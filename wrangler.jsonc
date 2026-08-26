@@ -1,0 +1,45 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "kannaku",
+  "main": "src/worker.ts",
+  "compatibility_date": "2026-08-26",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "html_handling": "auto-trailing-slash"
+  },
+  "vars": {
+    "ENVIRONMENT": "production",
+    "APP_NAME": "Kanakku GST Billing SaaS"
+  },
+  "observability": {
+    "enabled": true
+  }
+  // Future Cloudflare D1 SQL Database configuration:
+  // "d1_databases": [
+  //   {
+  //     "binding": "DB",
+  //     "database_name": "kannaku_saas_prod",
+  //     "database_id": "YOUR_D1_DATABASE_ID_HERE",
+  //     "migrations_dir": "src/db"
+  //   }
+  // ],
+  // Future Cloudflare KV Storage configuration:
+  // "kv_namespaces": [
+  //   {
+  //     "binding": "SESSION_KV",
+  //     "id": "YOUR_KV_NAMESPACE_ID_HERE"
+  //   }
+  // ],
+  // Future Cloudflare R2 Bucket configuration:
+  // "r2_buckets": [
+  //   {
+  //     "binding": "R2",
+  //     "bucket_name": "kannaku-invoices-prod"
+  //   }
+  // ]
+}
