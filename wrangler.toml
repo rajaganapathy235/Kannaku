@@ -2,11 +2,6 @@ name = "kannaku"
 compatibility_date = "2026-08-26"
 pages_build_output_dir = "dist"
 
-# Assets directory for Cloudflare Workers & Pages
-[assets]
-directory = "./dist"
-binding = "ASSETS"
-
 # Cloudflare D1 Serverless SQL Database Binding
 [[d1_databases]]
 binding = "DB"
