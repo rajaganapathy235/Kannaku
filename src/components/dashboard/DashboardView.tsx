@@ -6,6 +6,7 @@ import {
   CheckCircle2,
   ChevronRight,
   Clock,
+  Compass,
   FileCheck,
   FilePlus,
   FileText,
@@ -44,8 +45,7 @@ interface DashboardViewProps {
   onNavigateTab: (tab: any) => void;
   onOpenQuickPayment: () => void;
   onOpenHowToUse?: () => void;
-  onLoadDemoData?: () => void;
-  onClearData?: () => void;
+  onStartTour?: () => void;
 }
 
 export const DashboardView: React.FC<DashboardViewProps> = ({
@@ -59,8 +59,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   onNavigateTab,
   onOpenQuickPayment,
   onOpenHowToUse,
-  onLoadDemoData,
-  onClearData,
+  onStartTour,
 }) => {
   const [transactionTimeframe, setTransactionTimeframe] = useState<'week' | 'all'>('week');
   const [showGettingStarted, setShowGettingStarted] = useState<boolean>(true);
@@ -162,13 +161,22 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               </div>
 
               <div className="flex items-center gap-2">
+                {onStartTour && (
+                  <button
+                    onClick={onStartTour}
+                    className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer active:scale-98"
+                  >
+                    <Compass className="w-4 h-4" />
+                    <span>Start Interactive Tour</span>
+                  </button>
+                )}
                 {onOpenHowToUse && (
                   <button
                     onClick={onOpenHowToUse}
-                    className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
+                    className="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
                   >
-                    <BookOpen className="w-4 h-4" />
-                    <span>View Complete Guide</span>
+                    <BookOpen className="w-3.5 h-3.5 text-blue-300" />
+                    <span>Guide</span>
                   </button>
                 )}
                 <button

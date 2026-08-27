@@ -6,6 +6,7 @@ import {
   Check,
   ChevronRight,
   Cloud,
+  Compass,
   Database,
   Download,
   Edit2,
@@ -16,13 +17,11 @@ import {
   Mail,
   MapPin,
   Phone,
-  RotateCcw,
   Save,
   ShieldCheck,
   Smartphone,
   Sparkles,
   Stamp,
-  Trash2,
   Upload,
 } from 'lucide-react';
 import { CompanyProfile } from '../../types';
@@ -36,6 +35,7 @@ interface SettingsViewProps {
   onUpdateCompany: (company: CompanyProfile) => void;
   onRestoreDatabase: () => void;
   onOpenHowToUse?: () => void;
+  onStartTour?: () => void;
 }
 
 export const SettingsView: React.FC<SettingsViewProps> = ({
@@ -43,6 +43,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   onUpdateCompany,
   onRestoreDatabase,
   onOpenHowToUse,
+  onStartTour,
 }) => {
   const [form, setForm] = useState<CompanyProfile>(() => ({
     ...company,
@@ -600,61 +601,43 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         </div>
       </div>
 
-      {/* 3. Workspace Data & Guide Controls */}
+      {/* 3. Workspace Tour & Guide Controls */}
       <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
         <div className="flex items-center justify-between border-b border-slate-200 pb-3">
           <div className="flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-purple-600" />
+            <Compass className="w-4 h-4 text-blue-600" />
             <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900">
-              Workspace Mode & Billing Guide
+              Interactive Workspace Tour & User Guides
             </h3>
           </div>
+        </div>
+
+        <p className="text-xs text-slate-500 leading-relaxed">
+          Need a quick walkthrough of GST tax calculations, invoice templates, customer ledgers, or inventory tracking? Launch the interactive tour or view the complete GST billing handbook.
+        </p>
+
+        <div className="flex flex-wrap items-center gap-3 pt-1">
+          {onStartTour && (
+            <button
+              type="button"
+              onClick={onStartTour}
+              className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl flex items-center gap-2 shadow-xs transition-colors cursor-pointer active:scale-98"
+            >
+              <Compass className="w-4 h-4 text-white" />
+              <span>Launch Interactive Workspace Tour</span>
+            </button>
+          )}
+
           {onOpenHowToUse && (
             <button
               type="button"
               onClick={onOpenHowToUse}
-              className="px-3 py-1 bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
+              className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 font-semibold text-xs rounded-xl flex items-center gap-2 transition-colors cursor-pointer"
             >
-              <BookOpen className="w-3.5 h-3.5" />
-              <span>Open How-to-Use Guide</span>
+              <BookOpen className="w-4 h-4 text-blue-600" />
+              <span>Read Full Billing & GST Guide</span>
             </button>
           )}
-        </div>
-
-        <p className="text-xs text-slate-500 leading-relaxed">
-          For real production billing, keep your workspace clean with 0 mock data. You can reset to a clean slate or load sample records on demand.
-        </p>
-
-        <div className="flex flex-wrap items-center gap-3 pt-1">
-          <button
-            type="button"
-            onClick={() => {
-              if (window.confirm('Reset all invoices, clients, products and payments to a clean slate?')) {
-                KannakuDB.clearWorkspaceData();
-                onRestoreDatabase();
-                alert('Workspace reset to clean slate!');
-              }
-            }}
-            className="px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-semibold text-xs rounded-lg flex items-center gap-2 transition-colors cursor-pointer"
-          >
-            <Trash2 className="w-4 h-4 text-rose-500" />
-            <span>Reset to Clean Slate (0 Mock Data)</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              if (window.confirm('Load sample test invoices, clients, and catalog items?')) {
-                KannakuDB.loadDemoData();
-                onRestoreDatabase();
-                alert('Sample demo records loaded!');
-              }
-            }}
-            className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 font-semibold text-xs rounded-lg flex items-center gap-2 transition-colors cursor-pointer"
-          >
-            <RotateCcw className="w-4 h-4 text-slate-500" />
-            <span>Load Sample Demo Data</span>
-          </button>
         </div>
       </div>
 

@@ -2,6 +2,7 @@ import React from 'react';
 import {
   BookOpen,
   Building2,
+  Compass,
   HelpCircle,
   PlusCircle,
   Search,
@@ -22,6 +23,7 @@ interface NavbarProps {
   onOpenSuperAdmin?: () => void;
   onOpenHomepage?: () => void;
   onOpenHowToUse?: () => void;
+  onStartTour?: () => void;
   session: AuthSession | null;
   onLogout: () => void;
 }
@@ -36,6 +38,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenSuperAdmin,
   onOpenHomepage,
   onOpenHowToUse,
+  onStartTour,
   session,
   onLogout,
 }) => {
@@ -100,6 +103,17 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
         )}
 
+        {onStartTour && (
+          <button
+            onClick={onStartTour}
+            className="bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-lg font-bold text-xs transition-colors flex items-center gap-1.5 cursor-pointer shadow-2xs active:scale-98"
+            title="Start Interactive Workspace Tour"
+          >
+            <Compass className="w-3.5 h-3.5 text-blue-600" />
+            <span className="hidden sm:inline">Tour</span>
+          </button>
+        )}
+
         {onOpenHowToUse && (
           <button
             onClick={onOpenHowToUse}
@@ -107,7 +121,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             title="How to Use & Billing Guide"
           >
             <BookOpen className="w-3.5 h-3.5 text-blue-600" />
-            <span className="hidden sm:inline">How to Use</span>
+            <span className="hidden sm:inline">Guide</span>
           </button>
         )}
 

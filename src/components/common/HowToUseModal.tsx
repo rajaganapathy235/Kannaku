@@ -4,6 +4,7 @@ import {
   Building,
   CheckCircle2,
   ChevronRight,
+  Compass,
   CreditCard,
   FileCheck,
   FileSpreadsheet,
@@ -25,16 +26,14 @@ interface HowToUseModalProps {
   isOpen: boolean;
   onClose: () => void;
   onNavigateTab: (tab: string) => void;
-  onLoadDemoData?: () => void;
-  onClearData?: () => void;
+  onStartTour?: () => void;
 }
 
 export const HowToUseModal: React.FC<HowToUseModalProps> = ({
   isOpen,
   onClose,
   onNavigateTab,
-  onLoadDemoData,
-  onClearData,
+  onStartTour,
 }) => {
   const [activeSection, setActiveSection] = useState<'quickstart' | 'billing' | 'prints' | 'ledgers' | 'faq'>('quickstart');
 
@@ -327,9 +326,9 @@ export const HowToUseModal: React.FC<HowToUseModalProps> = ({
               </div>
 
               <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl">
-                <h4 className="font-bold text-slate-900 mb-1">Q: Can I test with sample data first?</h4>
+                <h4 className="font-bold text-slate-900 mb-1">Q: How can I explore all features quickly?</h4>
                 <p className="text-slate-600">
-                  Yes! Use the controls below to load sample demo records for testing, or clear all data to start with a fresh clean workspace.
+                  Launch the <strong>Interactive Workspace Tour</strong> at any time to walk through invoicing, quotations, inventory, and ledger workflows step by step.
                 </p>
               </div>
             </div>
@@ -340,31 +339,16 @@ export const HowToUseModal: React.FC<HowToUseModalProps> = ({
         {/* Footer Actions */}
         <div className="p-4 sm:p-5 border-t border-slate-200 bg-slate-50 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            {onLoadDemoData && (
+            {onStartTour && (
               <button
                 onClick={() => {
-                  if (window.confirm('Load sample invoices, clients, and items to test the system?')) {
-                    onLoadDemoData();
-                    onClose();
-                  }
+                  onClose();
+                  onStartTour();
                 }}
-                className="px-3 py-1.5 bg-white hover:bg-slate-100 border border-slate-300 text-slate-700 rounded-lg text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
+                className="px-3.5 py-2 bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 rounded-xl text-xs font-bold shadow-2xs transition-colors flex items-center gap-1.5 cursor-pointer"
               >
-                Load Sample Demo Data
-              </button>
-            )}
-
-            {onClearData && (
-              <button
-                onClick={() => {
-                  if (window.confirm('Reset all invoices, clients, products and payments to a clean slate?')) {
-                    onClearData();
-                    onClose();
-                  }
-                }}
-                className="px-3 py-1.5 bg-white hover:bg-rose-50 border border-rose-200 text-rose-700 rounded-lg text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
-              >
-                Reset to Clean Slate
+                <Compass className="w-4 h-4 text-blue-600" />
+                <span>Launch Interactive Workspace Tour</span>
               </button>
             )}
           </div>
