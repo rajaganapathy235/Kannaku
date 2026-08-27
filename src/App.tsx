@@ -27,15 +27,12 @@ import { SubscriptionView } from './components/subscription/SubscriptionView';
 import { SettingsView } from './components/settings/SettingsView';
 import { SuperAdminApp } from './components/admin/SuperAdminApp';
 import { ImpersonationBanner } from './components/admin/ImpersonationBanner';
-import { HowToUseModal } from './components/common/HowToUseModal';
-import { WorkspaceTourModal } from './components/common/WorkspaceTourModal';
-import { SaaSAdminDB } from './utils/adminStorage';
-import { TenantOrganizationFull } from './types/admin';
-import { AuthSession } from './types/auth';
 import { AuthService } from './utils/authService';
 import { LoginPage } from './components/auth/LoginPage';
 import { SignupPage } from './components/auth/SignupPage';
 import { LandingPage } from './components/home/LandingPage';
+import { SaaSAdminDB } from './utils/adminStorage';
+import { AuthSession } from './types/auth';
 
 export default function App() {
   const [authSession, setAuthSession] = useState<AuthSession | null>(() => {
@@ -69,8 +66,6 @@ export default function App() {
   // Active viewing/printing invoice modal
   const [activePrintInvoice, setActivePrintInvoice] = useState<Invoice | null>(null);
   const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
-  const [isHowToUseOpen, setIsHowToUseOpen] = useState<boolean>(false);
-  const [isTourOpen, setIsTourOpen] = useState<boolean>(false);
 
   // Quick Notification Banner
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -116,20 +111,6 @@ export default function App() {
     window.addEventListener('hashchange', handleHashChange);
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
-
-  // Automatic trigger on first-time login/workspace access
-  useEffect(() => {
-    if (authSession && !isSuperAdminMode && !authView) {
-      const targetId = authSession.user.organizationId || authSession.user.id;
-      if (!KannakuDB.hasCompletedTour(targetId)) {
-        const timer = setTimeout(() => {
-          setIsTourOpen(true);
-        }, 700);
-        return () => clearTimeout(timer);
-      }
-    }
-  }, [authSession, isSuperAdminMode, authView]);
-
   const handleLoginSuccess = (session: AuthSession) => {
     setAuthSession(session);
     setAuthView(null);
@@ -141,9 +122,6 @@ export default function App() {
       setIsSuperAdminMode(false);
       window.location.hash = '';
       const targetId = session.user.organizationId || session.user.id;
-      if (!KannakuDB.hasCompletedTour(targetId)) {
-        setTimeout(() => setIsTourOpen(true), 600);
-      }
     }
     showToast(`Welcome back, ${session.user.name}! Workspace synchronized.`);
   };
@@ -155,8 +133,6 @@ export default function App() {
     setIsSuperAdminMode(false);
     window.location.hash = '';
     showToast(`🎉 Workspace "${session.user.organizationName}" created successfully! 14-day trial active.`);
-    // Automatically trigger onboarding tour for newly registered users
-    setTimeout(() => setIsTourOpen(true), 700);
   };
 
   const handleLogout = () => {
@@ -541,8 +517,6 @@ export default function App() {
               setAuthView('home');
               window.location.hash = '#home';
             }}
-            onOpenHowToUse={() => setIsHowToUseOpen(true)}
-            onStartTour={() => setIsTourOpen(true)}
           />
         </div>
 
@@ -569,8 +543,6 @@ export default function App() {
               setAuthView('home');
               window.location.hash = '#home';
             }}
-            onOpenHowToUse={() => setIsHowToUseOpen(true)}
-            onStartTour={() => setIsTourOpen(true)}
             session={authSession}
             onLogout={handleLogout}
           />
@@ -593,8 +565,6 @@ export default function App() {
                 onViewInvoice={(inv) => setActivePrintInvoice(inv)}
                 onNavigateTab={(tab) => setActiveTab(tab)}
                 onOpenQuickPayment={() => setActiveTab('payments')}
-                onOpenHowToUse={() => setIsHowToUseOpen(true)}
-                onStartTour={() => setIsTourOpen(true)}
               />
             )}
 
@@ -687,8 +657,6 @@ export default function App() {
                 company={company}
                 onUpdateCompany={handleUpdateCompany}
                 onRestoreDatabase={reloadAllState}
-                onOpenHowToUse={() => setIsHowToUseOpen(true)}
-                onStartTour={() => setIsTourOpen(true)}
               />
             )}
           </div>
@@ -738,33 +706,6 @@ export default function App() {
           onConvertQuotation={handleConvertQuotationToInvoice}
         />
       )}
-
-      {/* How to Use & Getting Started Guide Modal */}
-      <HowToUseModal
-        isOpen={isHowToUseOpen}
-        onClose={() => setIsHowToUseOpen(false)}
-        onNavigateTab={(tab) => {
-          setIsHowToUseOpen(false);
-          setActiveTab(tab);
-        }}
-        onStartTour={() => setIsTourOpen(true)}
-      />
-
-      {/* Interactive Guided Workspace Tour Modal */}
-      <WorkspaceTourModal
-        isOpen={isTourOpen}
-        onClose={() => setIsTourOpen(false)}
-        userIdOrTenantId={authSession?.user?.organizationId || authSession?.user?.id}
-        onNavigateTab={(tab) => {
-          setActiveTab(tab);
-          setIsTourOpen(false);
-        }}
-        onNewInvoice={() => {
-          setIsTourOpen(false);
-          setEditingInvoice(null);
-          setActiveTab('create_invoice');
-        }}
-      />
     </div>
   );
 }

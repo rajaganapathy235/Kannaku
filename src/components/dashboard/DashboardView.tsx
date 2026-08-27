@@ -1,12 +1,10 @@
 import React, { useState } from 'react';
 import {
   AlertCircle,
-  BookOpen,
   Building,
   CheckCircle2,
   ChevronRight,
   Clock,
-  Compass,
   FileCheck,
   FilePlus,
   FileText,
@@ -44,8 +42,6 @@ interface DashboardViewProps {
   onViewInvoice: (invoice: Invoice) => void;
   onNavigateTab: (tab: any) => void;
   onOpenQuickPayment: () => void;
-  onOpenHowToUse?: () => void;
-  onStartTour?: () => void;
 }
 
 export const DashboardView: React.FC<DashboardViewProps> = ({
@@ -58,11 +54,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   onViewInvoice,
   onNavigateTab,
   onOpenQuickPayment,
-  onOpenHowToUse,
-  onStartTour,
 }) => {
   const [transactionTimeframe, setTransactionTimeframe] = useState<'week' | 'all'>('week');
-  const [showGettingStarted, setShowGettingStarted] = useState<boolean>(true);
 
   // Financial Calculations
   const salesInvoices = invoices.filter((i) => i.invoiceType === InvoiceType.SALES);
@@ -136,177 +129,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
   return (
     <div className="space-y-6 pb-12">
-      {/* How to Use & Getting Started Guide Card */}
-      {showGettingStarted && (
-        <div className="bg-linear-to-r from-slate-900 via-indigo-950 to-blue-950 text-white rounded-3xl p-5 sm:p-6 shadow-md border border-slate-800 relative overflow-hidden">
-          <div className="relative z-10 space-y-4">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-blue-500/20 border border-blue-400/30 flex items-center justify-center text-blue-300">
-                  <Sparkles className="w-5 h-5" />
-                </div>
-                <div>
-                  <h2 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
-                    How to Use Kannaku GST Billing
-                    {isCleanSlate && (
-                      <span className="text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 px-2 py-0.5 rounded-full font-bold uppercase">
-                        Fresh Clean Workspace
-                      </span>
-                    )}
-                  </h2>
-                  <p className="text-xs text-slate-300">
-                    Follow these 4 quick steps to configure your company, add clients & issue your first GST tax invoice.
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2">
-                {onStartTour && (
-                  <button
-                    onClick={onStartTour}
-                    className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer active:scale-98"
-                  >
-                    <Compass className="w-4 h-4" />
-                    <span>Start Interactive Tour</span>
-                  </button>
-                )}
-                {onOpenHowToUse && (
-                  <button
-                    onClick={onOpenHowToUse}
-                    className="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
-                  >
-                    <BookOpen className="w-3.5 h-3.5 text-blue-300" />
-                    <span>Guide</span>
-                  </button>
-                )}
-                <button
-                  onClick={() => setShowGettingStarted(false)}
-                  className="text-xs text-slate-400 hover:text-white px-2 py-1 transition-colors"
-                  title="Dismiss guide"
-                >
-                  Dismiss
-                </button>
-              </div>
-            </div>
-
-            {/* 4 Interactive Progress Steps */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-2">
-              
-              {/* Step 1 */}
-              <div
-                onClick={() => onNavigateTab('settings')}
-                className="p-3.5 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-blue-400/40 rounded-2xl transition-colors cursor-pointer group flex flex-col justify-between"
-              >
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-extrabold text-blue-300 uppercase tracking-wider">
-                      Step 1
-                    </span>
-                    {company.name && company.name !== 'Your Company Name' ? (
-                      <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                    ) : (
-                      <Building className="w-4 h-4 text-slate-400 group-hover:text-blue-300" />
-                    )}
-                  </div>
-                  <div className="font-bold text-xs text-white">Company & Bank Profile</div>
-                  <p className="text-[11px] text-slate-400 leading-snug">
-                    Set Business Name, GSTIN, Bank A/C & UPI ID
-                  </p>
-                </div>
-                <div className="mt-3 flex items-center text-[11px] font-bold text-blue-400 group-hover:text-blue-300">
-                  <span>Edit Profile →</span>
-                </div>
-              </div>
-
-              {/* Step 2 */}
-              <div
-                onClick={() => onNavigateTab('customers')}
-                className="p-3.5 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-indigo-400/40 rounded-2xl transition-colors cursor-pointer group flex flex-col justify-between"
-              >
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-extrabold text-indigo-300 uppercase tracking-wider">
-                      Step 2
-                    </span>
-                    {clients.length > 0 ? (
-                      <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                    ) : (
-                      <Users className="w-4 h-4 text-slate-400 group-hover:text-indigo-300" />
-                    )}
-                  </div>
-                  <div className="font-bold text-xs text-white">Add Clients & Parties</div>
-                  <p className="text-[11px] text-slate-400 leading-snug">
-                    {clients.length > 0
-                      ? `${clients.length} parties registered`
-                      : 'Add customer details & GSTIN for automatic tax'}
-                  </p>
-                </div>
-                <div className="mt-3 flex items-center text-[11px] font-bold text-indigo-400 group-hover:text-indigo-300">
-                  <span>{clients.length > 0 ? 'Manage Parties →' : '+ Add Customer →'}</span>
-                </div>
-              </div>
-
-              {/* Step 3 */}
-              <div
-                onClick={() => onNavigateTab('products')}
-                className="p-3.5 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-emerald-400/40 rounded-2xl transition-colors cursor-pointer group flex flex-col justify-between"
-              >
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-extrabold text-emerald-300 uppercase tracking-wider">
-                      Step 3
-                    </span>
-                    {products.length > 0 ? (
-                      <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                    ) : (
-                      <Package className="w-4 h-4 text-slate-400 group-hover:text-emerald-300" />
-                    )}
-                  </div>
-                  <div className="font-bold text-xs text-white">Add Items / Stock</div>
-                  <p className="text-[11px] text-slate-400 leading-snug">
-                    {products.length > 0
-                      ? `${products.length} items in catalog`
-                      : 'Add items with HSN codes & GST slab rates'}
-                  </p>
-                </div>
-                <div className="mt-3 flex items-center text-[11px] font-bold text-emerald-400 group-hover:text-emerald-300">
-                  <span>{products.length > 0 ? 'View Catalog →' : '+ Add Item →'}</span>
-                </div>
-              </div>
-
-              {/* Step 4 */}
-              <div
-                onClick={onNewInvoice}
-                className="p-3.5 bg-blue-600/30 hover:bg-blue-600/40 border border-blue-400/30 hover:border-blue-400/60 rounded-2xl transition-colors cursor-pointer group flex flex-col justify-between"
-              >
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-extrabold text-blue-200 uppercase tracking-wider">
-                      Step 4
-                    </span>
-                    {invoices.length > 0 ? (
-                      <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                    ) : (
-                      <FilePlus className="w-4 h-4 text-blue-300" />
-                    )}
-                  </div>
-                  <div className="font-bold text-xs text-white">Create GST Tax Invoice</div>
-                  <p className="text-[11px] text-slate-300 leading-snug">
-                    {invoices.length > 0
-                      ? `${invoices.length} bills generated`
-                      : 'Generate official GST bill, print or share on WhatsApp'}
-                  </p>
-                </div>
-                <div className="mt-3 flex items-center text-[11px] font-bold text-blue-200 group-hover:text-white">
-                  <span>+ New Invoice →</span>
-                </div>
-              </div>
-
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* 4 Financial KPI Metric Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         {/* Total Revenue */}

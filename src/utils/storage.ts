@@ -1047,20 +1047,6 @@ export class KannakuDB {
     }
   }
 
-  static hasCompletedTour(customId?: string): boolean {
-    const id = customId || this.getActiveTenantId();
-    return localStorage.getItem(`kannaku_tour_completed_${id}`) === 'true';
-  }
-
-  static setTourCompleted(customId?: string, completed: boolean = true): void {
-    const id = customId || this.getActiveTenantId();
-    if (completed) {
-      localStorage.setItem(`kannaku_tour_completed_${id}`, 'true');
-    } else {
-      localStorage.removeItem(`kannaku_tour_completed_${id}`);
-    }
-  }
-
   static exportAllData(): string {
     const backup = {
       app: 'Kannaku',
