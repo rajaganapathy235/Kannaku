@@ -117,6 +117,19 @@ export default function App() {
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
 
+  // Automatic trigger on first-time login/workspace access
+  useEffect(() => {
+    if (authSession && !isSuperAdminMode && !authView) {
+      const targetId = authSession.user.organizationId || authSession.user.id;
+      if (!KannakuDB.hasCompletedTour(targetId)) {
+        const timer = setTimeout(() => {
+          setIsTourOpen(true);
+        }, 700);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [authSession, isSuperAdminMode, authView]);
+
   const handleLoginSuccess = (session: AuthSession) => {
     setAuthSession(session);
     setAuthView(null);
@@ -127,6 +140,10 @@ export default function App() {
     } else {
       setIsSuperAdminMode(false);
       window.location.hash = '';
+      const targetId = session.user.organizationId || session.user.id;
+      if (!KannakuDB.hasCompletedTour(targetId)) {
+        setTimeout(() => setIsTourOpen(true), 600);
+      }
     }
     showToast(`Welcome back, ${session.user.name}! Workspace synchronized.`);
   };
@@ -138,6 +155,8 @@ export default function App() {
     setIsSuperAdminMode(false);
     window.location.hash = '';
     showToast(`🎉 Workspace "${session.user.organizationName}" created successfully! 14-day trial active.`);
+    // Automatically trigger onboarding tour for newly registered users
+    setTimeout(() => setIsTourOpen(true), 700);
   };
 
   const handleLogout = () => {
@@ -735,6 +754,7 @@ export default function App() {
       <WorkspaceTourModal
         isOpen={isTourOpen}
         onClose={() => setIsTourOpen(false)}
+        userIdOrTenantId={authSession?.user?.organizationId || authSession?.user?.id}
         onNavigateTab={(tab) => {
           setActiveTab(tab);
           setIsTourOpen(false);
