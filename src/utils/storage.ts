@@ -574,9 +574,9 @@ export class KannakuDB {
   static getClients(): Client[] {
     try {
       const data = localStorage.getItem(STORAGE_KEYS.CLIENTS);
-      return data ? JSON.parse(data) : INITIAL_CLIENTS;
+      return data !== null ? JSON.parse(data) : [];
     } catch {
-      return INITIAL_CLIENTS;
+      return [];
     }
   }
 
@@ -603,9 +603,9 @@ export class KannakuDB {
   static getProducts(): Product[] {
     try {
       const data = localStorage.getItem(STORAGE_KEYS.PRODUCTS);
-      return data ? JSON.parse(data) : INITIAL_PRODUCTS;
+      return data !== null ? JSON.parse(data) : [];
     } catch {
-      return INITIAL_PRODUCTS;
+      return [];
     }
   }
 
@@ -632,9 +632,9 @@ export class KannakuDB {
   static getInvoices(): Invoice[] {
     try {
       const data = localStorage.getItem(STORAGE_KEYS.INVOICES);
-      return data ? JSON.parse(data) : INITIAL_INVOICES;
+      return data !== null ? JSON.parse(data) : [];
     } catch {
-      return INITIAL_INVOICES;
+      return [];
     }
   }
 
@@ -812,14 +812,38 @@ export class KannakuDB {
   static getPayments(): PaymentLedgerEntry[] {
     try {
       const data = localStorage.getItem(STORAGE_KEYS.PAYMENTS);
-      return data ? JSON.parse(data) : INITIAL_PAYMENTS;
+      return data !== null ? JSON.parse(data) : [];
     } catch {
-      return INITIAL_PAYMENTS;
+      return [];
     }
   }
 
   static savePayments(payments: PaymentLedgerEntry[]): void {
     localStorage.setItem(STORAGE_KEYS.PAYMENTS, JSON.stringify(payments));
+  }
+
+  static loadDemoData(): void {
+    this.saveClients(INITIAL_CLIENTS);
+    this.saveProducts(INITIAL_PRODUCTS);
+    this.saveInvoices(INITIAL_INVOICES);
+    this.savePayments(INITIAL_PAYMENTS);
+    this.saveCompanyProfile(DEFAULT_COMPANY);
+    this.reconcileInvoicesWithLedger();
+  }
+
+  static clearWorkspaceData(): void {
+    this.saveClients([]);
+    this.saveProducts([]);
+    this.saveInvoices([]);
+    this.savePayments([]);
+  }
+
+  static isCleanWorkspace(): boolean {
+    return (
+      this.getInvoices().length === 0 &&
+      this.getClients().length === 0 &&
+      this.getProducts().length === 0
+    );
   }
 
   static savePayment(entry: PaymentLedgerEntry): void {

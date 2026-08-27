@@ -1,6 +1,8 @@
 import React from 'react';
 import {
+  BookOpen,
   Building2,
+  HelpCircle,
   PlusCircle,
   Search,
   Shield,
@@ -19,6 +21,7 @@ interface NavbarProps {
   onSearchChange?: (term: string) => void;
   onOpenSuperAdmin?: () => void;
   onOpenHomepage?: () => void;
+  onOpenHowToUse?: () => void;
   session: AuthSession | null;
   onLogout: () => void;
 }
@@ -32,6 +35,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onSearchChange,
   onOpenSuperAdmin,
   onOpenHomepage,
+  onOpenHowToUse,
   session,
   onLogout,
 }) => {
@@ -94,6 +98,17 @@ export const Navbar: React.FC<NavbarProps> = ({
               className="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-md text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-blue-600 transition-colors"
             />
           </div>
+        )}
+
+        {onOpenHowToUse && (
+          <button
+            onClick={onOpenHowToUse}
+            className="bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300/80 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-lg font-semibold text-xs transition-colors flex items-center gap-1.5 cursor-pointer"
+            title="How to Use & Billing Guide"
+          >
+            <BookOpen className="w-3.5 h-3.5 text-blue-600" />
+            <span className="hidden sm:inline">How to Use</span>
+          </button>
         )}
 
         <button

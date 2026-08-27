@@ -1,6 +1,7 @@
 import React from 'react';
 import {
   BarChart3,
+  BookOpen,
   CreditCard,
   FileText,
   Home,
@@ -32,6 +33,7 @@ interface SidebarProps {
   lowStockCount?: number;
   onOpenSuperAdmin?: () => void;
   onOpenHomepage?: () => void;
+  onOpenHowToUse?: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -42,6 +44,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   lowStockCount = 0,
   onOpenSuperAdmin,
   onOpenHomepage,
+  onOpenHowToUse,
 }) => {
   const navItems: {
     id: NavTab;
@@ -152,10 +155,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
           ></div>
         </div>
 
+        {onOpenHowToUse && (
+          <button
+            onClick={onOpenHowToUse}
+            className="mt-3 w-full py-1.5 px-3 bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 shadow-2xs transition-colors cursor-pointer"
+          >
+            <BookOpen className="w-3.5 h-3.5 text-blue-600" />
+            <span>How to Use Guide</span>
+          </button>
+        )}
+
         {onOpenHomepage && (
           <button
             onClick={onOpenHomepage}
-            className="mt-3 w-full py-1.5 px-3 bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 shadow-2xs transition-colors cursor-pointer"
+            className="mt-2 w-full py-1.5 px-3 bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 shadow-2xs transition-colors cursor-pointer"
           >
             <Globe className="w-3.5 h-3.5 text-blue-600" />
             <span>Product Homepage</span>

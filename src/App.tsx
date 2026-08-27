@@ -27,6 +27,7 @@ import { SubscriptionView } from './components/subscription/SubscriptionView';
 import { SettingsView } from './components/settings/SettingsView';
 import { SuperAdminApp } from './components/admin/SuperAdminApp';
 import { ImpersonationBanner } from './components/admin/ImpersonationBanner';
+import { HowToUseModal } from './components/common/HowToUseModal';
 import { SaaSAdminDB } from './utils/adminStorage';
 import { TenantOrganizationFull } from './types/admin';
 import { AuthSession } from './types/auth';
@@ -67,6 +68,7 @@ export default function App() {
   // Active viewing/printing invoice modal
   const [activePrintInvoice, setActivePrintInvoice] = useState<Invoice | null>(null);
   const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
+  const [isHowToUseOpen, setIsHowToUseOpen] = useState<boolean>(false);
 
   // Quick Notification Banner
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -84,6 +86,18 @@ export default function App() {
     setProducts(KannakuDB.getProducts());
     setPayments(KannakuDB.getPayments());
     setSubscription(KannakuDB.getSubscription());
+  };
+
+  const handleLoadDemoData = () => {
+    KannakuDB.loadDemoData();
+    reloadAllState();
+    showToast('Sample demo invoices, clients & items loaded!');
+  };
+
+  const handleClearWorkspaceData = () => {
+    KannakuDB.clearWorkspaceData();
+    reloadAllState();
+    showToast('Workspace reset to clean slate (0 mock records).');
   };
 
   // Reconcile and synchronize all invoices into payment ledgers on load
@@ -518,6 +532,7 @@ export default function App() {
               setAuthView('home');
               window.location.hash = '#home';
             }}
+            onOpenHowToUse={() => setIsHowToUseOpen(true)}
           />
         </div>
 
@@ -544,6 +559,7 @@ export default function App() {
               setAuthView('home');
               window.location.hash = '#home';
             }}
+            onOpenHowToUse={() => setIsHowToUseOpen(true)}
             session={authSession}
             onLogout={handleLogout}
           />
@@ -566,6 +582,9 @@ export default function App() {
                 onViewInvoice={(inv) => setActivePrintInvoice(inv)}
                 onNavigateTab={(tab) => setActiveTab(tab)}
                 onOpenQuickPayment={() => setActiveTab('payments')}
+                onOpenHowToUse={() => setIsHowToUseOpen(true)}
+                onLoadDemoData={handleLoadDemoData}
+                onClearData={handleClearWorkspaceData}
               />
             )}
 
@@ -658,6 +677,7 @@ export default function App() {
                 company={company}
                 onUpdateCompany={handleUpdateCompany}
                 onRestoreDatabase={reloadAllState}
+                onOpenHowToUse={() => setIsHowToUseOpen(true)}
               />
             )}
           </div>
@@ -707,6 +727,18 @@ export default function App() {
           onConvertQuotation={handleConvertQuotationToInvoice}
         />
       )}
+
+      {/* How to Use & Getting Started Guide Modal */}
+      <HowToUseModal
+        isOpen={isHowToUseOpen}
+        onClose={() => setIsHowToUseOpen(false)}
+        onNavigateTab={(tab) => {
+          setIsHowToUseOpen(false);
+          setActiveTab(tab);
+        }}
+        onLoadDemoData={handleLoadDemoData}
+        onClearData={handleClearWorkspaceData}
+      />
     </div>
   );
 }
