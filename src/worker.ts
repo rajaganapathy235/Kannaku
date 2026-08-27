@@ -3,14 +3,18 @@
  * Handles Static Assets, SPA Fallback Routing, and Future Serverless API Endpoints.
  */
 
+export interface WorkerFetcher {
+  fetch: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+}
+
 export interface Env {
   // Cloudflare Static Assets Binding (defined in wrangler.jsonc)
-  ASSETS: Fetcher;
+  ASSETS: WorkerFetcher;
 
   // Future SaaS Cloudflare Bindings
-  DB?: D1Database;
-  SESSION_KV?: KVNamespace;
-  R2?: R2Bucket;
+  DB?: any;
+  SESSION_KV?: any;
+  R2?: any;
 
   // Environment Variables
   ENVIRONMENT?: string;
@@ -18,8 +22,13 @@ export interface Env {
   GEMINI_API_KEY?: string;
 }
 
+export interface WorkerExecutionContext {
+  waitUntil(promise: Promise<any>): void;
+  passThroughOnException(): void;
+}
+
 export default {
-  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+  async fetch(request: Request, env: Env, ctx?: WorkerExecutionContext): Promise<Response> {
     const url = new URL(request.url);
 
     // 1. API Route Handler (Foundation for future Cloudflare D1/R2/KV backend)

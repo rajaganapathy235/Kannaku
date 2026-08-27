@@ -1,6 +1,6 @@
 import { AdminRole } from '../types/admin';
 
-export type UserAuthRole = 'OWNER' | 'ADMIN' | 'MANAGER' | 'ACCOUNTANT' | 'STAFF' | 'SUPER_ADMIN';
+export type UserAuthRole = 'OWNER' | 'SUPER_ADMIN';
 
 export interface AuthSession {
   token: string;

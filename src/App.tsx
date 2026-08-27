@@ -37,9 +37,11 @@ import { LandingPage } from './components/home/LandingPage';
 
 export default function App() {
   const [authSession, setAuthSession] = useState<AuthSession | null>(() => {
-    return AuthService.getSession() || AuthService.quickSwitchRole('hytexcottonmills@gmail.com');
+    return AuthService.getSession();
   });
   const [authView, setAuthView] = useState<'login' | 'signup' | 'home' | null>(() => {
+    if (window.location.hash === '#login') return 'login';
+    if (window.location.hash === '#signup') return 'signup';
     if (window.location.hash === '#home') return 'home';
     return null;
   });
@@ -137,7 +139,8 @@ export default function App() {
   const handleLogout = () => {
     AuthService.logout();
     setAuthSession(null);
-    setAuthView('login');
+    setAuthView('home');
+    window.location.hash = '#home';
     showToast('Signed out successfully.');
   };
 

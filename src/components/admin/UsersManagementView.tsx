@@ -101,11 +101,7 @@ export const UsersManagementView: React.FC = () => {
             className="px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-slate-300 focus:outline-none cursor-pointer"
           >
             <option value="ALL">All Roles</option>
-            <option value="OWNER">Owner</option>
-            <option value="ADMIN">Admin</option>
-            <option value="ACCOUNTANT">Accountant</option>
-            <option value="STAFF">Staff</option>
-            <option value="VIEWER">Viewer</option>
+            <option value="OWNER">Tenant Owner</option>
           </select>
 
           <select

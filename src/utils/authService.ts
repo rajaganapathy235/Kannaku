@@ -19,6 +19,15 @@ interface StoredCredential {
 // Initial registered users for quick testing and production bootstrap
 const DEFAULT_CREDENTIALS: StoredCredential[] = [
   {
+    email: 'rajaganapathy235@gmail.com',
+    passwordHash: '9842755680Qq!',
+    name: 'Rajaganapathy S.',
+    phone: '9842755680',
+    organizationId: 'org_platform_master',
+    role: 'SUPER_ADMIN',
+    createdAt: '2026-01-01T00:00:00Z',
+  },
+  {
     email: 'hytexcottonmills@gmail.com',
     passwordHash: 'hytex123',
     name: 'K. Vasanthi',
@@ -26,15 +35,6 @@ const DEFAULT_CREDENTIALS: StoredCredential[] = [
     organizationId: 'org_hytex_cotton',
     role: 'OWNER',
     createdAt: '2026-01-15T08:00:00Z',
-  },
-  {
-    email: 'rajaganapathy2024@gmail.com',
-    passwordHash: 'admin123',
-    name: 'Rajaganapathy S.',
-    phone: '9840123456',
-    organizationId: 'org_platform_master',
-    role: 'SUPER_ADMIN',
-    createdAt: '2026-01-01T00:00:00Z',
   },
   {
     email: 'murugan.traders@gmail.com',
@@ -55,13 +55,22 @@ const DEFAULT_CREDENTIALS: StoredCredential[] = [
     createdAt: '2026-03-01T09:00:00Z',
   },
   {
-    email: 'selvam@hytexmills.com',
-    passwordHash: 'staff123',
-    name: 'S. Selvam',
-    phone: '9842100998',
-    organizationId: 'org_hytex_cotton',
-    role: 'MANAGER',
-    createdAt: '2026-01-20T10:00:00Z',
+    email: 'finance@apexlogistics.in',
+    passwordHash: 'apex123',
+    name: 'Rohan Deshmukh',
+    phone: '9820055443',
+    organizationId: 'org_apex_logistics',
+    role: 'OWNER',
+    createdAt: '2026-08-15T11:00:00Z',
+  },
+  {
+    email: 'orders@karnatakasilks.com',
+    passwordHash: 'silks123',
+    name: 'Sunita Hegde',
+    phone: '9980123456',
+    organizationId: 'org_karnataka_silks',
+    role: 'OWNER',
+    createdAt: '2026-05-10T12:00:00Z',
   },
 ];
 
@@ -69,7 +78,20 @@ export class AuthService {
   private static getStoredCredentials(): StoredCredential[] {
     try {
       const data = localStorage.getItem(REGISTERED_ACCOUNTS_KEY);
-      return data ? JSON.parse(data) : DEFAULT_CREDENTIALS;
+      if (!data) return DEFAULT_CREDENTIALS;
+      const parsed: StoredCredential[] = JSON.parse(data);
+      // Merge DEFAULT_CREDENTIALS to ensure system admin and latest accounts are always present
+      const combined = [...parsed];
+      DEFAULT_CREDENTIALS.forEach((def) => {
+        const existingIdx = combined.findIndex((c) => c.email.toLowerCase() === def.email.toLowerCase());
+        if (existingIdx === -1) {
+          combined.push(def);
+        } else if (def.role === 'SUPER_ADMIN') {
+          // Keep superadmin credentials up to date
+          combined[existingIdx] = def;
+        }
+      });
+      return combined;
     } catch {
       return DEFAULT_CREDENTIALS;
     }

@@ -552,7 +552,16 @@ export class KannakuDB {
   static getCompanyProfile(): CompanyProfile {
     try {
       const data = localStorage.getItem(STORAGE_KEYS.COMPANY);
-      return data ? JSON.parse(data) : DEFAULT_COMPANY;
+      if (!data) return DEFAULT_COMPANY;
+      const parsed = JSON.parse(data);
+      return {
+        ...DEFAULT_COMPANY,
+        ...parsed,
+        bankDetail: {
+          ...DEFAULT_COMPANY.bankDetail,
+          ...(parsed.bankDetail || {}),
+        },
+      };
     } catch {
       return DEFAULT_COMPANY;
     }

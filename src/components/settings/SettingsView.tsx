@@ -38,8 +38,34 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   onUpdateCompany,
   onRestoreDatabase,
 }) => {
-  const [form, setForm] = useState<CompanyProfile>(company);
+  const [form, setForm] = useState<CompanyProfile>(() => ({
+    ...company,
+    bankDetail: {
+      bankName: '',
+      accountNumber: '',
+      ifscCode: '',
+      branchName: '',
+      upiId: '',
+      panNumber: '',
+      ...(company.bankDetail || {}),
+    },
+  }));
   const [savedSuccess, setSavedSuccess] = useState(false);
+
+  React.useEffect(() => {
+    setForm({
+      ...company,
+      bankDetail: {
+        bankName: '',
+        accountNumber: '',
+        ifscCode: '',
+        branchName: '',
+        upiId: '',
+        panNumber: '',
+        ...(company.bankDetail || {}),
+      },
+    });
+  }, [company]);
 
   // Branding Modals state
   const [isLogoModalOpen, setIsLogoModalOpen] = useState(false);
@@ -54,7 +80,13 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     setForm((prev) => ({
       ...prev,
       bankDetail: {
-        ...prev.bankDetail,
+        bankName: '',
+        accountNumber: '',
+        ifscCode: '',
+        branchName: '',
+        upiId: '',
+        panNumber: '',
+        ...(prev.bankDetail || {}),
         [field]: value,
       },
     }));
@@ -455,7 +487,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               </label>
               <input
                 type="text"
-                value={form.bankDetail.bankName}
+                value={form.bankDetail?.bankName || ''}
                 onChange={(e) => handleBankChange('bankName', e.target.value)}
                 className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 focus:bg-white focus:border-blue-600 focus:outline-none transition-colors"
               />
@@ -467,7 +499,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               </label>
               <input
                 type="text"
-                value={form.bankDetail.branchName}
+                value={form.bankDetail?.branchName || ''}
                 onChange={(e) => handleBankChange('branchName', e.target.value)}
                 className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 focus:bg-white focus:border-blue-600 focus:outline-none transition-colors"
               />
@@ -479,7 +511,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               </label>
               <input
                 type="text"
-                value={form.bankDetail.accountNumber}
+                value={form.bankDetail?.accountNumber || ''}
                 onChange={(e) =>
                   handleBankChange('accountNumber', e.target.value)
                 }
@@ -493,7 +525,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               </label>
               <input
                 type="text"
-                value={form.bankDetail.ifscCode}
+                value={form.bankDetail?.ifscCode || ''}
                 onChange={(e) =>
                   handleBankChange('ifscCode', e.target.value.toUpperCase())
                 }
@@ -507,7 +539,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               </label>
               <input
                 type="text"
-                value={form.bankDetail.upiId}
+                value={form.bankDetail?.upiId || ''}
                 onChange={(e) => handleBankChange('upiId', e.target.value)}
                 placeholder="e.g. hytexmills@hdfcbank"
                 className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg font-mono font-semibold text-blue-600 focus:bg-white focus:border-blue-600 focus:outline-none transition-colors"

@@ -47,7 +47,7 @@ const STORAGE_KEYS = {
 export const INITIAL_ADMIN_USER: AdminUser = {
   id: 'admin_owner_01',
   name: 'Rajaganapathy S.',
-  email: 'rajaganapathy2024@gmail.com',
+  email: 'rajaganapathy235@gmail.com',
   role: 'SUPER_ADMIN',
   avatarUrl: 'https://ui-avatars.com/api/?name=Raja+Ganapathy&background=1e293b&color=38bdf8',
   lastLogin: new Date().toISOString(),
@@ -405,19 +405,6 @@ export const INITIAL_USERS: PlatformUser[] = [
     planName: 'Pro Trader',
     lastLogin: '2026-08-26T02:10:00Z',
     createdDate: '2026-01-15T08:00:00Z',
-  },
-  {
-    id: 'usr_hytex_staff1',
-    organizationId: 'org_hytex_cotton',
-    organizationName: 'HYTEX COTTON MILLS',
-    name: 'S. Selvam',
-    email: 'selvam@hytexmills.com',
-    phone: '9842100998',
-    role: 'MANAGER',
-    status: 'ACTIVE',
-    planName: 'Pro Trader',
-    lastLogin: '2026-08-25T11:45:00Z',
-    createdDate: '2026-01-20T10:00:00Z',
   },
   {
     id: 'usr_murugan_owner',
@@ -1118,7 +1105,7 @@ export const DEFAULT_PLATFORM_SETTINGS: PlatformSettings = {
     notifyOnPaymentFailed: true,
     notifyOnTrialExpiring: true,
     notifyOnNewSignup: true,
-    adminNotificationEmail: 'rajaganapathy2024@gmail.com',
+    adminNotificationEmail: 'rajaganapathy235@gmail.com',
     slackWebhookUrl: 'https://hooks.slack.com/services/T00/B00/XXXXXX',
   },
   security: {

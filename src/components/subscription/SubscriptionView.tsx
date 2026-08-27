@@ -162,11 +162,18 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
         priceInr: pricing.amount,
         durationDays: pricing.durationDays,
         features: [
-          'Unlimited GST Invoices & Estimates',
-          'Tally V4 Multi-Copy PDF Engine',
-          'Customer & Supplier Party Ledgers',
-          'GSTR-1 HSN Breakdown Reports',
-          'Live Cloud & Stock Tracking',
+          'Unlimited Invoices with Custom Prefixes',
+          'Unlimited Quotations & Proforma Invoices',
+          'Tally Multi-Copy Engine (Original, Duplicate, Triplicate)',
+          'Dynamic UPI QR On Invoices for Instant Payment',
+          'Digital Signature & Seal Upload on Bill PDF',
+          'Customer & Supplier Ledger with Balance Tracking',
+          'GSTR-1 Excel / CSV Compliant Tax Reports',
+          'Daybook, Cashflow & Profit Summary',
+          'Inventory Management & Stock Alert Notifications',
+          'A4, A5 and 3-Inch Thermal POS Receipt Printing',
+          'Multi-Device & Multi-User Seat Access',
+          'Direct WhatsApp & Email PDF Dispatch',
         ],
       };
 
