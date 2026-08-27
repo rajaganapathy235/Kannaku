@@ -76,7 +76,7 @@ export const UsersManagementView: React.FC = () => {
             <span>Platform User Accounts & Role Control</span>
           </h1>
           <p className="text-xs text-slate-400 mt-0.5">
-            Global directory of owners, accountants, staff, and auditors across all organizations
+            Global directory of tenant owners and administrative accounts across all organizations
           </p>
         </div>
       </div>
@@ -102,6 +102,7 @@ export const UsersManagementView: React.FC = () => {
           >
             <option value="ALL">All Roles</option>
             <option value="OWNER">Tenant Owner</option>
+            <option value="SUPER_ADMIN">Super Admin</option>
           </select>
 
           <select

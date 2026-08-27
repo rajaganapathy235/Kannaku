@@ -549,39 +549,139 @@ export const INITIAL_SUBSCRIPTION_STATE: SubscriptionState = {
 
 // Database Accessor & Persistence Class
 export class KannakuDB {
+  static getActiveTenantId(): string {
+    const impersonated = localStorage.getItem('kannaku_impersonated_org_id');
+    if (impersonated) return impersonated;
+
+    try {
+      const auth = localStorage.getItem('kannaku_auth_session_v1');
+      if (auth) {
+        const session = JSON.parse(auth);
+        if (session?.user?.organizationId) {
+          return session.user.organizationId;
+        }
+      }
+    } catch {
+      // ignore
+    }
+
+    return localStorage.getItem(STORAGE_KEYS.ACTIVE_TENANT_ID) || 'org_hytex_cotton';
+  }
+
+  static setActiveTenantId(id: string): void {
+    localStorage.setItem(STORAGE_KEYS.ACTIVE_TENANT_ID, id);
+  }
+
+  private static getTenantKey(baseKey: string, customTenantId?: string): string {
+    const tenantId = customTenantId || this.getActiveTenantId();
+    return `${baseKey}_${tenantId}`;
+  }
+
   static getCompanyProfile(): CompanyProfile {
     try {
-      const data = localStorage.getItem(STORAGE_KEYS.COMPANY);
-      if (!data) return DEFAULT_COMPANY;
-      const parsed = JSON.parse(data);
-      return {
-        ...DEFAULT_COMPANY,
-        ...parsed,
-        bankDetail: {
-          ...DEFAULT_COMPANY.bankDetail,
-          ...(parsed.bankDetail || {}),
-        },
-      };
+      const tenantId = this.getActiveTenantId();
+      const tenantKey = this.getTenantKey(STORAGE_KEYS.COMPANY);
+      const data = localStorage.getItem(tenantKey);
+
+      if (data) {
+        const parsed = JSON.parse(data);
+        return {
+          ...DEFAULT_COMPANY,
+          ...parsed,
+          bankDetail: {
+            ...DEFAULT_COMPANY.bankDetail,
+            ...(parsed.bankDetail || {}),
+          },
+        };
+      }
+
+      // Check if this tenant exists in registered SaaS organizations
+      try {
+        const orgsData = localStorage.getItem('kannaku_saas_organizations_v2');
+        if (orgsData) {
+          const orgs = JSON.parse(orgsData);
+          const org = orgs.find((o: any) => o.id === tenantId);
+          if (org && tenantId !== 'org_hytex_cotton') {
+            const orgProfile: CompanyProfile = {
+              name: org.name,
+              address: `${org.city || 'Industrial Zone'}, ${org.state || 'Tamil Nadu'}`,
+              city: org.city || 'Tiruppur',
+              state: org.state || 'Tamil Nadu',
+              pin: '641604',
+              code: '33',
+              email: org.adminEmail || '',
+              mobile: org.mobile || '',
+              registerNumber: org.registerNumber || '',
+              panNumber: org.registerNumber ? org.registerNumber.substring(2, 12) : '',
+              billPrefix: 'INV/2026/',
+              invoicePrefixSales: 'INV/2026/',
+              invoicePrefixPurchase: 'PUR/2026/',
+              invoicePrefixQuotation: 'QUO/2026/',
+              colorScheme: 'blue',
+              termsAndConditions:
+                '1. Goods once sold will not be taken back or exchanged.\n2. Interest @ 18% p.a. charged on overdue bills.',
+              jurisdictionCity: org.city || 'Tiruppur',
+              bankDetail: {
+                bankName: 'State Bank of India',
+                accountNumber: '',
+                ifscCode: '',
+                branchName: org.city || 'Main Branch',
+                upiId: `${org.slug || 'pay'}@upi`,
+                panNumber: org.registerNumber ? org.registerNumber.substring(2, 12) : '',
+              },
+            };
+            this.saveCompanyProfile(orgProfile);
+            return orgProfile;
+          }
+        }
+      } catch {
+        // ignore
+      }
+
+      // Legacy fallback for default tenant
+      const legacyData = localStorage.getItem(STORAGE_KEYS.COMPANY);
+      if (legacyData && tenantId === 'org_hytex_cotton') {
+        const parsed = JSON.parse(legacyData);
+        return {
+          ...DEFAULT_COMPANY,
+          ...parsed,
+          bankDetail: {
+            ...DEFAULT_COMPANY.bankDetail,
+            ...(parsed.bankDetail || {}),
+          },
+        };
+      }
+
+      return DEFAULT_COMPANY;
     } catch {
       return DEFAULT_COMPANY;
     }
   }
 
   static saveCompanyProfile(profile: CompanyProfile): void {
-    localStorage.setItem(STORAGE_KEYS.COMPANY, JSON.stringify(profile));
+    localStorage.setItem(this.getTenantKey(STORAGE_KEYS.COMPANY), JSON.stringify(profile));
   }
 
   static getClients(): Client[] {
     try {
-      const data = localStorage.getItem(STORAGE_KEYS.CLIENTS);
-      return data !== null ? JSON.parse(data) : [];
+      const tenantId = this.getActiveTenantId();
+      const tenantKey = this.getTenantKey(STORAGE_KEYS.CLIENTS);
+      const data = localStorage.getItem(tenantKey);
+      if (data !== null) return JSON.parse(data);
+
+      // Check legacy key only for org_hytex_cotton demo
+      if (tenantId === 'org_hytex_cotton') {
+        const legacy = localStorage.getItem(STORAGE_KEYS.CLIENTS);
+        if (legacy !== null) return JSON.parse(legacy);
+      }
+      return [];
     } catch {
       return [];
     }
   }
 
   static saveClients(clients: Client[]): void {
-    localStorage.setItem(STORAGE_KEYS.CLIENTS, JSON.stringify(clients));
+    localStorage.setItem(this.getTenantKey(STORAGE_KEYS.CLIENTS), JSON.stringify(clients));
   }
 
   static saveClient(client: Client): void {
@@ -602,15 +702,23 @@ export class KannakuDB {
 
   static getProducts(): Product[] {
     try {
-      const data = localStorage.getItem(STORAGE_KEYS.PRODUCTS);
-      return data !== null ? JSON.parse(data) : [];
+      const tenantId = this.getActiveTenantId();
+      const tenantKey = this.getTenantKey(STORAGE_KEYS.PRODUCTS);
+      const data = localStorage.getItem(tenantKey);
+      if (data !== null) return JSON.parse(data);
+
+      if (tenantId === 'org_hytex_cotton') {
+        const legacy = localStorage.getItem(STORAGE_KEYS.PRODUCTS);
+        if (legacy !== null) return JSON.parse(legacy);
+      }
+      return [];
     } catch {
       return [];
     }
   }
 
   static saveProducts(products: Product[]): void {
-    localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(products));
+    localStorage.setItem(this.getTenantKey(STORAGE_KEYS.PRODUCTS), JSON.stringify(products));
   }
 
   static saveProduct(product: Product): void {
@@ -631,15 +739,23 @@ export class KannakuDB {
 
   static getInvoices(): Invoice[] {
     try {
-      const data = localStorage.getItem(STORAGE_KEYS.INVOICES);
-      return data !== null ? JSON.parse(data) : [];
+      const tenantId = this.getActiveTenantId();
+      const tenantKey = this.getTenantKey(STORAGE_KEYS.INVOICES);
+      const data = localStorage.getItem(tenantKey);
+      if (data !== null) return JSON.parse(data);
+
+      if (tenantId === 'org_hytex_cotton') {
+        const legacy = localStorage.getItem(STORAGE_KEYS.INVOICES);
+        if (legacy !== null) return JSON.parse(legacy);
+      }
+      return [];
     } catch {
       return [];
     }
   }
 
   static saveInvoices(invoices: Invoice[]): void {
-    localStorage.setItem(STORAGE_KEYS.INVOICES, JSON.stringify(invoices));
+    localStorage.setItem(this.getTenantKey(STORAGE_KEYS.INVOICES), JSON.stringify(invoices));
   }
 
   static saveInvoice(invoice: Invoice): void {
@@ -811,15 +927,23 @@ export class KannakuDB {
 
   static getPayments(): PaymentLedgerEntry[] {
     try {
-      const data = localStorage.getItem(STORAGE_KEYS.PAYMENTS);
-      return data !== null ? JSON.parse(data) : [];
+      const tenantId = this.getActiveTenantId();
+      const tenantKey = this.getTenantKey(STORAGE_KEYS.PAYMENTS);
+      const data = localStorage.getItem(tenantKey);
+      if (data !== null) return JSON.parse(data);
+
+      if (tenantId === 'org_hytex_cotton') {
+        const legacy = localStorage.getItem(STORAGE_KEYS.PAYMENTS);
+        if (legacy !== null) return JSON.parse(legacy);
+      }
+      return [];
     } catch {
       return [];
     }
   }
 
   static savePayments(payments: PaymentLedgerEntry[]): void {
-    localStorage.setItem(STORAGE_KEYS.PAYMENTS, JSON.stringify(payments));
+    localStorage.setItem(this.getTenantKey(STORAGE_KEYS.PAYMENTS), JSON.stringify(payments));
   }
 
   static loadDemoData(): void {
@@ -854,15 +978,19 @@ export class KannakuDB {
 
   static getSubscription(): SubscriptionState {
     try {
-      const data = localStorage.getItem(STORAGE_KEYS.SUBSCRIPTION);
-      return data ? JSON.parse(data) : INITIAL_SUBSCRIPTION_STATE;
+      const tenantKey = this.getTenantKey(STORAGE_KEYS.SUBSCRIPTION);
+      const data = localStorage.getItem(tenantKey);
+      if (data) return JSON.parse(data);
+
+      const legacy = localStorage.getItem(STORAGE_KEYS.SUBSCRIPTION);
+      return legacy ? JSON.parse(legacy) : INITIAL_SUBSCRIPTION_STATE;
     } catch {
       return INITIAL_SUBSCRIPTION_STATE;
     }
   }
 
   static saveSubscription(sub: SubscriptionState): void {
-    localStorage.setItem(STORAGE_KEYS.SUBSCRIPTION, JSON.stringify(sub));
+    localStorage.setItem(this.getTenantKey(STORAGE_KEYS.SUBSCRIPTION), JSON.stringify(sub));
   }
 
   static getTenants(): TenantOrganization[] {
@@ -887,14 +1015,6 @@ export class KannakuDB {
       list.unshift(tenant);
     }
     this.saveTenants(list);
-  }
-
-  static getActiveTenantId(): string {
-    return localStorage.getItem(STORAGE_KEYS.ACTIVE_TENANT_ID) || 'tenant_kannaku_hq';
-  }
-
-  static setActiveTenantId(id: string): void {
-    localStorage.setItem(STORAGE_KEYS.ACTIVE_TENANT_ID, id);
   }
 
   static getMasterDevOpsConfig(): MasterDevOpsConfig {

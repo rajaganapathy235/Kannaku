@@ -152,7 +152,7 @@ export interface PlatformUser {
   name: string;
   email: string;
   phone?: string;
-  role: 'OWNER' | 'ADMIN' | 'MANAGER' | 'STAFF' | 'VIEWER';
+  role: 'OWNER' | 'SUPER_ADMIN';
   status: 'ACTIVE' | 'DISABLED' | 'SUSPENDED';
   planName: string;
   lastLogin: string;

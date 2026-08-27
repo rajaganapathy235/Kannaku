@@ -101,7 +101,7 @@ export const OrganizationDetailModal: React.FC<OrganizationDetailModalProps> = (
       organizationName: organization.name,
       name,
       email,
-      role: 'STAFF',
+      role: 'OWNER',
       status: 'ACTIVE',
       planName: organization.planName,
       lastLogin: new Date().toISOString(),

@@ -267,22 +267,33 @@ export class AuthService {
       city: payload.city.trim() || 'Tiruppur',
       state: payload.state.trim() || 'Tamil Nadu',
       pin: '641604',
+      code: '33',
       registerNumber: cleanGstin,
+      panNumber: cleanGstin.length >= 12 ? cleanGstin.substring(2, 12) : '',
       mobile: payload.phone.trim(),
       email: cleanEmail,
       billPrefix: 'INV/2026/',
-      currencySymbol: '₹',
-      bankName: 'State Bank of India',
-      bankAccount: '998877665544',
-      bankIfsc: 'SBIN0001234',
-      bankBranch: payload.city || 'Main Branch',
-      upiId: `${slug}@sbi`,
-      termsAndConditions: '1. Goods once sold will not be taken back.\n2. Interest @ 18% p.a. charged on overdue bills.',
-      showLogo: true,
-      hasDigitalStamp: true,
+      invoicePrefixSales: 'INV/2026/',
+      invoicePrefixPurchase: 'PUR/2026/',
+      invoicePrefixQuotation: 'QUO/2026/',
+      colorScheme: 'blue',
+      signatureName: payload.ownerName.trim(),
+      termsAndConditions: '1. Goods once sold will not be taken back or exchanged.\n2. Interest @ 18% p.a. charged on overdue bills.',
+      jurisdictionCity: payload.city.trim() || 'Tiruppur',
+      bankDetail: {
+        bankName: 'State Bank of India',
+        accountNumber: '',
+        ifscCode: '',
+        branchName: payload.city || 'Main Branch',
+        upiId: `${slug}@sbi`,
+        panNumber: cleanGstin.length >= 12 ? cleanGstin.substring(2, 12) : '',
+      },
     };
-    localStorage.setItem(`kannaku_company_profile_${orgId}`, JSON.stringify(initialCompany));
-    localStorage.setItem('kannaku_company_profile', JSON.stringify(initialCompany));
+
+    localStorage.setItem('kannaku_active_tenant_id', orgId);
+    KannakuDB.setActiveTenantId(orgId);
+    KannakuDB.saveCompanyProfile(initialCompany as any);
+    KannakuDB.clearWorkspaceData();
 
     // Auto-login newly registered tenant
     return this.login({ email: cleanEmail, password: payload.password, rememberMe: true });
