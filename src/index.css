@@ -14,14 +14,30 @@
 
 /* Custom Printable styling for GST Invoices & Party Ledgers */
 @media print {
+  @page {
+    size: A4 portrait;
+    margin: 8mm 8mm 8mm 8mm;
+  }
+
+  html, body {
+    width: 210mm;
+    height: auto;
+    background: #FFFFFF !important;
+    color: #000000 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
   body * {
     visibility: hidden;
   }
+
   #printable-invoice, #printable-invoice *,
   #printable-ledger, #printable-ledger *,
   .printable-document, .printable-document * {
     visibility: visible;
   }
+
   #printable-invoice,
   #printable-ledger,
   .printable-document {
@@ -31,12 +47,27 @@
     width: 100% !important;
     max-width: 100% !important;
     margin: 0 !important;
-    padding: 12px !important;
+    padding: 0 !important;
     box-shadow: none !important;
     border: none !important;
     background: #FFFFFF !important;
     color: #000000 !important;
   }
+
+  .invoice-a4-page {
+    page-break-after: always;
+    break-after: page;
+    box-shadow: none !important;
+    border: 1px solid #000000 !important;
+    margin-bottom: 0 !important;
+    min-height: 275mm !important;
+  }
+
+  .invoice-a4-page:last-child {
+    page-break-after: avoid;
+    break-after: avoid;
+  }
+
   .no-print {
     display: none !important;
   }
@@ -50,4 +81,3 @@
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
-

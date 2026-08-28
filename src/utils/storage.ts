@@ -742,15 +742,26 @@ export class KannakuDB {
       const tenantId = this.getActiveTenantId();
       const tenantKey = this.getTenantKey(STORAGE_KEYS.INVOICES);
       const data = localStorage.getItem(tenantKey);
-      if (data !== null) return JSON.parse(data);
+      if (data !== null) {
+        const list: Invoice[] = JSON.parse(data);
+        const filtered = list.filter((i) => i.id !== 'inv_mock_5_page_test');
+        if (filtered.length !== list.length) {
+          this.saveInvoices(filtered);
+        }
+        return filtered;
+      }
 
       if (tenantId === 'org_hytex_cotton') {
         const legacy = localStorage.getItem(STORAGE_KEYS.INVOICES);
-        if (legacy !== null) return JSON.parse(legacy);
+        if (legacy !== null) {
+          const list: Invoice[] = JSON.parse(legacy);
+          const filtered = list.filter((i) => i.id !== 'inv_mock_5_page_test');
+          return filtered;
+        }
       }
-      return [];
+      return INITIAL_INVOICES;
     } catch {
-      return [];
+      return INITIAL_INVOICES;
     }
   }
 
