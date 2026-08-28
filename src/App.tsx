@@ -33,6 +33,9 @@ import { SignupPage } from './components/auth/SignupPage';
 import { LandingPage } from './components/home/LandingPage';
 import { SaaSAdminDB } from './utils/adminStorage';
 import { AuthSession } from './types/auth';
+import { TenantOrganizationFull } from './types/admin';
+import { ConfirmationModal } from './components/common/ConfirmationModal';
+import { AlertModal } from './components/common/AlertModal';
 
 export default function App() {
   const [authSession, setAuthSession] = useState<AuthSession | null>(() => {
@@ -66,6 +69,15 @@ export default function App() {
   // Active viewing/printing invoice modal
   const [activePrintInvoice, setActivePrintInvoice] = useState<Invoice | null>(null);
   const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{
+    type: 'invoice' | 'client' | 'product';
+    id: string;
+    name: string;
+  } | null>(null);
+  const [alertTarget, setAlertTarget] = useState<{
+    title: string;
+    message: string;
+  } | null>(null);
 
   // Quick Notification Banner
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -281,10 +293,9 @@ export default function App() {
   };
 
   const handleDeleteInvoice = (id: string) => {
-    if (window.confirm('Are you sure you want to delete this invoice?')) {
-      KannakuDB.deleteInvoice(id);
-      reloadAllState();
-      showToast('Invoice deleted.');
+    const inv = invoices.find(i => i.id === id);
+    if (inv) {
+      setDeleteTarget({ type: 'invoice', id, name: `Invoice ${inv.invoiceNumber}` });
     }
   };
 
@@ -302,10 +313,19 @@ export default function App() {
   };
 
   const handleDeleteClient = (clientId: string) => {
-    if (window.confirm('Delete this party profile?')) {
-      KannakuDB.deleteClient(clientId);
-      reloadAllState();
-      showToast('Party deleted.');
+    const client = clients.find(c => c.id === clientId);
+    if (!client) return;
+
+    const hasInvoices = invoices.some(i => i.clientId === clientId);
+    const hasLedgerEntries = payments.some(p => p.partyId === clientId);
+
+    if (hasInvoices || hasLedgerEntries) {
+      setAlertTarget({
+        title: 'Cannot Delete Party',
+        message: 'This party has existing invoices or ledger entries. Please void related invoices or clear the ledger balance first to maintain accounting integrity.'
+      });
+    } else {
+      setDeleteTarget({ type: 'client', id: clientId, name: client.name });
     }
   };
 
@@ -323,10 +343,9 @@ export default function App() {
   };
 
   const handleDeleteProduct = (productId: string) => {
-    if (window.confirm('Delete this product from catalog?')) {
-      KannakuDB.deleteProduct(productId);
-      reloadAllState();
-      showToast('Product deleted.');
+    const prod = products.find(p => p.id === productId);
+    if (prod) {
+      setDeleteTarget({ type: 'product', id: productId, name: prod.name });
     }
   };
 
@@ -704,6 +723,40 @@ export default function App() {
             handleEditInvoice(inv);
           }}
           onConvertQuotation={handleConvertQuotationToInvoice}
+        />
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteTarget && (
+        <ConfirmationModal
+          isOpen={!!deleteTarget}
+          onClose={() => setDeleteTarget(null)}
+          onConfirm={() => {
+            if (deleteTarget.type === 'invoice') {
+              KannakuDB.deleteInvoice(deleteTarget.id);
+              showToast('Invoice deleted.');
+            } else if (deleteTarget.type === 'client') {
+              KannakuDB.deleteClient(deleteTarget.id);
+              showToast('Party deleted.');
+            } else if (deleteTarget.type === 'product') {
+              KannakuDB.deleteProduct(deleteTarget.id);
+              showToast('Product deleted.');
+            }
+            reloadAllState();
+            setDeleteTarget(null);
+          }}
+          title={`Delete ${deleteTarget.type.charAt(0).toUpperCase() + deleteTarget.type.slice(1)}`}
+          message={`Are you sure you want to delete ${deleteTarget.name}? This action cannot be undone.`}
+        />
+      )}
+
+      {/* Alert Modal */}
+      {alertTarget && (
+        <AlertModal
+          isOpen={!!alertTarget}
+          onClose={() => setAlertTarget(null)}
+          title={alertTarget.title}
+          message={alertTarget.message}
         />
       )}
     </div>

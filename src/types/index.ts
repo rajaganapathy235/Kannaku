@@ -110,8 +110,11 @@ export interface HsnSummaryItem {
   taxPercentage: number;
   taxableAmount: number;
   cgstAmount: number;
+  cgstRate?: number;
   sgstAmount: number;
+  sgstRate?: number;
   igstAmount: number;
+  igstRate?: number;
   totalTaxAmount: number;
 }
 
@@ -204,11 +207,14 @@ export interface Invoice {
   invoiceTaxType: TaxType;
   eway?: string;
   deliveryNote?: string;
+  deliveryNoteDate?: string;
   buyersOrderNo?: string;
+  orderDate?: string;
   dispatchDocNo?: string;
   dispatchedThrough?: string;
   destination?: string;
   vehicleNo?: string;
+  termsOfDelivery?: string;
   description: string;
   clientId: string;
   clientSnapshot: Client;

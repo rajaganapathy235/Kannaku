@@ -33,6 +33,12 @@ import {
 } from '../../types';
 import { calculateItemTaxAndTotals } from '../../utils/taxEngine';
 import { formatIndianCurrency, formatNumberIndian } from '../../utils/numberToWords';
+import {
+  INDIAN_STATES,
+  getStateCodeByName,
+  getStateNameByCode,
+  validateGSTIN,
+} from '../../utils/gstValidation';
 
 interface CreateInvoiceViewProps {
   company: CompanyProfile;
@@ -107,8 +113,14 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
   const [deliveryNote, setDeliveryNote] = useState(
     editingInvoice?.deliveryNote || ''
   );
+  const [deliveryNoteDate, setDeliveryNoteDate] = useState(
+    editingInvoice?.deliveryNoteDate || ''
+  );
   const [buyersOrderNo, setBuyersOrderNo] = useState(
     editingInvoice?.buyersOrderNo || ''
+  );
+  const [orderDate, setOrderDate] = useState(
+    editingInvoice?.orderDate || ''
   );
   const [dispatchDocNo, setDispatchDocNo] = useState(
     editingInvoice?.dispatchDocNo || ''
@@ -118,6 +130,9 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
   );
   const [destination, setDestination] = useState(
     editingInvoice?.destination || ''
+  );
+  const [termsOfDelivery, setTermsOfDelivery] = useState(
+    editingInvoice?.termsOfDelivery || ''
   );
 
   // Line Items
@@ -176,7 +191,23 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
   const [newCustPhone, setNewCustPhone] = useState('');
   const [newCustGstin, setNewCustGstin] = useState('');
   const [newCustCity, setNewCustCity] = useState('');
-  const [newCustState, setNewCustState] = useState(company.state);
+  const [newCustState, setNewCustState] = useState(company.state || 'Tamil Nadu');
+  const [quickCustGstError, setQuickCustGstError] = useState<string | null>(null);
+
+  const quickGstValidation = validateGSTIN(newCustGstin, newCustState);
+
+  const handleQuickGstinChange = (val: string) => {
+    const clean = val.toUpperCase().replace(/[^0-9A-Z]/g, '').slice(0, 15);
+    setNewCustGstin(clean);
+    setQuickCustGstError(null);
+
+    if (clean.length === 15) {
+      const check = validateGSTIN(clean);
+      if (check.isValid && check.stateName) {
+        setNewCustState(check.stateName);
+      }
+    }
+  };
 
   // When changing invoice type, generate new number if not editing
   const handleInvoiceTypeChange = (type: InvoiceType) => {
@@ -186,12 +217,21 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
     }
   };
 
-  // Auto-detect Tax Type when Client Changes (Inter-state if states differ)
+  // Auto-detect Tax Type when Client Changes (Inter-state if states or GST codes differ)
   const handleClientChange = (clientId: string) => {
     setSelectedClientId(clientId);
     const client = clients.find((c) => c.id === clientId);
     if (client) {
-      if (
+      const clientStateCode = client.code || getStateCodeByName(client.state);
+      const companyStateCode = company.code || getStateCodeByName(company.state);
+
+      if (clientStateCode && companyStateCode) {
+        if (clientStateCode !== companyStateCode) {
+          setTaxType('IGST');
+        } else {
+          setTaxType('CGST_SGST');
+        }
+      } else if (
         client.state &&
         company.state &&
         client.state.trim().toLowerCase() !== company.state.trim().toLowerCase()
@@ -293,6 +333,20 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
     e.preventDefault();
     if (!newCustName.trim()) return;
 
+    // Validate GSTIN if provided
+    if (newCustGstin.trim() && newCustGstin.trim().toUpperCase() !== 'URP') {
+      const check = validateGSTIN(newCustGstin, newCustState);
+      if (!check.isValid) {
+        setQuickCustGstError(
+          check.message || 'Invalid GSTIN format or state mismatch.'
+        );
+        return;
+      }
+    }
+
+    const stateCode =
+      getStateCodeByName(newCustState) || company.code || '33';
+
     const newClient: Client = {
       id: `c_${Date.now()}`,
       name: newCustName.trim(),
@@ -300,6 +354,7 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
       address: 'Main Road',
       city: newCustCity.trim() || company.city,
       state: newCustState.trim() || company.state,
+      code: stateCode,
       pin: '600001',
       registerNumber: newCustGstin.trim().toUpperCase() || 'URP',
       clientType:
@@ -315,6 +370,7 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
     setNewCustName('');
     setNewCustPhone('');
     setNewCustGstin('');
+    setQuickCustGstError(null);
   };
 
   // Save invoice
@@ -343,11 +399,14 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
       invoiceTaxType: taxType,
       eway: eway.trim() || undefined,
       deliveryNote: deliveryNote.trim() || undefined,
+      deliveryNoteDate: deliveryNoteDate.trim() || undefined,
       buyersOrderNo: buyersOrderNo.trim() || undefined,
+      orderDate: orderDate.trim() || undefined,
       dispatchDocNo: dispatchDocNo.trim() || undefined,
       dispatchedThrough: dispatchedThrough.trim() || undefined,
       destination: destination.trim() || undefined,
       vehicleNo: vehicleNo.trim() || undefined,
+      termsOfDelivery: termsOfDelivery.trim() || undefined,
       description,
       clientId: client.id,
       clientSnapshot: client,
@@ -790,11 +849,8 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
                           onChange={(e) => {
                             const val = Number(e.target.value);
                             handleItemChange(idx, 'discountRate', val);
-                            handleItemChange(
-                              idx,
-                              'isDiscountApplied',
-                              val > 0
-                            );
+                            handleItemChange(idx, 'isDiscountApplied', val > 0);
+                            handleItemChange(idx, 'flatOrPercentage', 'percentage');
                           }}
                           className="w-full p-1.5 bg-white border border-slate-300 rounded-lg text-right font-mono"
                         />
@@ -940,7 +996,7 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
                   type="text"
                   value={eway}
                   onChange={(e) => setEway(e.target.value)}
-                  placeholder="12-digit number"
+                  placeholder="e.g. 12-digit number"
                   className="w-full p-2 bg-slate-50 border border-slate-300 rounded-lg font-mono focus:bg-white"
                 />
               </div>
@@ -953,8 +1009,71 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
                   type="text"
                   value={vehicleNo}
                   onChange={(e) => setVehicleNo(e.target.value)}
-                  placeholder="e.g. TN 09 BX 4412"
-                  className="w-full p-2 bg-slate-50 border border-slate-300 rounded-lg uppercase focus:bg-white"
+                  placeholder="e.g. TN 45 BD 0636"
+                  className="w-full p-2 bg-slate-50 border border-slate-300 rounded-lg uppercase font-mono font-bold focus:bg-white"
+                />
+              </div>
+
+              <div>
+                <label className="text-[10px] text-slate-500 font-semibold">
+                  Delivery Note
+                </label>
+                <input
+                  type="text"
+                  value={deliveryNote}
+                  onChange={(e) => setDeliveryNote(e.target.value)}
+                  placeholder="Delivery Note Ref"
+                  className="w-full p-2 bg-slate-50 border border-slate-300 rounded-lg focus:bg-white"
+                />
+              </div>
+
+              <div>
+                <label className="text-[10px] text-slate-500 font-semibold">
+                  Delivery Note Date
+                </label>
+                <input
+                  type="date"
+                  value={deliveryNoteDate}
+                  onChange={(e) => setDeliveryNoteDate(e.target.value)}
+                  className="w-full p-2 bg-slate-50 border border-slate-300 rounded-lg focus:bg-white"
+                />
+              </div>
+
+              <div>
+                <label className="text-[10px] text-slate-500 font-semibold">
+                  Buyer's Order / PO No.
+                </label>
+                <input
+                  type="text"
+                  value={buyersOrderNo}
+                  onChange={(e) => setBuyersOrderNo(e.target.value)}
+                  placeholder="PO Reference"
+                  className="w-full p-2 bg-slate-50 border border-slate-300 rounded-lg focus:bg-white"
+                />
+              </div>
+
+              <div>
+                <label className="text-[10px] text-slate-500 font-semibold">
+                  Buyer's Order Date
+                </label>
+                <input
+                  type="date"
+                  value={orderDate}
+                  onChange={(e) => setOrderDate(e.target.value)}
+                  className="w-full p-2 bg-slate-50 border border-slate-300 rounded-lg focus:bg-white"
+                />
+              </div>
+
+              <div>
+                <label className="text-[10px] text-slate-500 font-semibold">
+                  Dispatched Document No.
+                </label>
+                <input
+                  type="text"
+                  value={dispatchDocNo}
+                  onChange={(e) => setDispatchDocNo(e.target.value)}
+                  placeholder="Doc / LR Number"
+                  className="w-full p-2 bg-slate-50 border border-slate-300 rounded-lg focus:bg-white"
                 />
               </div>
 
@@ -966,20 +1085,33 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
                   type="text"
                   value={dispatchedThrough}
                   onChange={(e) => setDispatchedThrough(e.target.value)}
-                  placeholder="Transporter Name"
+                  placeholder="e.g. By Road / VRL"
                   className="w-full p-2 bg-slate-50 border border-slate-300 rounded-lg focus:bg-white"
                 />
               </div>
 
               <div>
                 <label className="text-[10px] text-slate-500 font-semibold">
-                  Buyer's PO Number
+                  Destination
                 </label>
                 <input
                   type="text"
-                  value={buyersOrderNo}
-                  onChange={(e) => setBuyersOrderNo(e.target.value)}
-                  placeholder="PO Reference"
+                  value={destination}
+                  onChange={(e) => setDestination(e.target.value)}
+                  placeholder="Destination City"
+                  className="w-full p-2 bg-slate-50 border border-slate-300 rounded-lg focus:bg-white"
+                />
+              </div>
+
+              <div className="sm:col-span-3">
+                <label className="text-[10px] text-slate-500 font-semibold">
+                  Terms of Delivery
+                </label>
+                <input
+                  type="text"
+                  value={termsOfDelivery}
+                  onChange={(e) => setTermsOfDelivery(e.target.value)}
+                  placeholder="e.g. Ex-Factory / Door Delivery / Freight to Pay"
                   className="w-full p-2 bg-slate-50 border border-slate-300 rounded-lg focus:bg-white"
                 />
               </div>
@@ -1165,6 +1297,13 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
             </h3>
 
             <form onSubmit={handleSaveQuickCustomer} className="space-y-3">
+              {quickCustGstError && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded-xl flex items-start gap-2 text-xs">
+                  <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
+                  <span>{quickCustGstError}</span>
+                </div>
+              )}
+
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">
                   Party / Company Name *
@@ -1175,7 +1314,7 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
                   value={newCustName}
                   onChange={(e) => setNewCustName(e.target.value)}
                   placeholder="e.g. Annai Traders"
-                  className="w-full text-xs p-2 bg-slate-50 border border-slate-300 rounded-xl focus:bg-white"
+                  className="w-full text-xs p-2 bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:outline-none focus:border-blue-600"
                 />
               </div>
 
@@ -1188,21 +1327,47 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
                   value={newCustPhone}
                   onChange={(e) => setNewCustPhone(e.target.value)}
                   placeholder="10-digit mobile"
-                  className="w-full text-xs p-2 bg-slate-50 border border-slate-300 rounded-xl focus:bg-white"
+                  className="w-full text-xs p-2 bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:outline-none focus:border-blue-600"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  GSTIN (optional)
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-xs font-semibold text-slate-700">
+                    GSTIN (optional)
+                  </label>
+                  <span className="text-[10px] text-slate-500">15 digits</span>
+                </div>
                 <input
                   type="text"
                   value={newCustGstin}
-                  onChange={(e) => setNewCustGstin(e.target.value)}
+                  onChange={(e) => handleQuickGstinChange(e.target.value)}
                   placeholder="e.g. 33AAAAA0000A1Z5"
-                  className="w-full text-xs font-mono uppercase p-2 bg-slate-50 border border-slate-300 rounded-xl focus:bg-white"
+                  className={`w-full text-xs font-mono uppercase p-2 bg-slate-50 border rounded-xl focus:bg-white focus:outline-none ${
+                    newCustGstin && !quickGstValidation.isValid
+                      ? 'border-red-400 focus:border-red-500 bg-red-50/30'
+                      : newCustGstin && quickGstValidation.isValid && !quickGstValidation.isUnregistered
+                      ? 'border-emerald-400 focus:border-emerald-500 bg-emerald-50/20'
+                      : 'border-slate-300 focus:border-blue-600'
+                  }`}
                 />
+                {newCustGstin.trim() && (
+                  <div className="mt-1">
+                    {quickGstValidation.isValid && !quickGstValidation.isUnregistered ? (
+                      <div className="flex items-center gap-1 text-[11px] font-semibold text-emerald-700">
+                        <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                        <span>
+                          Valid ({quickGstValidation.stateCode} - {quickGstValidation.stateName})
+                        </span>
+                      </div>
+                    ) : !quickGstValidation.isValid ? (
+                      <div className="flex items-start gap-1 text-[10.5px] font-medium text-red-600">
+                        <AlertCircle className="w-3.5 h-3.5 text-red-600 shrink-0 mt-0.5" />
+                        <span>{quickGstValidation.message}</span>
+                      </div>
+                    ) : null}
+                  </div>
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-2">
@@ -1215,20 +1380,32 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
                     value={newCustCity}
                     onChange={(e) => setNewCustCity(e.target.value)}
                     placeholder="City"
-                    className="w-full text-xs p-2 bg-slate-50 border border-slate-300 rounded-xl focus:bg-white"
+                    className="w-full text-xs p-2 bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:outline-none focus:border-blue-600"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    State
-                  </label>
-                  <input
-                    type="text"
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-xs font-semibold text-slate-700">
+                      State
+                    </label>
+                    <span className="text-[10px] text-slate-500 font-mono">
+                      Code: {getStateCodeByName(newCustState) || '--'}
+                    </span>
+                  </div>
+                  <select
                     value={newCustState}
-                    onChange={(e) => setNewCustState(e.target.value)}
-                    placeholder="State"
-                    className="w-full text-xs p-2 bg-slate-50 border border-slate-300 rounded-xl focus:bg-white"
-                  />
+                    onChange={(e) => {
+                      setNewCustState(e.target.value);
+                      setQuickCustGstError(null);
+                    }}
+                    className="w-full text-xs p-2 bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:outline-none focus:border-blue-600"
+                  >
+                    {INDIAN_STATES.map((s) => (
+                      <option key={s.code} value={s.name}>
+                        {s.name} ({s.code})
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
 

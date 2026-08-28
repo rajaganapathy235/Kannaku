@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import {
+  AlertCircle,
   Building,
+  CheckCircle2,
   Edit2,
   FileText,
   Mail,
@@ -16,6 +18,12 @@ import {
 import { Client, CompanyProfile, Invoice, PaymentLedgerEntry } from '../../types';
 import { formatIndianCurrency, formatNumberIndian } from '../../utils/numberToWords';
 import { PartyLedgerView } from './PartyLedgerView';
+import {
+  INDIAN_STATES,
+  getStateCodeByName,
+  getStateNameByCode,
+  validateGSTIN,
+} from '../../utils/gstValidation';
 
 interface CustomerListViewProps {
   clients: Client[];
@@ -57,8 +65,30 @@ export const CustomerListView: React.FC<CustomerListViewProps> = ({
   const [pin, setPin] = useState('');
   const [registerNumber, setRegisterNumber] = useState('');
   const [balance, setBalance] = useState<number>(0);
+  const [gstError, setGstError] = useState<string | null>(null);
 
   const customerList = clients.filter((c) => c.clientType !== 'supplier');
+
+  const gstValidation = validateGSTIN(registerNumber, state);
+
+  const handleGstinChange = (val: string) => {
+    const clean = val.toUpperCase().replace(/[^0-9A-Z]/g, '').slice(0, 15);
+    setRegisterNumber(clean);
+    setGstError(null);
+
+    // Auto-detect and sync state if valid 15-digit GSTIN entered
+    if (clean.length === 15) {
+      const check = validateGSTIN(clean);
+      if (check.isValid && check.stateName) {
+        setState(check.stateName);
+      }
+    }
+  };
+
+  const handleStateChange = (newState: string) => {
+    setState(newState);
+    setGstError(null);
+  };
 
   const filteredCustomers = customerList.filter((c) => {
     if (!search.trim()) return true;
@@ -78,10 +108,11 @@ export const CustomerListView: React.FC<CustomerListViewProps> = ({
     setEmail('');
     setAddress('');
     setCity(company.city);
-    setState(company.state);
+    setState(company.state || 'Tamil Nadu');
     setPin('');
     setRegisterNumber('');
     setBalance(0);
+    setGstError(null);
     setIsModalOpen(true);
   };
 
@@ -94,14 +125,26 @@ export const CustomerListView: React.FC<CustomerListViewProps> = ({
     setCity(c.city);
     setState(c.state);
     setPin(c.pin);
-    setRegisterNumber(c.registerNumber);
+    setRegisterNumber(c.registerNumber === 'URP' ? '' : c.registerNumber);
     setBalance(c.balance);
+    setGstError(null);
     setIsModalOpen(true);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
+
+    // Validate GSTIN if entered
+    if (registerNumber.trim() && registerNumber.trim().toUpperCase() !== 'URP') {
+      const check = validateGSTIN(registerNumber, state);
+      if (!check.isValid) {
+        setGstError(check.message || 'Invalid GSTIN format or state mismatch.');
+        return;
+      }
+    }
+
+    const stateCode = getStateCodeByName(state) || company.code || '33';
 
     if (editingClient) {
       onUpdateClient({
@@ -112,6 +155,7 @@ export const CustomerListView: React.FC<CustomerListViewProps> = ({
         address: address.trim(),
         city: city.trim(),
         state: state.trim(),
+        code: stateCode,
         pin: pin.trim(),
         registerNumber: registerNumber.trim().toUpperCase() || 'URP',
         balance: Number(balance) || 0,
@@ -125,6 +169,7 @@ export const CustomerListView: React.FC<CustomerListViewProps> = ({
         address: address.trim() || 'Main Road',
         city: city.trim() || company.city,
         state: state.trim() || company.state,
+        code: stateCode,
         pin: pin.trim() || '638751',
         registerNumber: registerNumber.trim().toUpperCase() || 'URP',
         clientType: 'customer',
@@ -314,6 +359,13 @@ Please let us know once the transfer is completed. Thank you!`;
             </h3>
 
             <form onSubmit={handleSubmit} className="space-y-4 text-xs">
+              {gstError && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded-xl flex items-start gap-2 text-xs">
+                  <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
+                  <span>{gstError}</span>
+                </div>
+              )}
+
               <div>
                 <label className="block font-semibold text-slate-700 mb-1">
                   Client / Business Name *
@@ -330,16 +382,43 @@ Please let us know once the transfer is completed. Thank you!`;
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-semibold text-slate-700 mb-1">
-                    GSTIN / UIN (15 Digits)
-                  </label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="font-semibold text-slate-700">
+                      GSTIN / UIN (15 Digits)
+                    </label>
+                    <span className="text-[10px] text-slate-500">Leave blank for URP</span>
+                  </div>
                   <input
                     type="text"
                     value={registerNumber}
-                    onChange={(e) => setRegisterNumber(e.target.value.toUpperCase())}
+                    onChange={(e) => handleGstinChange(e.target.value)}
                     placeholder="33AAAAA0000A1Z5"
-                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono uppercase text-slate-900 focus:bg-white focus:border-blue-600 focus:outline-none"
+                    className={`w-full p-2.5 bg-slate-50 border rounded-xl font-mono uppercase text-slate-900 focus:bg-white focus:outline-none ${
+                      registerNumber && !gstValidation.isValid
+                        ? 'border-red-400 focus:border-red-500 bg-red-50/30'
+                        : registerNumber && gstValidation.isValid && !gstValidation.isUnregistered
+                        ? 'border-emerald-400 focus:border-emerald-500 bg-emerald-50/20'
+                        : 'border-slate-200 focus:border-blue-600'
+                    }`}
                   />
+                  {/* Real-time GSTIN validation feedback */}
+                  {registerNumber.trim() && (
+                    <div className="mt-1">
+                      {gstValidation.isValid && !gstValidation.isUnregistered ? (
+                        <div className="flex items-center gap-1 text-[11px] font-semibold text-emerald-700">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                          <span>
+                            Valid GSTIN ({gstValidation.stateCode} - {gstValidation.stateName})
+                          </span>
+                        </div>
+                      ) : !gstValidation.isValid ? (
+                        <div className="flex items-start gap-1 text-[10.5px] font-medium text-red-600">
+                          <AlertCircle className="w-3.5 h-3.5 text-red-600 shrink-0 mt-0.5" />
+                          <span>{gstValidation.message}</span>
+                        </div>
+                      ) : null}
+                    </div>
+                  )}
                 </div>
 
                 <div>
@@ -397,16 +476,25 @@ Please let us know once the transfer is completed. Thank you!`;
                 </div>
 
                 <div>
-                  <label className="block font-semibold text-slate-700 mb-1">
-                    State
-                  </label>
-                  <input
-                    type="text"
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="font-semibold text-slate-700">
+                      State
+                    </label>
+                    <span className="text-[10px] text-slate-500 font-mono">
+                      Code: {getStateCodeByName(state) || '--'}
+                    </span>
+                  </div>
+                  <select
                     value={state}
-                    onChange={(e) => setState(e.target.value)}
-                    placeholder="State"
+                    onChange={(e) => handleStateChange(e.target.value)}
                     className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:border-blue-600 focus:outline-none"
-                  />
+                  >
+                    {INDIAN_STATES.map((s) => (
+                      <option key={s.code} value={s.name}>
+                        {s.name} ({s.code})
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 <div>

@@ -761,6 +761,7 @@ export class KannakuDB {
   static saveInvoice(invoice: Invoice): void {
     const list = this.getInvoices();
     const idx = list.findIndex((i) => i.id === invoice.id);
+    const oldInvoice = idx >= 0 ? list[idx] : null;
     if (idx >= 0) {
       list[idx] = invoice;
     } else {
@@ -769,7 +770,7 @@ export class KannakuDB {
     this.saveInvoices(list);
 
     // Automatically synchronize ledger entries for this invoice
-    this.syncInvoiceToLedger(invoice);
+    this.syncInvoiceToLedger(invoice, oldInvoice);
   }
 
   static deleteInvoice(id: string): void {
@@ -794,7 +795,7 @@ export class KannakuDB {
     }
   }
 
-  static syncInvoiceToLedger(invoice: Invoice): void {
+  static syncInvoiceToLedger(invoice: Invoice, oldInvoice?: Invoice): void {
     const isSales = invoice.invoiceType === InvoiceType.SALES;
     const isPurchase = invoice.invoiceType === InvoiceType.PURCHASE;
 
@@ -892,6 +893,11 @@ export class KannakuDB {
     // Recalculate client balance
     if (invoice.clientId) {
       this.recalculateClientBalance(invoice.clientId);
+    }
+    
+    // If client changed, recalculate old client balance too
+    if (oldInvoice && oldInvoice.clientId && oldInvoice.clientId !== invoice.clientId) {
+      this.recalculateClientBalance(oldInvoice.clientId);
     }
   }
 
