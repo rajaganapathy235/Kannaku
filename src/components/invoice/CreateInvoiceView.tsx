@@ -971,12 +971,81 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
                   <button
                     type="button"
                     onClick={() => handleRemoveExtraItem(exIdx)}
-                    className="p-1.5 text-slate-400 hover:text-rose-600 rounded"
+                    className="p-1.5 text-slate-400 hover:text-rose-600 rounded cursor-pointer"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
               ))}
+            </div>
+
+            {/* TCS Section (Tax Collected at Source - Section 206C) */}
+            <div className="pt-3 border-t border-slate-100 space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs font-semibold text-slate-700">
+                    TCS (Tax Collected at Source)
+                  </span>
+                  <span className="text-[10px] text-slate-400 font-normal">
+                    Sec 206C(1H) / 206C(1)
+                  </span>
+                </div>
+                {calcResult.calc.tcsAmount > 0 && (
+                  <span className="text-xs font-mono font-bold text-blue-700">
+                    +₹{formatNumberIndian(calcResult.calc.tcsAmount)}
+                  </span>
+                )}
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setTcsPercentage(0)}
+                  className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    tcsPercentage === 0
+                      ? 'bg-slate-900 text-white shadow-xs'
+                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  }`}
+                >
+                  No TCS (0%)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTcsPercentage(0.1)}
+                  className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    tcsPercentage === 0.1
+                      ? 'bg-blue-700 text-white shadow-xs'
+                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  }`}
+                >
+                  TCS @ 0.1% (Sales &gt; ₹50L)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTcsPercentage(1.0)}
+                  className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    tcsPercentage === 1.0
+                      ? 'bg-blue-700 text-white shadow-xs'
+                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  }`}
+                >
+                  TCS @ 1% (Scrap / Non-PAN)
+                </button>
+                <div className="flex items-center gap-1 bg-slate-50 border border-slate-300 rounded-xl px-2 py-1">
+                  <span className="text-[11px] text-slate-500 font-medium">Custom:</span>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    max="15"
+                    value={tcsPercentage || ''}
+                    onChange={(e) => setTcsPercentage(Math.max(0, Number(e.target.value)))}
+                    placeholder="0"
+                    className="w-12 text-xs font-mono font-bold bg-transparent text-right outline-none text-slate-900"
+                  />
+                  <span className="text-xs text-slate-500 font-bold">%</span>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -1173,6 +1242,15 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
                   <span>Extra Charges</span>
                   <span className="font-mono font-semibold">
                     +₹{formatNumberIndian(calcResult.calc.extraItemsTotal)}
+                  </span>
+                </div>
+              )}
+
+              {calcResult.calc.tcsAmount > 0 && (
+                <div className="flex justify-between text-blue-700 bg-blue-50/70 p-1.5 rounded-lg font-semibold">
+                  <span>TCS @ {calcResult.calc.tcsPercentage}% (Sec 206C)</span>
+                  <span className="font-mono">
+                    +₹{formatNumberIndian(calcResult.calc.tcsAmount)}
                   </span>
                 </div>
               )}

@@ -89,7 +89,7 @@ export const SignupPage: React.FC<SignupPageProps> = ({
   };
 
   // Submit Final Registration
-  const handleFinalSignup = (e: React.FormEvent) => {
+  const handleFinalSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setLoading(true);
@@ -107,15 +107,18 @@ export const SignupPage: React.FC<SignupPageProps> = ({
       billingCycle,
     };
 
-    setTimeout(() => {
-      const res = AuthService.signupTenant(payload);
+    try {
+      const res = await AuthService.signupTenantAsync(payload);
       setLoading(false);
       if (res.success && res.session) {
         onSignupSuccess(res.session);
       } else {
         setError(res.error || 'Failed to create workspace. Please try again.');
       }
-    }, 500);
+    } catch {
+      setLoading(false);
+      setError('Failed to create workspace. Please try again.');
+    }
   };
 
   return (

@@ -14,6 +14,7 @@ import {
   TenantOrganization,
   UserSubscription,
 } from '../types';
+import { ApiService } from './apiService';
 
 const STORAGE_KEYS = {
   COMPANY: 'kannaku_company_profile',
@@ -660,6 +661,10 @@ export class KannakuDB {
 
   static saveCompanyProfile(profile: CompanyProfile): void {
     localStorage.setItem(this.getTenantKey(STORAGE_KEYS.COMPANY), JSON.stringify(profile));
+    // Asynchronous Cloudflare D1 Sync
+    ApiService.updateOrganization(profile).catch((err) => {
+      console.warn('D1 company profile sync background note:', err);
+    });
   }
 
   static getClients(): Client[] {
@@ -693,11 +698,21 @@ export class KannakuDB {
       list.unshift(client);
     }
     this.saveClients(list);
+
+    // Asynchronous Cloudflare D1 Sync
+    ApiService.saveClient(client).catch((err) => {
+      console.warn('D1 client sync background note:', err);
+    });
   }
 
   static deleteClient(id: string): void {
     const list = this.getClients().filter((c) => c.id !== id);
     this.saveClients(list);
+
+    // Asynchronous Cloudflare D1 Delete
+    ApiService.deleteClient(id).catch((err) => {
+      console.warn('D1 client delete background note:', err);
+    });
   }
 
   static getProducts(): Product[] {
@@ -730,11 +745,21 @@ export class KannakuDB {
       list.unshift(product);
     }
     this.saveProducts(list);
+
+    // Asynchronous Cloudflare D1 Sync
+    ApiService.saveProduct(product).catch((err) => {
+      console.warn('D1 product sync background note:', err);
+    });
   }
 
   static deleteProduct(id: string): void {
     const list = this.getProducts().filter((p) => p.id !== id);
     this.saveProducts(list);
+
+    // Asynchronous Cloudflare D1 Delete
+    ApiService.deleteProduct(id).catch((err) => {
+      console.warn('D1 product delete background note:', err);
+    });
   }
 
   static getInvoices(): Invoice[] {
@@ -782,6 +807,11 @@ export class KannakuDB {
 
     // Automatically synchronize ledger entries for this invoice
     this.syncInvoiceToLedger(invoice, oldInvoice);
+
+    // Asynchronous Cloudflare D1 Sync
+    ApiService.saveInvoice(invoice).catch((err) => {
+      console.warn('D1 invoice sync background note:', err);
+    });
   }
 
   static deleteInvoice(id: string): void {
@@ -804,6 +834,11 @@ export class KannakuDB {
     if (inv && inv.clientId) {
       this.recalculateClientBalance(inv.clientId);
     }
+
+    // Asynchronous Cloudflare D1 Delete
+    ApiService.deleteInvoice(id).catch((err) => {
+      console.warn('D1 invoice delete background note:', err);
+    });
   }
 
   static syncInvoiceToLedger(invoice: Invoice, oldInvoice?: Invoice): void {
@@ -999,6 +1034,11 @@ export class KannakuDB {
     if (entry.partyId) {
       this.recalculateClientBalance(entry.partyId);
     }
+
+    // Asynchronous Cloudflare D1 Sync
+    ApiService.savePayment(entry).catch((err) => {
+      console.warn('D1 payment sync background note:', err);
+    });
   }
 
   static deletePayment(id: string): void {
@@ -1008,6 +1048,65 @@ export class KannakuDB {
     this.savePayments(updated);
     if (entry && entry.partyId) {
       this.recalculateClientBalance(entry.partyId);
+    }
+
+    // Asynchronous Cloudflare D1 Delete
+    ApiService.deletePayment(id).catch((err) => {
+      console.warn('D1 payment delete background note:', err);
+    });
+  }
+
+  // Synchronize workspace data directly from Cloudflare D1
+  static async syncFromD1(): Promise<{ success: boolean; error?: string }> {
+    try {
+      const [orgRes, clientsRes, productsRes, invoicesRes, paymentsRes] = await Promise.all([
+        ApiService.getOrganization(),
+        ApiService.getClients(),
+        ApiService.getProducts(),
+        ApiService.getInvoices(),
+        ApiService.getPayments(),
+      ]);
+
+      if (orgRes.data) {
+        localStorage.setItem(this.getTenantKey(STORAGE_KEYS.COMPANY), JSON.stringify(orgRes.data));
+      }
+      if (clientsRes.data && Array.isArray(clientsRes.data)) {
+        this.saveClients(clientsRes.data);
+      }
+      if (productsRes.data && Array.isArray(productsRes.data)) {
+        this.saveProducts(productsRes.data);
+      }
+      if (invoicesRes.data && Array.isArray(invoicesRes.data)) {
+        this.saveInvoices(invoicesRes.data);
+      }
+      if (paymentsRes.data && Array.isArray(paymentsRes.data)) {
+        this.savePayments(paymentsRes.data);
+      }
+
+      return { success: true };
+    } catch (err: any) {
+      return { success: false, error: err?.message || 'Failed to sync with D1' };
+    }
+  }
+
+  // Push all existing local data into Cloudflare D1 for permanent persistence
+  static async migrateAllLocalDataToD1(): Promise<{ success: boolean; migrated?: any; error?: string }> {
+    try {
+      const payload = {
+        company: this.getCompanyProfile(),
+        clients: this.getClients(),
+        products: this.getProducts(),
+        invoices: this.getInvoices(),
+        payments: this.getPayments(),
+      };
+
+      const res = await ApiService.migrateLocalData(payload);
+      if (res.data?.success) {
+        return { success: true, migrated: res.data.migrated };
+      }
+      return { success: false, error: res.error || 'Migration failed' };
+    } catch (err: any) {
+      return { success: false, error: err?.message || 'Migration network error' };
     }
   }
 

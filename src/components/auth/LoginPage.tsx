@@ -43,20 +43,23 @@ export const LoginPage: React.FC<LoginPageProps> = ({
   const [forgotEmail, setForgotEmail] = useState('');
   const [resetSent, setResetSent] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setLoading(true);
 
-    setTimeout(() => {
-      const res = AuthService.login({ email, password, rememberMe });
+    try {
+      const res = await AuthService.loginAsync({ email, password, rememberMe });
       setLoading(false);
       if (res.success && res.session) {
         onLoginSuccess(res.session);
       } else {
         setError(res.error || 'Authentication failed. Please check your credentials.');
       }
-    }, 400);
+    } catch {
+      setLoading(false);
+      setError('Connection error. Please try again.');
+    }
   };
 
   const handleQuickFill = (demoEmail: string, demoPass: string) => {

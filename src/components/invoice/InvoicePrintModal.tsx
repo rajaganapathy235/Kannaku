@@ -844,6 +844,23 @@ Thank you for your business!`;
                                           </tr>
                                         )}
 
+                                        {/* TCS (Tax Collected at Source) Row */}
+                                        {(invoice.calc.tcsAmount || 0) > 0 && (
+                                          <tr className="font-bold">
+                                            <td className="py-0.5 px-1.5 border-r border-black text-center"></td>
+                                            <td className="py-0.5 px-2 border-r border-black text-left uppercase text-[10px]">
+                                              TCS @ {invoice.calc.tcsPercentage || 0.1}%
+                                            </td>
+                                            <td className="py-0.5 px-2 border-r border-black text-center"></td>
+                                            <td className="py-0.5 px-2 border-r border-black text-right"></td>
+                                            <td className="py-0.5 px-2 border-r border-black text-right"></td>
+                                            <td className="py-0.5 px-2 border-r border-black text-center"></td>
+                                            <td className="py-0.5 px-2 text-right font-mono text-black font-bold">
+                                              {formatNumberIndian(invoice.calc.tcsAmount)}
+                                            </td>
+                                          </tr>
+                                        )}
+
                                         {/* Round Off Row */}
                                         {(invoice.calc.roundOffValue !== 0 || Math.abs(invoice.calc.roundOffValue || 0) < 0.0001) && (
                                           <tr className="font-bold">

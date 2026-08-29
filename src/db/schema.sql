@@ -117,6 +117,8 @@ CREATE TABLE IF NOT EXISTS invoices (
     sgst_amount NUMERIC(12, 2) DEFAULT 0,
     igst_amount NUMERIC(12, 2) DEFAULT 0,
     total_tax NUMERIC(12, 2) DEFAULT 0,
+    tcs_percentage NUMERIC(5, 3) DEFAULT 0,
+    tcs_amount NUMERIC(12, 2) DEFAULT 0,
     round_off NUMERIC(6, 2) DEFAULT 0,
     grand_total NUMERIC(12, 2) NOT NULL,
     
