@@ -2,6 +2,28 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
 /**
+ * Detects iOS (iPhone / iPad / iPod) environments including mobile Safari
+ */
+export function isIOS(): boolean {
+  if (typeof window === 'undefined' || typeof navigator === 'undefined') return false;
+  return (
+    /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+  );
+}
+
+/**
+ * Detects mobile devices (iOS / Android)
+ */
+export function isMobileDevice(): boolean {
+  if (typeof window === 'undefined' || typeof navigator === 'undefined') return false;
+  return (
+    /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+  );
+}
+
+/**
  * Converts modern CSS color functions (like oklch, oklab, color()) to standard rgb()
  * so that html2canvas can parse them without throwing "unsupported color function" errors.
  */
@@ -35,7 +57,7 @@ function convertOklchToRgb(cssText: string): string {
 
 /**
  * High-reliability PDF export for GST Tax Invoices and Party Ledgers.
- * Works seamlessly on iOS Safari, Android Chrome, and Desktop browsers.
+ * Works seamlessly on iOS Safari (iPhone/iPad), Android Chrome, and Desktop browsers.
  */
 export async function downloadInvoiceAsPdf(
   elementId: string,
@@ -160,13 +182,13 @@ export async function downloadInvoiceAsPdf(
       }
     }
 
-    // Deliver PDF across mobile and desktop
+    // Deliver PDF across iPhone (iOS Safari), Android, and Desktop
     const pdfBlob = pdf.output('blob');
     const pdfFile = new File([pdfBlob], fileName, { type: 'application/pdf' });
+    const blobUrl = URL.createObjectURL(pdfBlob);
 
-    // 1. Mobile Web Share API: On iOS Safari and Android, this triggers native "Save to Files", "Share", "Print"
-    const isMobileDevice = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-    if (isMobileDevice && navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
+    // 1. Mobile Web Share API: Try system share sheet on mobile devices
+    if (isMobileDevice() && navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
       try {
         await navigator.share({
           files: [pdfFile],
@@ -176,14 +198,24 @@ export async function downloadInvoiceAsPdf(
         return true;
       } catch (shareError: any) {
         if (shareError?.name === 'AbortError') {
-          return true; // User dismissed share drawer
+          return true; // User dismissed share sheet
         }
-        console.warn('Web Share API aborted or failed, falling back to direct download:', shareError);
+        console.warn('Web Share API deferred, switching to direct iOS/Android presentation:', shareError);
       }
     }
 
-    // 2. Direct Blob Object URL anchor download
-    const blobUrl = URL.createObjectURL(pdfBlob);
+    // 2. Special handling for iPhone / iOS Safari where <a download> is blocked
+    if (isIOS()) {
+      // In iOS Safari, opening the PDF blob in a new tab immediately invokes iOS Safari's native PDF Viewer with AirPrint & Save to Files
+      const newTab = window.open(blobUrl, '_blank');
+      if (!newTab) {
+        // If popup blocker intervened, navigate directly
+        window.location.href = blobUrl;
+      }
+      return true;
+    }
+
+    // 3. Android & Desktop: Direct Blob Object URL download anchor
     const downloadAnchor = document.createElement('a');
     downloadAnchor.href = blobUrl;
     downloadAnchor.download = fileName;
@@ -202,7 +234,6 @@ export async function downloadInvoiceAsPdf(
     return true;
   } catch (error) {
     console.error('Failed to generate PDF:', error);
-    // Last-resort fallback to standard print dialog
     try {
       await printDocumentElement(elementId);
     } catch {
@@ -218,8 +249,8 @@ export async function downloadInvoiceAsPdf(
 
 /**
  * Universal Print Helper for GST Tax Invoices and Party Ledgers.
- * Renders the printable document in an isolated clean print frame,
- * resolving iOS Safari, Android Chrome, and Iframe blank-print bugs.
+ * Renders the printable document cleanly across iPhone (iOS Safari), Android Chrome,
+ * and Desktop browsers, solving WebKit blank-print and fixed modal overflow bugs.
  */
 export async function printDocumentElement(elementId: string): Promise<boolean> {
   const sourceElement = document.getElementById(elementId);
@@ -228,9 +259,63 @@ export async function printDocumentElement(elementId: string): Promise<boolean> 
     return true;
   }
 
-  // Check if we are on a mobile device or in an iframe where window.print() on fixed modals blanks out
+  // A. Special Handler for iOS Safari (iPhone & iPad)
+  if (isIOS()) {
+    // 1. Clean up any existing print mount
+    const existingRoot = document.getElementById('kannaku-print-root');
+    if (existingRoot && existingRoot.parentNode) {
+      existingRoot.parentNode.removeChild(existingRoot);
+    }
+
+    // 2. Create dedicated direct body mount for iOS print rendering
+    const printRoot = document.createElement('div');
+    printRoot.id = 'kannaku-print-root';
+    printRoot.className = 'kannaku-print-root';
+
+    const clone = sourceElement.cloneNode(true) as HTMLElement;
+    clone.style.transform = 'none';
+    clone.style.margin = '0 auto';
+    clone.style.position = 'relative';
+    clone.style.boxShadow = 'none';
+    clone.style.border = elementId === 'printable-invoice' ? 'none' : '1px solid #cbd5e1';
+
+    printRoot.appendChild(clone);
+    document.body.appendChild(printRoot);
+    document.body.classList.add('kannaku-printing');
+
+    // Wait for images inside clone to be ready
+    const cloneImages = Array.from(clone.querySelectorAll('img'));
+    await Promise.all(
+      cloneImages.map(
+        (img) =>
+          new Promise<void>((resolve) => {
+            if (img.complete) resolve();
+            else {
+              img.onload = () => resolve();
+              img.onerror = () => resolve();
+            }
+          })
+      )
+    );
+
+    await new Promise((r) => setTimeout(r, 150));
+
+    try {
+      window.print();
+    } finally {
+      // Remove iOS print mount after print dialog closes
+      setTimeout(() => {
+        document.body.classList.remove('kannaku-printing');
+        if (printRoot.parentNode) {
+          printRoot.parentNode.removeChild(printRoot);
+        }
+      }, 1200);
+    }
+    return true;
+  }
+
+  // B. Android Chrome & Desktop: Isolated print iframe context
   try {
-    // Remove any previous print iframes
     const oldIframe = document.getElementById('kannaku-print-iframe');
     if (oldIframe && oldIframe.parentNode) {
       oldIframe.parentNode.removeChild(oldIframe);
@@ -362,7 +447,7 @@ export async function printDocumentElement(elementId: string): Promise<boolean> 
     );
 
     // Allow CSS layout calculation
-    await new Promise((r) => setTimeout(r, 250));
+    await new Promise((r) => setTimeout(r, 200));
 
     // Trigger printing inside iframe
     if (printIframe.contentWindow) {
