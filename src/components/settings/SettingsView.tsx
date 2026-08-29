@@ -1,12 +1,10 @@
 import React, { useState } from 'react';
 import {
   Award,
-  BookOpen,
   Building,
   Check,
   ChevronRight,
   Cloud,
-  Compass,
   Database,
   Download,
   Edit2,
@@ -598,46 +596,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               className="hidden"
             />
           </label>
-        </div>
-      </div>
-
-      {/* 3. Workspace Tour & Guide Controls */}
-      <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
-        <div className="flex items-center justify-between border-b border-slate-200 pb-3">
-          <div className="flex items-center gap-2">
-            <Compass className="w-4 h-4 text-blue-600" />
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900">
-              Interactive Workspace Tour & User Guides
-            </h3>
-          </div>
-        </div>
-
-        <p className="text-xs text-slate-500 leading-relaxed">
-          Need a quick walkthrough of GST tax calculations, invoice templates, customer ledgers, or inventory tracking? Launch the interactive tour or view the complete GST billing handbook.
-        </p>
-
-        <div className="flex flex-wrap items-center gap-3 pt-1">
-          {onStartTour && (
-            <button
-              type="button"
-              onClick={onStartTour}
-              className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl flex items-center gap-2 shadow-xs transition-colors cursor-pointer active:scale-98"
-            >
-              <Compass className="w-4 h-4 text-white" />
-              <span>Launch Interactive Workspace Tour</span>
-            </button>
-          )}
-
-          {onOpenHowToUse && (
-            <button
-              type="button"
-              onClick={onOpenHowToUse}
-              className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 font-semibold text-xs rounded-xl flex items-center gap-2 transition-colors cursor-pointer"
-            >
-              <BookOpen className="w-4 h-4 text-blue-600" />
-              <span>Read Full Billing & GST Guide</span>
-            </button>
-          )}
         </div>
       </div>
 

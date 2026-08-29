@@ -6,6 +6,7 @@ import {
   Calendar,
   Check,
   CheckCircle2,
+  ChevronDown,
   Copy,
   Download,
   Edit2,
@@ -480,70 +481,116 @@ _Thank you for your business!_`;
         </div>
 
         {/* 2. Comprehensive Filter Toolbar */}
-        <div className="max-w-6xl mx-auto px-3 sm:px-6 py-2 border-t border-slate-100 space-y-2">
-          {/* Row 1: Type Tabs & Time Presets */}
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            {/* Transaction Type Filters */}
-            <div className="flex items-center gap-1 bg-slate-100 p-0.5 rounded-xl text-xs font-semibold overflow-x-auto no-scrollbar">
+        <div className="max-w-6xl mx-auto px-3 sm:px-6 py-2.5 border-t border-slate-100 space-y-2.5">
+          {/* Row 1: Type Tabs (Full width on mobile, inline on desktop) */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            {/* Transaction Type Segmented Tabs */}
+            <div className="grid grid-cols-3 sm:flex items-center gap-1 bg-slate-100 p-1 rounded-xl text-xs font-semibold w-full sm:w-auto">
               {[
-                { id: 'all', label: `All (${partyEntries.length})` },
+                { id: 'all', label: 'All', count: partyEntries.length },
                 {
                   id: 'debit',
-                  label: `Debit / Billed (${
-                    partyEntries.filter((e) => e.type === 'debit').length
-                  })`,
+                  label: 'Debit',
+                  sub: 'Billed',
+                  count: partyEntries.filter((e) => e.type === 'debit').length,
                 },
                 {
                   id: 'credit',
-                  label: `Credit / Paid (${
-                    partyEntries.filter((e) => e.type === 'credit').length
-                  })`,
+                  label: 'Credit',
+                  sub: 'Paid',
+                  count: partyEntries.filter((e) => e.type === 'credit').length,
                 },
               ].map((tab) => (
                 <button
                   key={tab.id}
                   onClick={() => setTypeFilter(tab.id as TypeFilter)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer whitespace-nowrap ${
+                  className={`py-1.5 px-2.5 rounded-lg text-xs font-bold transition-colors cursor-pointer text-center flex items-center justify-center gap-1.5 whitespace-nowrap ${
                     typeFilter === tab.id
                       ? 'bg-white text-slate-900 shadow-xs'
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
-                  {tab.label}
+                  <span>{tab.label}</span>
+                  <span
+                    className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono font-bold ${
+                      typeFilter === tab.id
+                        ? tab.id === 'debit'
+                          ? 'bg-rose-100 text-rose-800'
+                          : tab.id === 'credit'
+                          ? 'bg-emerald-100 text-emerald-800'
+                          : 'bg-slate-200 text-slate-800'
+                        : 'bg-slate-200/70 text-slate-600'
+                    }`}
+                  >
+                    {tab.count}
+                  </span>
                 </button>
               ))}
             </div>
 
-            {/* View Switcher on Mobile & Time Presets */}
+            {/* Desktop Time Filter Pills & Mobile Controls */}
             <div className="flex items-center gap-2">
-              {/* Mobile Card / Table toggle */}
-              <div className="md:hidden flex items-center bg-slate-100 p-0.5 rounded-lg border border-slate-200">
+              {/* Mobile View: Time Preset Dropdown + Layout Switcher + Sort */}
+              <div className="flex sm:hidden items-center gap-2 w-full">
+                {/* Time filter select dropdown for iPhone */}
+                <div className="relative flex-1">
+                  <Calendar className="w-3.5 h-3.5 text-blue-600 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <select
+                    value={timeFilter}
+                    onChange={(e) => setTimeFilter(e.target.value as TimeFilter)}
+                    className="w-full pl-8 pr-7 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-800 appearance-none focus:outline-none focus:border-blue-600 shadow-xs"
+                  >
+                    <option value="all">📅 All Time</option>
+                    <option value="today">Today</option>
+                    <option value="yesterday">Yesterday</option>
+                    <option value="this_week">This Week</option>
+                    <option value="this_month">This Month</option>
+                    <option value="last_month">Last Month</option>
+                    <option value="last_30_days">Last 30 Days</option>
+                    <option value="this_year">This Year</option>
+                    <option value="custom">Custom Date Range...</option>
+                  </select>
+                  <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                </div>
+
+                {/* Mobile Card / Table toggle */}
+                <div className="flex items-center bg-slate-100 p-0.5 rounded-lg border border-slate-200 shrink-0">
+                  <button
+                    onClick={() => setMobileLayout('cards')}
+                    className={`p-1.5 rounded-md text-xs font-bold transition cursor-pointer ${
+                      mobileLayout === 'cards'
+                        ? 'bg-white text-blue-600 shadow-xs'
+                        : 'text-slate-600'
+                    }`}
+                    title="Card View"
+                  >
+                    <LayoutGrid className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={() => setMobileLayout('table')}
+                    className={`p-1.5 rounded-md text-xs font-bold transition cursor-pointer ${
+                      mobileLayout === 'table'
+                        ? 'bg-white text-blue-600 shadow-xs'
+                        : 'text-slate-600'
+                    }`}
+                    title="Table View"
+                  >
+                    <List className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+
+                {/* Mobile Sort Toggle */}
                 <button
-                  onClick={() => setMobileLayout('cards')}
-                  className={`p-1.5 rounded-md text-xs font-bold transition cursor-pointer ${
-                    mobileLayout === 'cards'
-                      ? 'bg-white text-blue-600 shadow-xs'
-                      : 'text-slate-600'
-                  }`}
-                  title="Card View"
+                  onClick={() => setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc')}
+                  className="px-2 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold shrink-0 cursor-pointer border border-slate-200"
+                  title={`Sort: ${sortOrder === 'desc' ? 'Newest First' : 'Oldest First'}`}
                 >
-                  <LayoutGrid className="w-3.5 h-3.5" />
-                </button>
-                <button
-                  onClick={() => setMobileLayout('table')}
-                  className={`p-1.5 rounded-md text-xs font-bold transition cursor-pointer ${
-                    mobileLayout === 'table'
-                      ? 'bg-white text-blue-600 shadow-xs'
-                      : 'text-slate-600'
-                  }`}
-                  title="Table View"
-                >
-                  <List className="w-3.5 h-3.5" />
+                  {sortOrder === 'desc' ? '↓ New' : '↑ Old'}
                 </button>
               </div>
 
-              {/* Time Filter Buttons */}
-              <div className="flex items-center gap-1 overflow-x-auto no-scrollbar">
+              {/* Desktop/Tablet Time Filter Pills */}
+              <div className="hidden sm:flex items-center gap-1.5 flex-wrap">
                 {[
                   { id: 'all', label: 'All Time' },
                   { id: 'today', label: 'Today' },
@@ -568,53 +615,58 @@ _Thank you for your business!_`;
             </div>
           </div>
 
-          {/* Row 2: Search, Date Pickers, Sort & Reset */}
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="relative flex-1 min-w-[200px]">
+          {/* Row 2: Search, Custom Date Range & Controls */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+            <div className="relative flex-1 min-w-0">
               <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search voucher #, invoice #, particular, amount..."
+                placeholder="Search voucher #, bill #, particulars, amount..."
                 className="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-blue-600 transition-colors"
               />
             </div>
 
+            {/* Custom Date Range Picker (Responsive) */}
             {timeFilter === 'custom' && (
-              <div className="flex items-center gap-1.5 bg-blue-50/70 p-1 rounded-xl border border-blue-200 text-xs">
-                <Calendar className="w-3.5 h-3.5 text-blue-600" />
+              <div className="flex items-center justify-between sm:justify-start gap-1.5 bg-blue-50/80 p-1.5 rounded-xl border border-blue-200 text-xs">
+                <Calendar className="w-3.5 h-3.5 text-blue-600 shrink-0" />
                 <input
                   type="date"
                   value={customStartDate}
                   onChange={(e) => setCustomStartDate(e.target.value)}
-                  className="px-2 py-0.5 bg-white border border-slate-300 rounded-lg text-xs font-medium"
+                  className="px-2 py-1 bg-white border border-slate-300 rounded-lg text-xs font-medium w-full sm:w-auto"
                 />
-                <span className="text-slate-400 text-xs">to</span>
+                <span className="text-slate-400 text-xs font-bold px-0.5">to</span>
                 <input
                   type="date"
                   value={customEndDate}
                   onChange={(e) => setCustomEndDate(e.target.value)}
-                  className="px-2 py-0.5 bg-white border border-slate-300 rounded-lg text-xs font-medium"
+                  className="px-2 py-1 bg-white border border-slate-300 rounded-lg text-xs font-medium w-full sm:w-auto"
                 />
               </div>
             )}
 
-            <button
-              onClick={() => setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc')}
-              className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold flex items-center gap-1 cursor-pointer shrink-0"
-              title="Toggle Sort Order"
-            >
-              <span>Sort: {sortOrder === 'desc' ? 'Newest' : 'Oldest'}</span>
-            </button>
+            {/* Desktop Sort Button */}
+            <div className="hidden sm:flex items-center gap-2">
+              <button
+                onClick={() => setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc')}
+                className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold flex items-center gap-1 cursor-pointer shrink-0"
+                title="Toggle Sort Order"
+              >
+                <span>Sort: {sortOrder === 'desc' ? 'Newest' : 'Oldest'}</span>
+              </button>
+            </div>
 
+            {/* Reset Filters CTA */}
             {hasActiveFilters && (
               <button
                 onClick={handleResetFilters}
-                className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-bold flex items-center gap-1 cursor-pointer shrink-0"
+                className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer shrink-0 transition-colors"
               >
                 <RefreshCw className="w-3.5 h-3.5" />
-                <span>Reset</span>
+                <span>Reset Filters</span>
               </button>
             )}
           </div>
