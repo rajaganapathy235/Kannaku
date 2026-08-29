@@ -12,6 +12,7 @@ import { Client, PaymentLedgerEntry } from '../../types';
 
 interface AddLedgerEntryModalProps {
   party: Client;
+  initialEntry?: PaymentLedgerEntry | null;
   onClose: () => void;
   onSaveEntry: (entry: PaymentLedgerEntry, updatedPartyBalance: number) => void;
 }
@@ -36,15 +37,29 @@ const CREDIT_OPTIONS: EntryTypeOption[] = [
 
 export const AddLedgerEntryModal: React.FC<AddLedgerEntryModalProps> = ({
   party,
+  initialEntry,
   onClose,
   onSaveEntry,
 }) => {
-  const [selectedType, setSelectedType] = useState<string>('Sales');
-  const [category, setCategory] = useState<'debit' | 'credit'>('debit');
-  const [date, setDate] = useState<string>(new Date().toISOString().split('T')[0]);
-  const [amount, setAmount] = useState<string>('');
-  const [particular, setParticular] = useState<string>('Sales');
-  const [vchNo, setVchNo] = useState<string>('');
+  const isEditing = !!initialEntry;
+  const [selectedType, setSelectedType] = useState<string>(
+    initialEntry?.entryType || (initialEntry?.type === 'credit' ? 'Payment In' : 'Sales')
+  );
+  const [category, setCategory] = useState<'debit' | 'credit'>(
+    initialEntry?.type || 'debit'
+  );
+  const [date, setDate] = useState<string>(
+    initialEntry?.date || new Date().toISOString().split('T')[0]
+  );
+  const [amount, setAmount] = useState<string>(
+    initialEntry ? String(initialEntry.amount) : ''
+  );
+  const [particular, setParticular] = useState<string>(
+    initialEntry?.particular || 'Sales'
+  );
+  const [vchNo, setVchNo] = useState<string>(
+    initialEntry?.vchNo || ''
+  );
 
   const handleSelectOption = (opt: EntryTypeOption) => {
     setSelectedType(opt.label);
@@ -60,15 +75,19 @@ export const AddLedgerEntryModal: React.FC<AddLedgerEntryModalProps> = ({
       return;
     }
 
-    // In double-entry ledger for a customer:
-    // Debit = increases receivable (e.g. Sales, Payment Out, Purchase Return)
-    // Credit = decreases receivable (e.g. Payment In, Sales Return, Purchase)
-    // For a supplier, it's inverse, but standard party balance tracks net debit due.
-    const delta = category === 'debit' ? numAmount : -numAmount;
+    // Calculate delta against old entry if editing
+    let delta = 0;
+    if (initialEntry) {
+      const oldVal = initialEntry.type === 'debit' ? Number(initialEntry.amount) : -Number(initialEntry.amount);
+      const newVal = category === 'debit' ? numAmount : -numAmount;
+      delta = newVal - oldVal;
+    } else {
+      delta = category === 'debit' ? numAmount : -numAmount;
+    }
     const newBalance = (party.balance || 0) + delta;
 
-    const newEntry: PaymentLedgerEntry = {
-      id: `entry_${Date.now()}`,
+    const savedEntry: PaymentLedgerEntry = {
+      id: initialEntry?.id || `entry_${Date.now()}`,
       partyId: party.id,
       partyName: party.name,
       partyType: party.clientType,
@@ -80,37 +99,38 @@ export const AddLedgerEntryModal: React.FC<AddLedgerEntryModalProps> = ({
       particular: particular.trim() || selectedType,
       vchNo: vchNo.trim() || undefined,
       referenceNo: vchNo.trim() ? `VCH-${vchNo.trim()}` : undefined,
-      createdOn: new Date().toISOString(),
+      invoiceNumber: initialEntry?.invoiceNumber,
+      createdOn: initialEntry?.createdOn || new Date().toISOString(),
     };
 
-    onSaveEntry(newEntry, newBalance);
+    onSaveEntry(savedEntry, newBalance);
   };
 
   return (
     <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-md border border-slate-200 overflow-hidden animate-in zoom-in-95 duration-150 my-auto">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md border border-slate-200 overflow-hidden animate-in zoom-in-95 duration-150 my-auto">
         {/* Header */}
         <div className="bg-white px-5 py-4 border-b border-slate-200 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
               onClick={onClose}
-              className="p-1 rounded-full text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors"
+              className="p-1 rounded-full text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors cursor-pointer"
               title="Back"
             >
               <ArrowLeft className="w-5 h-5" />
             </button>
             <div>
               <h3 className="text-base font-bold text-slate-900 leading-tight">
-                Add Ledger Entry
+                {isEditing ? 'Edit Ledger Entry' : 'Add Ledger Entry'}
               </h3>
-              <p className="text-xs font-bold text-[#E65100] mt-0.5 tracking-wide">
+              <p className="text-xs font-bold text-blue-600 mt-0.5 tracking-wide">
                 {party.name}
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100"
+            className="p-1 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>

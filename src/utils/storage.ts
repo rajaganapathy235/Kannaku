@@ -989,8 +989,26 @@ export class KannakuDB {
 
   static savePayment(entry: PaymentLedgerEntry): void {
     const list = this.getPayments();
-    list.unshift(entry);
+    const idx = list.findIndex((p) => p.id === entry.id);
+    if (idx >= 0) {
+      list[idx] = entry;
+    } else {
+      list.unshift(entry);
+    }
     this.savePayments(list);
+    if (entry.partyId) {
+      this.recalculateClientBalance(entry.partyId);
+    }
+  }
+
+  static deletePayment(id: string): void {
+    const list = this.getPayments();
+    const entry = list.find((p) => p.id === id);
+    const updated = list.filter((p) => p.id !== id);
+    this.savePayments(updated);
+    if (entry && entry.partyId) {
+      this.recalculateClientBalance(entry.partyId);
+    }
   }
 
   static getSubscription(): SubscriptionState {
