@@ -20,7 +20,7 @@ import {
   InvoiceType,
 } from '../../types';
 import { amountToIndianWords, formatIndianCurrency, formatNumberIndian } from '../../utils/numberToWords';
-import { downloadInvoiceAsPdf } from '../../utils/pdfExport';
+import { downloadInvoiceAsPdf, printDocumentElement } from '../../utils/pdfExport';
 
 interface InvoicePrintModalProps {
   invoice: Invoice;
@@ -90,8 +90,8 @@ export const InvoicePrintModal: React.FC<InvoicePrintModalProps> = ({
     return 'TAX INVOICE';
   };
 
-  const handlePrint = () => {
-    window.print();
+  const handlePrint = async () => {
+    await printDocumentElement('printable-invoice');
   };
 
   const handleDownloadPdf = async () => {

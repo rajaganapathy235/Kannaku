@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 import { Client, CompanyProfile, PaymentLedgerEntry } from '../../types';
 import { formatIndianCurrency, formatNumberIndian } from '../../utils/numberToWords';
-import { downloadInvoiceAsPdf } from '../../utils/pdfExport';
+import { downloadInvoiceAsPdf, printDocumentElement } from '../../utils/pdfExport';
 
 interface PartyLedgerPrintModalProps {
   party: Client;
@@ -107,8 +107,8 @@ export const PartyLedgerPrintModal: React.FC<PartyLedgerPrintModalProps> = ({
     }
   };
 
-  const handlePrint = () => {
-    window.print();
+  const handlePrint = async () => {
+    await printDocumentElement('printable-ledger');
   };
 
   const handleDownloadPdf = async () => {

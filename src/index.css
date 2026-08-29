@@ -16,18 +16,41 @@
 @media print {
   @page {
     size: A4 portrait;
-    margin: 8mm 8mm 8mm 8mm;
+    margin: 6mm 6mm 6mm 6mm;
   }
 
   html, body {
-    width: 210mm;
-    height: auto;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 100% !important;
+    overflow: visible !important;
     background: #FFFFFF !important;
     color: #000000 !important;
     margin: 0 !important;
     padding: 0 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
 
+  /* Reset all fixed/backdrop/overflow modals during print */
+  #root, #root > *, .fixed, .overflow-y-auto, .overflow-x-auto, .overflow-hidden,
+  .backdrop-blur-xs, .backdrop-blur-sm, .backdrop-blur-md {
+    position: static !important;
+    overflow: visible !important;
+    display: block !important;
+    background: transparent !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    transform: none !important;
+    max-height: none !important;
+    height: auto !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+  }
+
+  /* Hide everything except the printable document */
   body * {
     visibility: hidden;
   }
@@ -35,32 +58,36 @@
   #printable-invoice, #printable-invoice *,
   #printable-ledger, #printable-ledger *,
   .printable-document, .printable-document * {
-    visibility: visible;
+    visibility: visible !important;
   }
 
   #printable-invoice,
   #printable-ledger,
   .printable-document {
-    position: absolute;
-    left: 0;
-    top: 0;
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
     width: 100% !important;
-    max-width: 100% !important;
-    margin: 0 !important;
+    max-width: 800px !important;
+    margin: 0 auto !important;
     padding: 0 !important;
     box-shadow: none !important;
     border: none !important;
     background: #FFFFFF !important;
     color: #000000 !important;
+    transform: none !important;
   }
 
   .invoice-a4-page {
     page-break-after: always;
     break-after: page;
     box-shadow: none !important;
-    border: 1px solid #000000 !important;
-    margin-bottom: 0 !important;
-    min-height: 275mm !important;
+    border: 1.5px solid #000000 !important;
+    margin: 0 auto 0 auto !important;
+    min-height: 270mm !important;
+    background: #FFFFFF !important;
+    color: #000000 !important;
+    transform: none !important;
   }
 
   .invoice-a4-page:last-child {
