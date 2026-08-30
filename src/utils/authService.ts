@@ -163,57 +163,24 @@ export class AuthService {
     }
   }
 
-  // Quick Switch / Demo Helper with REAL Server Signed JWT Token
+  // Demo Helper using verified credentials
   static async quickSwitchRoleAsync(role: 'SUPER_ADMIN' | 'OWNER'): Promise<{
     success: boolean;
     error?: string;
     session?: AuthSession;
   }> {
-    try {
-      const res = await ApiService.demoSwitch(role);
-      if (res.success && res.data?.token) {
-        const { user, organization, token } = res.data;
-        const session: AuthSession = {
-          token,
-          user: {
-            id: user.id,
-            email: user.email,
-            name: user.name,
-            phone: user.phone,
-            role: user.role,
-            adminRole: user.role === 'SUPER_ADMIN' ? 'SUPER_ADMIN' : undefined,
-            organizationId: organization?.id || user.organizationId,
-            organizationName: organization?.name || 'Kannaku Workspace',
-            gstin: organization?.register_number || organization?.registerNumber || '33ASWPV8266F1ZW',
-            planName: organization?.plan_name || organization?.planName || 'Pro Trader',
-            avatarUrl: user.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=1A73E8&color=fff`,
-          },
-          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-          loginTimestamp: new Date().toISOString(),
-        };
-
-        localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(session));
-
-        if (session.user.role !== 'SUPER_ADMIN') {
-          localStorage.setItem('kannaku_active_tenant_id', session.user.organizationId);
-          KannakuDB.setActiveTenantId(session.user.organizationId);
-          SaaSAdminDB.setPortalMode('CUSTOMER');
-        } else {
-          SaaSAdminDB.setPortalMode('ADMIN');
-        }
-
-        return { success: true, session };
-      }
-
-      return {
-        success: false,
-        error: res.error || 'Failed to switch demo role via Cloudflare API',
-      };
-    } catch (err: any) {
-      return {
-        success: false,
-        error: err?.message || 'Network error during role switch',
-      };
+    if (role === 'SUPER_ADMIN') {
+      return this.loginAsync({
+        email: 'rajaganapathy235@gmail.com',
+        password: '9842755680Qq!',
+        rememberMe: true,
+      });
+    } else {
+      return this.loginAsync({
+        email: 'hytexcottonmills@gmail.com',
+        password: 'hytex123',
+        rememberMe: true,
+      });
     }
   }
 }

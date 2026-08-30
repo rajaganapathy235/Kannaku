@@ -116,7 +116,11 @@ export default function App() {
     const handleApiError = (e: any) => {
       const detail = e.detail || {};
       if (detail.status === 401) {
-        showToast('⚠️ Session expired. Please sign in again.');
+        AuthService.logout();
+        setAuthSession(null);
+        setAuthView('login');
+        window.location.hash = '#login';
+        showToast('⚠️ Session expired or unauthorized. Please sign in.');
       } else if (detail.error?.includes('D1 binding') || detail.error?.includes('env.DB')) {
         setSyncErrorBanner({
           action: 'Cloudflare D1 Database Binding',
@@ -467,22 +471,36 @@ export default function App() {
           window.location.hash = '#login';
         }}
         onEnterDemoApp={async () => {
-          const res = await AuthService.quickSwitchRoleAsync('OWNER');
+          const res = await AuthService.loginAsync({
+            email: 'hytexcottonmills@gmail.com',
+            password: 'hytex123',
+            rememberMe: true,
+          });
           if (res.success && res.session) {
             setAuthSession(res.session);
             setAuthView(null);
             window.location.hash = '';
             reloadAllState();
+          } else {
+            setAuthView('login');
+            window.location.hash = '#login';
           }
         }}
         onOpenSuperAdmin={async () => {
-          const res = await AuthService.quickSwitchRoleAsync('SUPER_ADMIN');
+          const res = await AuthService.loginAsync({
+            email: 'rajaganapathy235@gmail.com',
+            password: '9842755680Qq!',
+            rememberMe: true,
+          });
           if (res.success && res.session) {
             setAuthSession(res.session);
+            setIsSuperAdminMode(true);
+            setAuthView(null);
+            window.location.hash = '#admin';
+          } else {
+            setAuthView('login');
+            window.location.hash = '#login';
           }
-          setIsSuperAdminMode(true);
-          setAuthView(null);
-          window.location.hash = '#admin';
         }}
       />
     );
@@ -503,9 +521,17 @@ export default function App() {
         }}
         onEnterDemoApp={async () => {
           if (!authSession) {
-            const res = await AuthService.quickSwitchRoleAsync('OWNER');
+            const res = await AuthService.loginAsync({
+              email: 'hytexcottonmills@gmail.com',
+              password: 'hytex123',
+              rememberMe: true,
+            });
             if (res.success && res.session) {
               setAuthSession(res.session);
+            } else {
+              setAuthView('login');
+              window.location.hash = '#login';
+              return;
             }
           }
           setAuthView(null);
@@ -513,13 +539,20 @@ export default function App() {
           reloadAllState();
         }}
         onOpenSuperAdmin={async () => {
-          const res = await AuthService.quickSwitchRoleAsync('SUPER_ADMIN');
+          const res = await AuthService.loginAsync({
+            email: 'rajaganapathy235@gmail.com',
+            password: '9842755680Qq!',
+            rememberMe: true,
+          });
           if (res.success && res.session) {
             setAuthSession(res.session);
+            setIsSuperAdminMode(true);
+            setAuthView(null);
+            window.location.hash = '#admin';
+          } else {
+            setAuthView('login');
+            window.location.hash = '#login';
           }
-          setIsSuperAdminMode(true);
-          setAuthView(null);
-          window.location.hash = '#admin';
         }}
       />
     );

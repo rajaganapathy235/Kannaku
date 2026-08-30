@@ -140,6 +140,9 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
   // 2. AUTHENTICATION ENDPOINTS
   // -------------------------------------------------------------
   if (path === '/api/auth/demo-switch' && method === 'POST') {
+    if (env.ENVIRONMENT !== 'development') {
+      return errorResponse('Endpoint not available in production', 404);
+    }
     try {
       const body = (await request.json().catch(() => ({}))) as any;
       const role = body?.role === 'SUPER_ADMIN' ? 'SUPER_ADMIN' : 'OWNER';
