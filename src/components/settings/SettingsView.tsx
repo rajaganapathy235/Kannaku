@@ -23,6 +23,7 @@ import {
   Upload,
 } from 'lucide-react';
 import { CompanyProfile } from '../../types';
+import { ApiService } from '../../utils/apiService';
 import { KannakuDB } from '../../utils/storage';
 import { LogoPickerModal } from './LogoPickerModal';
 import { SignaturePadModal } from './SignaturePadModal';
@@ -132,7 +133,51 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   };
 
   const [d1SyncStatus, setD1SyncStatus] = useState<string | null>(null);
+  const [d1HealthInfo, setD1HealthInfo] = useState<{
+    tested: boolean;
+    online: boolean;
+    statusText: string;
+    details?: any;
+  }>({
+    tested: false,
+    online: false,
+    statusText: 'Not tested yet',
+  });
   const [isSyncing, setIsSyncing] = useState(false);
+
+  const handleTestD1Health = async () => {
+    setIsSyncing(true);
+    setD1SyncStatus('Checking Cloudflare D1 database connection...');
+    try {
+      const res = await ApiService.checkDbHealth();
+      if (res.data?.success && res.data.database === 'connected') {
+        setD1HealthInfo({
+          tested: true,
+          online: true,
+          statusText: 'Connected (DB binding active)',
+          details: res.data.counts,
+        });
+        setD1SyncStatus(`✅ Connected to Cloudflare D1 SQLite! (Tenants: ${res.data.counts?.organizations || 0}, Invoices in D1: ${res.data.counts?.invoices || 0})`);
+      } else {
+        const errorMsg = res.error || `HTTP ${res.status}: D1 binding not active`;
+        setD1HealthInfo({
+          tested: true,
+          online: false,
+          statusText: errorMsg,
+        });
+        setD1SyncStatus(`❌ D1 Error: ${errorMsg}. Please verify Cloudflare Pages -> Settings -> Functions -> D1 Database binding is set to "DB".`);
+      }
+    } catch (err: any) {
+      setD1HealthInfo({
+        tested: true,
+        online: false,
+        statusText: err?.message || 'Connection failed',
+      });
+      setD1SyncStatus(`❌ Network error: ${err?.message || 'Cannot reach /api/health/db'}`);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
 
   const handleSyncFromD1 = async () => {
     setIsSyncing(true);
@@ -141,7 +186,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       const res = await KannakuDB.syncFromD1();
       if (res.success) {
         onRestoreDatabase();
-        setD1SyncStatus('✅ Workspace successfully synchronized from Cloudflare D1!');
+        setD1SyncStatus('✅ Workspace successfully synchronized from Cloudflare D1 database!');
       } else {
         setD1SyncStatus(`⚠️ Sync Notice: ${res.error || 'Server responded, using active local cache'}`);
       }
@@ -149,7 +194,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       setD1SyncStatus('⚠️ Cloudflare D1 sync completed.');
     } finally {
       setIsSyncing(false);
-      setTimeout(() => setD1SyncStatus(null), 5000);
     }
   };
 
@@ -159,15 +203,15 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     try {
       const res = await KannakuDB.migrateAllLocalDataToD1();
       if (res.success) {
-        setD1SyncStatus('✅ All data successfully persisted to Cloudflare D1 database!');
+        const counts = res.migrated || {};
+        setD1SyncStatus(`✅ All data successfully persisted to Cloudflare D1! (Synced ${counts.invoices || 0} invoices, ${counts.clients || 0} parties, ${counts.products || 0} items)`);
       } else {
-        setD1SyncStatus(`⚠️ Note: ${res.error || 'Check D1 database binding'}`);
+        setD1SyncStatus(`❌ D1 Upload Notice: ${res.error || 'Check D1 database binding in Cloudflare Dashboard'}`);
       }
-    } catch {
-      setD1SyncStatus('⚠️ Cloudflare D1 push completed.');
+    } catch (err: any) {
+      setD1SyncStatus(`❌ Push error: ${err?.message || 'Network error'}`);
     } finally {
       setIsSyncing(false);
-      setTimeout(() => setD1SyncStatus(null), 5000);
     }
   };
 

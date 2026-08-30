@@ -5,6 +5,13 @@
 
 import { hashPassword } from './crypto';
 
+export interface D1Result<T = unknown> {
+  results?: T[];
+  success: boolean;
+  meta: any;
+  error?: string;
+}
+
 export interface D1PreparedStatement {
   bind(...values: any[]): D1PreparedStatement;
   first<T = unknown>(colName?: string): Promise<T | null>;
@@ -68,6 +75,24 @@ export async function execute(
     return res.success;
   } catch (err: any) {
     console.error('D1 execute error:', err?.message || err, sql);
+    throw new Error('Database execute failed');
+  }
+}
+
+export async function executeRaw(
+  db: D1Database,
+  sql: string,
+  ...params: any[]
+): Promise<{ success: boolean; meta: any }> {
+  try {
+    let stmt = db.prepare(sql);
+    if (params.length > 0) {
+      stmt = stmt.bind(...params);
+    }
+    const res = await stmt.run();
+    return res;
+  } catch (err: any) {
+    console.error('D1 executeRaw error:', err?.message || err, sql);
     throw new Error('Database execute failed');
   }
 }
@@ -275,6 +300,29 @@ export async function ensureTables(db: D1Database): Promise<void> {
         ip_address TEXT,
         timestamp TEXT DEFAULT CURRENT_TIMESTAMP
       );
+
+      CREATE TABLE IF NOT EXISTS impersonation_sessions (
+        id TEXT PRIMARY KEY,
+        organization_id TEXT NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+        organization_name TEXT NOT NULL,
+        tenant_email TEXT NOT NULL,
+        admin_id TEXT NOT NULL,
+        admin_email TEXT NOT NULL,
+        admin_name TEXT NOT NULL,
+        started_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        ended_at TEXT,
+        reason TEXT
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_platform_users_email ON platform_users(email);
+      CREATE INDEX IF NOT EXISTS idx_platform_users_org ON platform_users(organization_id);
+      CREATE INDEX IF NOT EXISTS idx_clients_org ON clients(organization_id);
+      CREATE INDEX IF NOT EXISTS idx_products_org ON products(organization_id);
+      CREATE INDEX IF NOT EXISTS idx_invoices_org ON invoices(organization_id);
+      CREATE INDEX IF NOT EXISTS idx_invoices_num ON invoices(organization_id, invoice_number);
+      CREATE INDEX IF NOT EXISTS idx_invoice_items_inv ON invoice_items(invoice_id);
+      CREATE INDEX IF NOT EXISTS idx_payment_ledgers_org ON payment_ledgers(organization_id);
+      CREATE INDEX IF NOT EXISTS idx_audit_logs_org ON audit_logs(organization_id);
     `);
   } catch (err) {
     console.error('ensureTables warning:', err);
