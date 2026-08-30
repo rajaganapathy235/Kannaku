@@ -25,7 +25,7 @@ export interface RequestContext {
   url: URL;
 }
 
-// Extract authenticated session from Authorization header or Cookie
+// Extract authenticated session strictly from Authorization header or Cookie
 export async function authenticateRequest(
   request: Request,
   secretKey: string
@@ -43,7 +43,10 @@ export async function authenticateRequest(
     }
   }
 
-  if (!token) return null;
+  if (!token) {
+    return null;
+  }
+
   return await verifySessionToken(token, secretKey);
 }
 

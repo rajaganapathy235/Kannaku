@@ -73,6 +73,7 @@ export class ApiService {
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
     }
+
     const impersonatedOrg = localStorage.getItem('kannaku_impersonated_org_id');
     if (impersonatedOrg) {
       headers['X-Impersonate-Org'] = impersonatedOrg;
@@ -80,11 +81,59 @@ export class ApiService {
     return headers;
   }
 
+  /**
+   * Automatically acquire a signed session token for demo/default tenant if missing or expired.
+   */
+  static async autoInitializeSession(): Promise<boolean> {
+    try {
+      const res = await fetch('/api/auth/demo-switch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role: 'OWNER' }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data?.token && data?.user && data?.organization) {
+          const session: AuthSession = {
+            token: data.token,
+            user: {
+              id: data.user.id,
+              email: data.user.email,
+              name: data.user.name,
+              phone: data.user.phone,
+              role: data.user.role,
+              organizationId: data.organization.id,
+              organizationName: data.organization.name,
+              gstin: data.organization.registerNumber || data.organization.register_number || '33ASWPV8266F1ZW',
+              planName: data.organization.planName || data.organization.plan_name || 'Pro Trader',
+              avatarUrl: data.user.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(data.user.name)}&background=1A73E8&color=fff`,
+            },
+            expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+            loginTimestamp: new Date().toISOString(),
+          };
+          localStorage.setItem(TOKEN_KEY, JSON.stringify(session));
+          localStorage.setItem('kannaku_active_tenant_id', data.organization.id);
+          return true;
+        }
+      }
+    } catch {
+      // Ignored in offline/standalone mode
+    }
+    return false;
+  }
+
   static async request<T = any>(
     path: string,
-    options: RequestInit = {}
+    options: RequestInit = {},
+    isRetry: boolean = false
   ): Promise<ApiResult<T>> {
     try {
+      // If token is missing on an authenticated route, attempt auto-initialization once
+      const isPublicRoute = path.startsWith('/api/auth/') || path.startsWith('/api/health');
+      if (!isPublicRoute && !this.getToken() && !isRetry) {
+        await this.autoInitializeSession();
+      }
+
       const res = await fetch(path, {
         ...options,
         headers: {
@@ -96,6 +145,14 @@ export class ApiService {
       const json = await res.json().catch(() => null);
 
       if (!res.ok) {
+        // If 401 unauthorized on authenticated route, re-initialize token and retry once
+        if (res.status === 401 && !isPublicRoute && !isRetry) {
+          const refreshed = await this.autoInitializeSession();
+          if (refreshed) {
+            return this.request<T>(path, options, true);
+          }
+        }
+
         const errorMsg =
           json?.error || `HTTP ${res.status}: ${res.statusText || 'API Request Failed'}`;
         console.error(`[Kannaku ApiService Error] ${options.method || 'GET'} ${path} failed:`, {
