@@ -228,15 +228,13 @@ export class ApiService {
     });
   }
 
-  static async demoSwitch(role: 'SUPER_ADMIN' | 'OWNER') {
+  static async changePassword(currentPassword: string, newPassword: string) {
     return this.request<{
       success: boolean;
-      token: string;
-      user: any;
-      organization: any;
-    }>('/api/auth/demo-switch', {
+      message?: string;
+    }>('/api/auth/change-password', {
       method: 'POST',
-      body: JSON.stringify({ role }),
+      body: JSON.stringify({ currentPassword, newPassword }),
     });
   }
 

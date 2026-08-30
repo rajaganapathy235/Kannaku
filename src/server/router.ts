@@ -111,7 +111,7 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
 
   if (path === '/api/health/db') {
     try {
-      await seedInitialTenants(db);
+      await seedInitialTenants(db, env);
       const orgCount = await queryFirst<{ count: number }>(db, 'SELECT COUNT(*) as count FROM organizations');
       const invCount = await queryFirst<{ count: number }>(db, 'SELECT COUNT(*) as count FROM invoices');
       const clientCount = await queryFirst<{ count: number }>(db, 'SELECT COUNT(*) as count FROM clients WHERE is_active = 1');
@@ -146,7 +146,7 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
     try {
       const body = (await request.json().catch(() => ({}))) as any;
       const role = body?.role === 'SUPER_ADMIN' ? 'SUPER_ADMIN' : 'OWNER';
-      await seedInitialTenants(db);
+      await seedInitialTenants(db, env);
 
       let user: any = null;
       if (role === 'SUPER_ADMIN') {
@@ -217,7 +217,7 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
         return errorResponse('Email and password are required', 400);
       }
 
-      await seedInitialTenants(db);
+      await seedInitialTenants(db, env);
 
       const user = await queryFirst<any>(
         db,
@@ -407,6 +407,66 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
       },
       organization: org,
     });
+  }
+
+  if (path === '/api/auth/change-password' && method === 'POST') {
+    try {
+      const body = (await request.json().catch(() => ({}))) as any;
+      const { currentPassword, newPassword } = body;
+
+      if (!currentPassword || !newPassword) {
+        return errorResponse('Current password and new password are required', 400);
+      }
+
+      if (typeof newPassword !== 'string' || newPassword.length < 6) {
+        return errorResponse('New password must be at least 6 characters long', 400);
+      }
+
+      const user = await queryFirst<any>(
+        db,
+        'SELECT * FROM platform_users WHERE id = ?',
+        session.userId
+      );
+
+      if (!user) {
+        return errorResponse('User account not found', 404);
+      }
+
+      const isCurrentValid = await verifyPassword(currentPassword, user.password_hash);
+      if (!isCurrentValid) {
+        return errorResponse('Current password is incorrect', 400);
+      }
+
+      const newPassHash = await hashPassword(newPassword);
+      await execute(
+        db,
+        'UPDATE platform_users SET password_hash = ? WHERE id = ?',
+        newPassHash,
+        session.userId
+      );
+
+      // Audit log password rotation
+      await execute(
+        db,
+        `INSERT INTO audit_logs (
+          id, organization_id, user_id, action, entity_type, entity_id, metadata_json
+        ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        `audit_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+        session.organizationId,
+        session.userId,
+        'PASSWORD_CHANGED',
+        'platform_users',
+        session.userId,
+        JSON.stringify({ ip: request.headers.get('cf-connecting-ip') || 'unknown', timestamp: new Date().toISOString() })
+      );
+
+      return jsonResponse({
+        success: true,
+        message: 'Password changed successfully',
+      });
+    } catch (err: any) {
+      return errorResponse('Failed to change password: ' + (err?.message || 'Server error'), 500);
+    }
   }
 
   // -------------------------------------------------------------

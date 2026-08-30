@@ -215,22 +215,10 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <button
                     type="button"
-                    onClick={async () => {
+                    onClick={() => {
                       setError(null);
-                      setLoading(true);
                       setEmail('rajaganapathy235@gmail.com');
-                      setPassword('9842755680Qq!');
-                      const res = await AuthService.loginAsync({
-                        email: 'rajaganapathy235@gmail.com',
-                        password: '9842755680Qq!',
-                        rememberMe: true,
-                      });
-                      setLoading(false);
-                      if (res.success && res.session) {
-                        onLoginSuccess(res.session);
-                      } else {
-                        setError(res.error || 'Failed to authenticate SuperAdmin credentials');
-                      }
+                      setPassword('');
                     }}
                     className="p-2.5 bg-purple-950/20 hover:bg-purple-900/30 border border-purple-800/40 rounded-xl text-left transition-all cursor-pointer group"
                   >
@@ -239,29 +227,17 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                       <Sparkles className="w-3 h-3 text-purple-400" />
                     </div>
                     <div className="text-[10px] text-slate-400 flex items-center justify-between mt-0.5">
-                      <span className="text-purple-400 font-mono font-bold">Platform Master</span>
-                      <span className="text-[9px] text-emerald-400 font-mono">Sign In (Demo)</span>
+                      <span className="text-purple-400 font-mono font-bold">rajaganapathy235@gmail.com</span>
+                      <span className="text-[9px] text-purple-400 font-mono">Fill Email</span>
                     </div>
                   </button>
 
                   <button
                     type="button"
-                    onClick={async () => {
+                    onClick={() => {
                       setError(null);
-                      setLoading(true);
                       setEmail('hytexcottonmills@gmail.com');
-                      setPassword('hytex123');
-                      const res = await AuthService.loginAsync({
-                        email: 'hytexcottonmills@gmail.com',
-                        password: 'hytex123',
-                        rememberMe: true,
-                      });
-                      setLoading(false);
-                      if (res.success && res.session) {
-                        onLoginSuccess(res.session);
-                      } else {
-                        setError(res.error || 'Failed to authenticate Tenant Owner credentials');
-                      }
+                      setPassword('');
                     }}
                     className="p-2.5 bg-slate-950 hover:bg-slate-800 border border-slate-800 rounded-xl text-left transition-all cursor-pointer group"
                   >
@@ -270,8 +246,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                       <Zap className="w-3 h-3 text-emerald-400" />
                     </div>
                     <div className="text-[10px] text-slate-400 flex items-center justify-between mt-0.5">
-                      <span className="text-emerald-400 font-mono">Tenant Owner</span>
-                      <span className="text-[9px] text-emerald-400 font-mono">Sign In (Demo)</span>
+                      <span className="text-emerald-400 font-mono">hytexcottonmills@gmail.com</span>
+                      <span className="text-[9px] text-emerald-400 font-mono">Fill Email</span>
                     </div>
                   </button>
                 </div>

@@ -87,7 +87,7 @@ async function startServer() {
   // Auto-initialize schema & seed demo tenants
   try {
     await ensureTables(d1);
-    await seedInitialTenants(d1);
+    await seedInitialTenants(d1, process.env);
     console.log('[Server] Cloudflare D1 local SQLite database initialized at:', dbPath);
   } catch (err) {
     console.error('[Server] Failed to initialize database schema:', err);

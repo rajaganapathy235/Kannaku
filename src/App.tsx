@@ -470,14 +470,8 @@ export default function App() {
           setAuthView('login');
           window.location.hash = '#login';
         }}
-        onEnterDemoApp={async () => {
-          const res = await AuthService.loginAsync({
-            email: 'hytexcottonmills@gmail.com',
-            password: 'hytex123',
-            rememberMe: true,
-          });
-          if (res.success && res.session) {
-            setAuthSession(res.session);
+        onEnterDemoApp={() => {
+          if (authSession) {
             setAuthView(null);
             window.location.hash = '';
             reloadAllState();
@@ -486,14 +480,8 @@ export default function App() {
             window.location.hash = '#login';
           }
         }}
-        onOpenSuperAdmin={async () => {
-          const res = await AuthService.loginAsync({
-            email: 'rajaganapathy235@gmail.com',
-            password: '9842755680Qq!',
-            rememberMe: true,
-          });
-          if (res.success && res.session) {
-            setAuthSession(res.session);
+        onOpenSuperAdmin={() => {
+          if (authSession?.user?.role === 'SUPER_ADMIN') {
             setIsSuperAdminMode(true);
             setAuthView(null);
             window.location.hash = '#admin';
@@ -519,33 +507,18 @@ export default function App() {
           setAuthView('login');
           window.location.hash = '#login';
         }}
-        onEnterDemoApp={async () => {
-          if (!authSession) {
-            const res = await AuthService.loginAsync({
-              email: 'hytexcottonmills@gmail.com',
-              password: 'hytex123',
-              rememberMe: true,
-            });
-            if (res.success && res.session) {
-              setAuthSession(res.session);
-            } else {
-              setAuthView('login');
-              window.location.hash = '#login';
-              return;
-            }
+        onEnterDemoApp={() => {
+          if (authSession) {
+            setAuthView(null);
+            window.location.hash = '';
+            reloadAllState();
+          } else {
+            setAuthView('login');
+            window.location.hash = '#login';
           }
-          setAuthView(null);
-          window.location.hash = '';
-          reloadAllState();
         }}
-        onOpenSuperAdmin={async () => {
-          const res = await AuthService.loginAsync({
-            email: 'rajaganapathy235@gmail.com',
-            password: '9842755680Qq!',
-            rememberMe: true,
-          });
-          if (res.success && res.session) {
-            setAuthSession(res.session);
+        onOpenSuperAdmin={() => {
+          if (authSession?.user?.role === 'SUPER_ADMIN') {
             setIsSuperAdminMode(true);
             setAuthView(null);
             window.location.hash = '#admin';

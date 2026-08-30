@@ -163,24 +163,20 @@ export class AuthService {
     }
   }
 
-  // Demo Helper using verified credentials
-  static async quickSwitchRoleAsync(role: 'SUPER_ADMIN' | 'OWNER'): Promise<{
+  // Change password for currently authenticated user
+  static async changePasswordAsync(currentPassword: string, newPassword: string): Promise<{
     success: boolean;
     error?: string;
-    session?: AuthSession;
+    message?: string;
   }> {
-    if (role === 'SUPER_ADMIN') {
-      return this.loginAsync({
-        email: 'rajaganapathy235@gmail.com',
-        password: '9842755680Qq!',
-        rememberMe: true,
-      });
-    } else {
-      return this.loginAsync({
-        email: 'hytexcottonmills@gmail.com',
-        password: 'hytex123',
-        rememberMe: true,
-      });
+    try {
+      const res = await ApiService.changePassword(currentPassword, newPassword);
+      if (res.success) {
+        return { success: true, message: res.data?.message || 'Password updated successfully' };
+      }
+      return { success: false, error: res.error || 'Failed to update password' };
+    } catch (err: any) {
+      return { success: false, error: err?.message || 'Network error while changing password' };
     }
   }
 }

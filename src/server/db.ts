@@ -332,7 +332,7 @@ export async function ensureTables(db: D1Database): Promise<void> {
 /**
  * Bootstrap default organizations and default super admin / tenant owners if D1 is empty.
  */
-export async function seedInitialTenants(db: D1Database): Promise<void> {
+export async function seedInitialTenants(db: D1Database, env: any = {}): Promise<void> {
   try {
     const userCount = await queryFirst<{ count: number }>(
       db,
@@ -340,8 +340,20 @@ export async function seedInitialTenants(db: D1Database): Promise<void> {
     );
 
     if (!userCount || userCount.count === 0) {
-      const superAdminPassHash = await hashPassword('9842755680Qq!');
-      const vasanthiPassHash = await hashPassword('hytex123');
+      let superAdminInitialPassword = env?.SUPER_ADMIN_INITIAL_PASSWORD;
+      if (!superAdminInitialPassword) {
+        superAdminInitialPassword = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
+        console.log(`[AUTH BOOTSTRAP] SUPER_ADMIN_INITIAL_PASSWORD not set in environment. Generated initial password for rajaganapathy235@gmail.com: ${superAdminInitialPassword}`);
+      }
+
+      let demoOwnerInitialPassword = env?.DEMO_OWNER_INITIAL_PASSWORD;
+      if (!demoOwnerInitialPassword) {
+        demoOwnerInitialPassword = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
+        console.log(`[AUTH BOOTSTRAP] DEMO_OWNER_INITIAL_PASSWORD not set in environment. Generated initial password for hytexcottonmills@gmail.com: ${demoOwnerInitialPassword}`);
+      }
+
+      const superAdminPassHash = await hashPassword(superAdminInitialPassword);
+      const vasanthiPassHash = await hashPassword(demoOwnerInitialPassword);
 
       // 1. Platform Master Org & Super Admin
       await execute(

@@ -59,6 +59,51 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   }));
   const [savedSuccess, setSavedSuccess] = useState(false);
 
+  // Security / Password Change State
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [pwdLoading, setPwdLoading] = useState(false);
+  const [pwdError, setPwdError] = useState<string | null>(null);
+  const [pwdSuccess, setPwdSuccess] = useState<string | null>(null);
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPwdError(null);
+    setPwdSuccess(null);
+
+    if (!currentPassword || !newPassword) {
+      setPwdError('Current password and new password are required');
+      return;
+    }
+    if (newPassword.length < 6) {
+      setPwdError('New password must be at least 6 characters long');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setPwdError('New passwords do not match');
+      return;
+    }
+
+    setPwdLoading(true);
+    try {
+      const res = await ApiService.changePassword(currentPassword, newPassword);
+      setPwdLoading(false);
+      if (res.success) {
+        setPwdSuccess('Password changed successfully');
+        setCurrentPassword('');
+        setNewPassword('');
+        setConfirmPassword('');
+        setTimeout(() => setPwdSuccess(null), 4000);
+      } else {
+        setPwdError(res.error || 'Failed to update password');
+      }
+    } catch (err: any) {
+      setPwdLoading(false);
+      setPwdError(err?.message || 'Network error');
+    }
+  };
+
   React.useEffect(() => {
     setForm({
       ...company,
@@ -647,6 +692,79 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           <span>Save Changes to Profile & Bank Information</span>
         </button>
       </form>
+
+      {/* Account Security & Password Rotation */}
+      <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
+        <div className="flex items-center gap-2 border-b border-slate-200 pb-3">
+          <Key className="w-4 h-4 text-blue-600" />
+          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900">
+            Account Security & Password Rotation
+          </h3>
+        </div>
+
+        <p className="text-xs text-slate-500 leading-relaxed">
+          Update your account password securely. Passwords are encrypted using high-iteration PBKDF2-SHA256 hashing.
+        </p>
+
+        {pwdError && (
+          <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-700 font-medium">
+            {pwdError}
+          </div>
+        )}
+
+        {pwdSuccess && (
+          <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-700 font-medium flex items-center gap-2">
+            <Check className="w-4 h-4 text-emerald-600" />
+            <span>{pwdSuccess}</span>
+          </div>
+        )}
+
+        <form onSubmit={handleChangePassword} className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+          <div>
+            <label className="block font-semibold text-slate-700 mb-1">Current Password</label>
+            <input
+              type="password"
+              placeholder="••••••••"
+              value={currentPassword}
+              onChange={(e) => setCurrentPassword(e.target.value)}
+              className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 focus:bg-white focus:border-blue-600 focus:outline-none transition-colors"
+            />
+          </div>
+
+          <div>
+            <label className="block font-semibold text-slate-700 mb-1">New Password</label>
+            <input
+              type="password"
+              placeholder="Min. 6 characters"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 focus:bg-white focus:border-blue-600 focus:outline-none transition-colors"
+            />
+          </div>
+
+          <div>
+            <label className="block font-semibold text-slate-700 mb-1">Confirm New Password</label>
+            <input
+              type="password"
+              placeholder="Repeat new password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 focus:bg-white focus:border-blue-600 focus:outline-none transition-colors"
+            />
+          </div>
+
+          <div className="sm:col-span-3 flex justify-end pt-1">
+            <button
+              type="submit"
+              disabled={pwdLoading || !currentPassword || !newPassword}
+              className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold text-xs rounded-xl flex items-center gap-2 transition-colors cursor-pointer"
+            >
+              <Key className="w-3.5 h-3.5" />
+              <span>{pwdLoading ? 'Updating Password...' : 'Update Password'}</span>
+            </button>
+          </div>
+        </form>
+      </div>
 
       {/* Cloudflare D1 Cloud Database Sync & Diagnostics */}
       <DiagnosticPanel inline />
