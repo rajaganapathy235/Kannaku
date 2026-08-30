@@ -8,13 +8,58 @@ import { AuthSession } from '../types/auth';
 
 const TOKEN_KEY = 'kannaku_auth_session_v1';
 
+export interface ApiResult<T = any> {
+  data: T | null;
+  error: string | null;
+  status: number;
+  success: boolean;
+}
+
+export interface SystemDiagnostics {
+  dbStatus: 'connected' | 'error' | 'unreachable';
+  dbMessage: string;
+  isTokenValid: boolean;
+  tokenDetails: {
+    format: 'JWT_VALID' | 'NON_JWT' | 'NONE';
+    role?: string;
+    email?: string;
+    organizationId?: string;
+    isExpired?: boolean;
+    expiresAt?: string;
+  };
+  counts?: {
+    organizations: number;
+    invoices: number;
+    clients: number;
+    products: number;
+    payments: number;
+  };
+  timestamp: string;
+}
+
 export class ApiService {
-  private static getToken(): string | null {
+  /**
+   * Extract and strictly validate session token format.
+   * A valid JWT must consist of three Base64URL-encoded parts separated by periods.
+   */
+  static getToken(): string | null {
     try {
       const data = localStorage.getItem(TOKEN_KEY);
       if (!data) return null;
       const session: AuthSession = JSON.parse(data);
-      return session.token || null;
+      const token = session?.token;
+      if (!token || typeof token !== 'string') return null;
+
+      // Verify 3-part JWT structure
+      const parts = token.split('.');
+      if (parts.length !== 3) {
+        console.warn(
+          '[ApiService] Non-JWT session token detected:',
+          token.substring(0, 15) + '... Refusing to send invalid Bearer token.'
+        );
+        return null;
+      }
+      return token;
     } catch {
       return null;
     }
@@ -38,7 +83,7 @@ export class ApiService {
   static async request<T = any>(
     path: string,
     options: RequestInit = {}
-  ): Promise<{ data: T | null; error: string | null; status: number }> {
+  ): Promise<ApiResult<T>> {
     try {
       const res = await fetch(path, {
         ...options,
@@ -49,27 +94,124 @@ export class ApiService {
       });
 
       const json = await res.json().catch(() => null);
+
       if (!res.ok) {
-        return {
-          data: null,
-          error: json?.error || `Request failed with status ${res.status}`,
+        const errorMsg =
+          json?.error || `HTTP ${res.status}: ${res.statusText || 'API Request Failed'}`;
+        console.error(`[Kannaku ApiService Error] ${options.method || 'GET'} ${path} failed:`, {
           status: res.status,
+          error: errorMsg,
+          response: json,
+        });
+
+        // Dispatch a global event so UI components can surface real toasts/notifications
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(
+            new CustomEvent('kannaku:api-error', {
+              detail: { path, status: res.status, error: errorMsg },
+            })
+          );
+        }
+
+        return {
+          data: json,
+          error: errorMsg,
+          status: res.status,
+          success: false,
         };
       }
 
-      return { data: json, error: null, status: res.status };
+      return { data: json, error: null, status: res.status, success: true };
     } catch (err: any) {
+      const networkError =
+        err?.message || 'Network connection failed. Unable to reach Cloudflare Worker API.';
+      console.error(`[Kannaku ApiService Network Error] ${options.method || 'GET'} ${path}:`, err);
+
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(
+          new CustomEvent('kannaku:api-error', {
+            detail: { path, status: 0, error: networkError },
+          })
+        );
+      }
+
       return {
         data: null,
-        error: err?.message || 'Network connection failed. Please check your internet.',
+        error: networkError,
         status: 0,
+        success: false,
       };
     }
   }
 
-  // --- HEALTH CHECK ---
-  static async checkDbHealth() {
-    return this.request<{ success: boolean; database: string; counts?: any }>('/api/health/db');
+  // --- HEALTH & DIAGNOSTICS ---
+  static async checkDbHealth(): Promise<ApiResult<{ success: boolean; database: string; binding?: string; counts?: any }>> {
+    return this.request<{ success: boolean; database: string; binding?: string; counts?: any }>('/api/health/db');
+  }
+
+  static async runFullDiagnostics(): Promise<SystemDiagnostics> {
+    const rawToken = (() => {
+      try {
+        const data = localStorage.getItem(TOKEN_KEY);
+        if (!data) return null;
+        const session: AuthSession = JSON.parse(data);
+        return session?.token || null;
+      } catch {
+        return null;
+      }
+    })();
+
+    let isTokenValid = false;
+    let tokenDetails: SystemDiagnostics['tokenDetails'] = { format: 'NONE' };
+
+    if (rawToken) {
+      const parts = rawToken.split('.');
+      if (parts.length === 3) {
+        try {
+          const payloadJson = atob(parts[1].replace(/-/g, '+').replace(/_/g, '/'));
+          const payload = JSON.parse(payloadJson);
+          const isExpired = payload.exp ? Date.now() > payload.exp : false;
+          isTokenValid = !isExpired;
+          tokenDetails = {
+            format: 'JWT_VALID',
+            role: payload.role,
+            email: payload.email,
+            organizationId: payload.organizationId,
+            isExpired,
+            expiresAt: payload.exp ? new Date(payload.exp).toLocaleString() : undefined,
+          };
+        } catch {
+          tokenDetails = { format: 'NON_JWT' };
+        }
+      } else {
+        tokenDetails = { format: 'NON_JWT' };
+      }
+    }
+
+    const dbRes = await this.checkDbHealth();
+
+    let dbStatus: SystemDiagnostics['dbStatus'] = 'unreachable';
+    let dbMessage = dbRes.error || 'Connected to Cloudflare D1 Database';
+
+    if (dbRes.success && dbRes.data?.success) {
+      dbStatus = 'connected';
+      dbMessage = `Connected to Cloudflare D1 SQLite database (Binding: ${dbRes.data.binding || 'DB'})`;
+    } else if (dbRes.status === 503) {
+      dbStatus = 'error';
+      dbMessage = dbRes.error || 'D1 Database binding (DB) is missing in Cloudflare Pages';
+    } else if (dbRes.error) {
+      dbStatus = 'error';
+      dbMessage = dbRes.error;
+    }
+
+    return {
+      dbStatus,
+      dbMessage,
+      isTokenValid,
+      tokenDetails,
+      counts: dbRes.data?.counts,
+      timestamp: new Date().toISOString(),
+    };
   }
 
   // --- AUTHENTICATION ---
@@ -82,6 +224,18 @@ export class ApiService {
     }>('/api/auth/login', {
       method: 'POST',
       body: JSON.stringify({ email, password: pass }),
+    });
+  }
+
+  static async demoSwitch(role: 'SUPER_ADMIN' | 'OWNER') {
+    return this.request<{
+      success: boolean;
+      token: string;
+      user: any;
+      organization: any;
+    }>('/api/auth/demo-switch', {
+      method: 'POST',
+      body: JSON.stringify({ role }),
     });
   }
 

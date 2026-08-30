@@ -25,6 +25,7 @@ import {
 import { CompanyProfile } from '../../types';
 import { ApiService } from '../../utils/apiService';
 import { KannakuDB } from '../../utils/storage';
+import { DiagnosticPanel } from '../common/DiagnosticPanel';
 import { LogoPickerModal } from './LogoPickerModal';
 import { SignaturePadModal } from './SignaturePadModal';
 import { StampPickerModal } from './StampPickerModal';
@@ -647,52 +648,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         </button>
       </form>
 
-      {/* Cloudflare D1 Cloud Database Sync */}
-      <div className="bg-gradient-to-br from-slate-900 to-blue-950 text-white p-6 rounded-2xl border border-slate-800 shadow-md space-y-4">
-        <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-          <div className="flex items-center gap-2">
-            <Cloud className="w-5 h-5 text-blue-400 animate-pulse" />
-            <h3 className="text-sm font-black tracking-wide text-white">
-              Cloudflare D1 Serverless SQL Persistence
-            </h3>
-          </div>
-          <span className="text-[11px] font-bold font-mono px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30">
-            D1 Active
-          </span>
-        </div>
-
-        <p className="text-xs text-slate-300 leading-relaxed">
-          Your invoices, clients, products, and ledgers are synchronized across devices using our Cloudflare Worker + Cloudflare D1 SQLite backend engine.
-        </p>
-
-        {d1SyncStatus && (
-          <div className="p-3 rounded-xl bg-slate-800/80 border border-slate-700 text-xs font-medium text-slate-200">
-            {d1SyncStatus}
-          </div>
-        )}
-
-        <div className="flex flex-wrap items-center gap-3 pt-1">
-          <button
-            type="button"
-            disabled={isSyncing}
-            onClick={handleSyncFromD1}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-bold text-xs rounded-xl flex items-center gap-2 shadow-sm transition-all cursor-pointer"
-          >
-            <Cloud className="w-4 h-4" />
-            <span>{isSyncing ? 'Synchronizing...' : 'Pull from Cloudflare D1'}</span>
-          </button>
-
-          <button
-            type="button"
-            disabled={isSyncing}
-            onClick={handlePushAllToD1}
-            className="px-4 py-2 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-slate-200 font-bold text-xs rounded-xl flex items-center gap-2 border border-slate-700 transition-all cursor-pointer"
-          >
-            <Upload className="w-4 h-4 text-blue-400" />
-            <span>Push All Local Records to Cloudflare D1</span>
-          </button>
-        </div>
-      </div>
+      {/* Cloudflare D1 Cloud Database Sync & Diagnostics */}
+      <DiagnosticPanel inline />
 
       {/* Database Backup & Restore */}
       <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">

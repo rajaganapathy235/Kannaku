@@ -36,6 +36,7 @@ import { AuthSession } from './types/auth';
 import { TenantOrganizationFull } from './types/admin';
 import { ConfirmationModal } from './components/common/ConfirmationModal';
 import { AlertModal } from './components/common/AlertModal';
+import { DiagnosticPanel } from './components/common/DiagnosticPanel';
 
 export default function App() {
   const [authSession, setAuthSession] = useState<AuthSession | null>(() => {
@@ -81,6 +82,7 @@ export default function App() {
 
   // Quick Notification Banner
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [syncErrorBanner, setSyncErrorBanner] = useState<{ action: string; error: string; status?: number } | null>(null);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -102,6 +104,49 @@ export default function App() {
     KannakuDB.reconcileInvoicesWithLedger();
     reloadAllState();
 
+    // Auto-sync from Cloudflare D1 on app load if authenticated
+    if (authSession && authSession.token) {
+      KannakuDB.syncFromD1().then((res) => {
+        if (res.success) {
+          reloadAllState();
+        }
+      });
+    }
+
+    const handleApiError = (e: any) => {
+      const detail = e.detail || {};
+      if (detail.status === 401) {
+        showToast('⚠️ Session expired. Please sign in again.');
+      } else if (detail.error?.includes('D1 binding') || detail.error?.includes('env.DB')) {
+        setSyncErrorBanner({
+          action: 'Cloudflare D1 Database Binding',
+          error: detail.error,
+          status: detail.status,
+        });
+      }
+    };
+
+    const handleD1SyncError = (e: any) => {
+      const detail = e.detail || {};
+      setSyncErrorBanner({
+        action: detail.action || 'Database Operation',
+        error: detail.error || 'Failed to persist to Cloudflare D1',
+        status: detail.status,
+      });
+    };
+
+    const handleD1SyncSuccess = (e: any) => {
+      const detail = e.detail || {};
+      setSyncErrorBanner(null);
+      if (detail.action) {
+        showToast(`☁️ D1 Synced: ${detail.action}`);
+      }
+    };
+
+    window.addEventListener('kannaku:api-error', handleApiError);
+    window.addEventListener('kannaku:d1-sync-error', handleD1SyncError);
+    window.addEventListener('kannaku:d1-sync-success', handleD1SyncSuccess);
+
     const handleHashChange = () => {
       if (window.location.hash === '#admin') {
         setIsSuperAdminMode(true);
@@ -121,8 +166,13 @@ export default function App() {
       }
     };
     window.addEventListener('hashchange', handleHashChange);
-    return () => window.removeEventListener('hashchange', handleHashChange);
-  }, []);
+    return () => {
+      window.removeEventListener('hashchange', handleHashChange);
+      window.removeEventListener('kannaku:api-error', handleApiError);
+      window.removeEventListener('kannaku:d1-sync-error', handleD1SyncError);
+      window.removeEventListener('kannaku:d1-sync-success', handleD1SyncSuccess);
+    };
+  }, [authSession?.token]);
   const handleLoginSuccess = (session: AuthSession) => {
     setAuthSession(session);
     setAuthView(null);
@@ -416,14 +466,20 @@ export default function App() {
           setAuthView('login');
           window.location.hash = '#login';
         }}
-        onEnterDemoApp={() => {
-          const session = AuthService.quickSwitchRole('hytexcottonmills@gmail.com');
-          setAuthSession(session);
-          setAuthView(null);
-          window.location.hash = '';
-          reloadAllState();
+        onEnterDemoApp={async () => {
+          const res = await AuthService.quickSwitchRoleAsync('OWNER');
+          if (res.success && res.session) {
+            setAuthSession(res.session);
+            setAuthView(null);
+            window.location.hash = '';
+            reloadAllState();
+          }
         }}
-        onOpenSuperAdmin={() => {
+        onOpenSuperAdmin={async () => {
+          const res = await AuthService.quickSwitchRoleAsync('SUPER_ADMIN');
+          if (res.success && res.session) {
+            setAuthSession(res.session);
+          }
           setIsSuperAdminMode(true);
           setAuthView(null);
           window.location.hash = '#admin';
@@ -445,16 +501,22 @@ export default function App() {
           setAuthView('login');
           window.location.hash = '#login';
         }}
-        onEnterDemoApp={() => {
+        onEnterDemoApp={async () => {
           if (!authSession) {
-            const session = AuthService.quickSwitchRole('hytexcottonmills@gmail.com');
-            setAuthSession(session);
+            const res = await AuthService.quickSwitchRoleAsync('OWNER');
+            if (res.success && res.session) {
+              setAuthSession(res.session);
+            }
           }
           setAuthView(null);
           window.location.hash = '';
           reloadAllState();
         }}
-        onOpenSuperAdmin={() => {
+        onOpenSuperAdmin={async () => {
+          const res = await AuthService.quickSwitchRoleAsync('SUPER_ADMIN');
+          if (res.success && res.session) {
+            setAuthSession(res.session);
+          }
           setIsSuperAdminMode(true);
           setAuthView(null);
           window.location.hash = '#admin';
@@ -571,20 +633,23 @@ export default function App() {
           <div className="max-w-7xl mx-auto">
             {/* Active View Router */}
             {activeTab === 'dashboard' && (
-              <DashboardView
-                company={company}
-                invoices={invoices}
-                clients={clients}
-                products={products}
-                payments={payments}
-                onNewInvoice={() => {
-                  setEditingInvoice(null);
-                  setActiveTab('create_invoice');
-                }}
-                onViewInvoice={(inv) => setActivePrintInvoice(inv)}
-                onNavigateTab={(tab) => setActiveTab(tab)}
-                onOpenQuickPayment={() => setActiveTab('payments')}
-              />
+              <div className="space-y-6">
+                <DiagnosticPanel />
+                <DashboardView
+                  company={company}
+                  invoices={invoices}
+                  clients={clients}
+                  products={products}
+                  payments={payments}
+                  onNewInvoice={() => {
+                    setEditingInvoice(null);
+                    setActiveTab('create_invoice');
+                  }}
+                  onViewInvoice={(inv) => setActivePrintInvoice(inv)}
+                  onNavigateTab={(tab) => setActiveTab(tab)}
+                  onOpenQuickPayment={() => setActiveTab('payments')}
+                />
+              </div>
             )}
 
             {activeTab === 'invoices' && (
@@ -758,6 +823,43 @@ export default function App() {
           title={alertTarget.title}
           message={alertTarget.message}
         />
+      )}
+
+      {/* Sync Error Banner Overlay */}
+      {syncErrorBanner && (
+        <div className="fixed bottom-14 sm:bottom-6 right-4 sm:right-6 z-50 max-w-md w-full bg-slate-900 border border-rose-600 rounded-2xl shadow-2xl p-4 text-white animate-in slide-in-from-bottom-5">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex items-start gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-rose-500/20 text-rose-400 flex items-center justify-center shrink-0 mt-0.5">
+                <span className="font-bold text-xs">⚠️</span>
+              </div>
+              <div className="space-y-1">
+                <div className="font-bold text-xs text-rose-300">
+                  Cloudflare D1 Sync Alert: {syncErrorBanner.action}
+                </div>
+                <p className="text-[11px] text-slate-300 leading-relaxed font-mono">
+                  {syncErrorBanner.error}
+                </p>
+                <div className="text-[10px] text-slate-400 pt-1">
+                  Local cache saved. Data will sync once Cloudflare D1 connection is confirmed.
+                </div>
+              </div>
+            </div>
+            <button
+              onClick={() => setSyncErrorBanner(null)}
+              className="text-slate-400 hover:text-white p-1 rounded-md hover:bg-slate-800 text-xs cursor-pointer"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Toast Notification Banner */}
+      {toastMessage && (
+        <div className="fixed bottom-14 sm:bottom-6 left-1/2 -translate-x-1/2 z-50 bg-slate-900/95 text-white px-4 py-2.5 rounded-full shadow-2xl border border-slate-700 text-xs font-medium backdrop-blur-md animate-in fade-in flex items-center gap-2">
+          <span>{toastMessage}</span>
+        </div>
       )}
     </div>
   );

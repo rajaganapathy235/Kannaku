@@ -661,9 +661,20 @@ export class KannakuDB {
 
   static saveCompanyProfile(profile: CompanyProfile): void {
     localStorage.setItem(this.getTenantKey(STORAGE_KEYS.COMPANY), JSON.stringify(profile));
-    // Asynchronous Cloudflare D1 Sync
-    ApiService.updateOrganization(profile).catch((err) => {
-      console.warn('D1 company profile sync background note:', err);
+    // D1 Cloudflare Persistence
+    ApiService.updateOrganization(profile).then((res) => {
+      if (!res.success) {
+        console.error('[Kannaku D1 Error] Failed to update organization profile:', res.error);
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(
+            new CustomEvent('kannaku:d1-sync-error', {
+              detail: { action: 'Update Company Profile', error: res.error, status: res.status },
+            })
+          );
+        }
+      } else if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('kannaku:d1-sync-success', { detail: { action: 'Update Company Profile' } }));
+      }
     });
   }
 
@@ -699,9 +710,20 @@ export class KannakuDB {
     }
     this.saveClients(list);
 
-    // Asynchronous Cloudflare D1 Sync
-    ApiService.saveClient(client).catch((err) => {
-      console.warn('D1 client sync background note:', err);
+    // Cloudflare D1 Sync
+    ApiService.saveClient(client).then((res) => {
+      if (!res.success) {
+        console.error('[Kannaku D1 Error] Failed to save client to D1:', res.error);
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(
+            new CustomEvent('kannaku:d1-sync-error', {
+              detail: { action: `Save Party (${client.name})`, error: res.error, status: res.status },
+            })
+          );
+        }
+      } else if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('kannaku:d1-sync-success', { detail: { action: `Saved Party ${client.name}` } }));
+      }
     });
   }
 
@@ -709,9 +731,18 @@ export class KannakuDB {
     const list = this.getClients().filter((c) => c.id !== id);
     this.saveClients(list);
 
-    // Asynchronous Cloudflare D1 Delete
-    ApiService.deleteClient(id).catch((err) => {
-      console.warn('D1 client delete background note:', err);
+    // Cloudflare D1 Delete
+    ApiService.deleteClient(id).then((res) => {
+      if (!res.success) {
+        console.error('[Kannaku D1 Error] Failed to delete client from D1:', res.error);
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(
+            new CustomEvent('kannaku:d1-sync-error', {
+              detail: { action: 'Delete Party', error: res.error, status: res.status },
+            })
+          );
+        }
+      }
     });
   }
 
@@ -746,9 +777,20 @@ export class KannakuDB {
     }
     this.saveProducts(list);
 
-    // Asynchronous Cloudflare D1 Sync
-    ApiService.saveProduct(product).catch((err) => {
-      console.warn('D1 product sync background note:', err);
+    // Cloudflare D1 Sync
+    ApiService.saveProduct(product).then((res) => {
+      if (!res.success) {
+        console.error('[Kannaku D1 Error] Failed to save product to D1:', res.error);
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(
+            new CustomEvent('kannaku:d1-sync-error', {
+              detail: { action: `Save Product (${product.name})`, error: res.error, status: res.status },
+            })
+          );
+        }
+      } else if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('kannaku:d1-sync-success', { detail: { action: `Saved Product ${product.name}` } }));
+      }
     });
   }
 
@@ -756,9 +798,18 @@ export class KannakuDB {
     const list = this.getProducts().filter((p) => p.id !== id);
     this.saveProducts(list);
 
-    // Asynchronous Cloudflare D1 Delete
-    ApiService.deleteProduct(id).catch((err) => {
-      console.warn('D1 product delete background note:', err);
+    // Cloudflare D1 Delete
+    ApiService.deleteProduct(id).then((res) => {
+      if (!res.success) {
+        console.error('[Kannaku D1 Error] Failed to delete product from D1:', res.error);
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(
+            new CustomEvent('kannaku:d1-sync-error', {
+              detail: { action: 'Delete Product', error: res.error, status: res.status },
+            })
+          );
+        }
+      }
     });
   }
 
@@ -808,9 +859,20 @@ export class KannakuDB {
     // Automatically synchronize ledger entries for this invoice
     this.syncInvoiceToLedger(invoice, oldInvoice);
 
-    // Asynchronous Cloudflare D1 Sync
-    ApiService.saveInvoice(invoice).catch((err) => {
-      console.warn('D1 invoice sync background note:', err);
+    // Cloudflare D1 Sync
+    ApiService.saveInvoice(invoice).then((res) => {
+      if (!res.success) {
+        console.error('[Kannaku D1 Error] Failed to save invoice to D1:', res.error);
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(
+            new CustomEvent('kannaku:d1-sync-error', {
+              detail: { action: `Save Invoice #${invoice.invoiceNumber}`, error: res.error, status: res.status },
+            })
+          );
+        }
+      } else if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('kannaku:d1-sync-success', { detail: { action: `Saved Invoice #${invoice.invoiceNumber}` } }));
+      }
     });
   }
 
@@ -835,9 +897,18 @@ export class KannakuDB {
       this.recalculateClientBalance(inv.clientId);
     }
 
-    // Asynchronous Cloudflare D1 Delete
-    ApiService.deleteInvoice(id).catch((err) => {
-      console.warn('D1 invoice delete background note:', err);
+    // Cloudflare D1 Delete
+    ApiService.deleteInvoice(id).then((res) => {
+      if (!res.success) {
+        console.error('[Kannaku D1 Error] Failed to delete invoice from D1:', res.error);
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(
+            new CustomEvent('kannaku:d1-sync-error', {
+              detail: { action: 'Delete Invoice', error: res.error, status: res.status },
+            })
+          );
+        }
+      }
     });
   }
 
@@ -1035,9 +1106,20 @@ export class KannakuDB {
       this.recalculateClientBalance(entry.partyId);
     }
 
-    // Asynchronous Cloudflare D1 Sync
-    ApiService.savePayment(entry).catch((err) => {
-      console.warn('D1 payment sync background note:', err);
+    // Cloudflare D1 Sync
+    ApiService.savePayment(entry).then((res) => {
+      if (!res.success) {
+        console.error('[Kannaku D1 Error] Failed to record payment in D1:', res.error);
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(
+            new CustomEvent('kannaku:d1-sync-error', {
+              detail: { action: `Record Payment (₹${entry.amount})`, error: res.error, status: res.status },
+            })
+          );
+        }
+      } else if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('kannaku:d1-sync-success', { detail: { action: `Recorded Payment ₹${entry.amount}` } }));
+      }
     });
   }
 
@@ -1050,14 +1132,23 @@ export class KannakuDB {
       this.recalculateClientBalance(entry.partyId);
     }
 
-    // Asynchronous Cloudflare D1 Delete
-    ApiService.deletePayment(id).catch((err) => {
-      console.warn('D1 payment delete background note:', err);
+    // Cloudflare D1 Delete
+    ApiService.deletePayment(id).then((res) => {
+      if (!res.success) {
+        console.error('[Kannaku D1 Error] Failed to delete payment from D1:', res.error);
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(
+            new CustomEvent('kannaku:d1-sync-error', {
+              detail: { action: 'Delete Payment Entry', error: res.error, status: res.status },
+            })
+          );
+        }
+      }
     });
   }
 
   // Synchronize workspace data directly from Cloudflare D1
-  static async syncFromD1(): Promise<{ success: boolean; error?: string }> {
+  static async syncFromD1(): Promise<{ success: boolean; error?: string; counts?: any }> {
     try {
       const [orgRes, clientsRes, productsRes, invoicesRes, paymentsRes] = await Promise.all([
         ApiService.getOrganization(),
@@ -1067,23 +1158,41 @@ export class KannakuDB {
         ApiService.getPayments(),
       ]);
 
-      if (orgRes.data) {
+      if (!orgRes.success && !clientsRes.success && !productsRes.success && !invoicesRes.success) {
+        return {
+          success: false,
+          error: orgRes.error || clientsRes.error || 'Failed to authenticate or fetch data from Cloudflare D1',
+        };
+      }
+
+      if (orgRes.success && orgRes.data) {
         localStorage.setItem(this.getTenantKey(STORAGE_KEYS.COMPANY), JSON.stringify(orgRes.data));
       }
-      if (clientsRes.data && Array.isArray(clientsRes.data)) {
+      if (clientsRes.success && Array.isArray(clientsRes.data)) {
         this.saveClients(clientsRes.data);
       }
-      if (productsRes.data && Array.isArray(productsRes.data)) {
+      if (productsRes.success && Array.isArray(productsRes.data)) {
         this.saveProducts(productsRes.data);
       }
-      if (invoicesRes.data && Array.isArray(invoicesRes.data)) {
+      if (invoicesRes.success && Array.isArray(invoicesRes.data)) {
         this.saveInvoices(invoicesRes.data);
       }
-      if (paymentsRes.data && Array.isArray(paymentsRes.data)) {
+      if (paymentsRes.success && Array.isArray(paymentsRes.data)) {
         this.savePayments(paymentsRes.data);
       }
 
-      return { success: true };
+      const counts = {
+        clients: Array.isArray(clientsRes.data) ? clientsRes.data.length : 0,
+        products: Array.isArray(productsRes.data) ? productsRes.data.length : 0,
+        invoices: Array.isArray(invoicesRes.data) ? invoicesRes.data.length : 0,
+        payments: Array.isArray(paymentsRes.data) ? paymentsRes.data.length : 0,
+      };
+
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('kannaku:d1-sync-success', { detail: { action: 'Synced from Cloudflare D1', counts } }));
+      }
+
+      return { success: true, counts };
     } catch (err: any) {
       return { success: false, error: err?.message || 'Failed to sync with D1' };
     }

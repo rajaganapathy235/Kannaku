@@ -84,7 +84,11 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
 
   const db = env.DB;
   if (!db) {
-    return errorResponse('Cloudflare D1 Database binding (DB) is not configured', 503);
+    console.error('[CRITICAL] Cloudflare D1 Database binding "DB" is not bound! In Cloudflare Pages, go to Settings -> Functions -> D1 Database Bindings -> add binding "DB"');
+    return errorResponse(
+      'Cloudflare D1 Database binding (DB) is missing. If deployed on Cloudflare Pages, configure D1 Database Binding under Project Settings -> Functions -> D1 Database Bindings with binding name "DB".',
+      503
+    );
   }
 
   // Ensure tables and seed exist on first call
@@ -104,25 +108,95 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
 
   if (path === '/api/health/db') {
     try {
+      await seedInitialTenants(db);
       const orgCount = await queryFirst<{ count: number }>(db, 'SELECT COUNT(*) as count FROM organizations');
       const invCount = await queryFirst<{ count: number }>(db, 'SELECT COUNT(*) as count FROM invoices');
+      const clientCount = await queryFirst<{ count: number }>(db, 'SELECT COUNT(*) as count FROM clients WHERE is_active = 1');
+      const prodCount = await queryFirst<{ count: number }>(db, 'SELECT COUNT(*) as count FROM products WHERE is_active = 1');
+      const payCount = await queryFirst<{ count: number }>(db, 'SELECT COUNT(*) as count FROM payment_ledgers');
+
       return jsonResponse({
         success: true,
         database: 'connected',
-        binding: 'DB (D1 SQLite)',
+        binding: 'DB (Cloudflare D1 SQLite)',
         counts: {
           organizations: orgCount?.count || 0,
           invoices: invCount?.count || 0,
+          clients: clientCount?.count || 0,
+          products: prodCount?.count || 0,
+          payments: payCount?.count || 0,
         },
+        timestamp: new Date().toISOString(),
       });
-    } catch {
-      return errorResponse('Database health check failed', 500);
+    } catch (err: any) {
+      return errorResponse('Database health check failed: ' + (err?.message || 'Unknown database error'), 500);
     }
   }
 
   // -------------------------------------------------------------
   // 2. AUTHENTICATION ENDPOINTS
   // -------------------------------------------------------------
+  if (path === '/api/auth/demo-switch' && method === 'POST') {
+    try {
+      const body = (await request.json().catch(() => ({}))) as any;
+      const role = body?.role === 'SUPER_ADMIN' ? 'SUPER_ADMIN' : 'OWNER';
+      await seedInitialTenants(db);
+
+      let user: any = null;
+      if (role === 'SUPER_ADMIN') {
+        user = await queryFirst<any>(db, "SELECT * FROM platform_users WHERE role = 'SUPER_ADMIN' LIMIT 1");
+      } else {
+        user = await queryFirst<any>(db, "SELECT * FROM platform_users WHERE organization_id = 'org_hytex_cotton' LIMIT 1");
+        if (!user) {
+          user = await queryFirst<any>(db, "SELECT * FROM platform_users WHERE role = 'OWNER' LIMIT 1");
+        }
+      }
+
+      if (!user) {
+        return errorResponse('Demo user not found in database', 404);
+      }
+
+      const org = await queryFirst<any>(db, 'SELECT * FROM organizations WHERE id = ?', user.organization_id);
+
+      const token = await createSessionToken(
+        {
+          userId: user.id,
+          email: user.email,
+          name: user.name,
+          organizationId: user.organization_id,
+          role: user.role,
+        },
+        secretKey
+      );
+
+      const sessionCookie = `kannaku_session=${token}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=${7 * 24 * 3600}`;
+
+      return jsonResponse(
+        {
+          success: true,
+          token,
+          user: {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            phone: user.phone,
+            role: user.role,
+            avatarUrl: user.avatar_url,
+          },
+          organization: org || {
+            id: user.organization_id,
+            name: 'HYTEX COTTON MILLS',
+            planId: 'plan_pro',
+            planName: 'Pro Trader',
+          },
+        },
+        200,
+        { 'Set-Cookie': sessionCookie }
+      );
+    } catch (err: any) {
+      return errorResponse('Failed to issue demo session token: ' + (err?.message || 'Unknown error'), 500);
+    }
+  }
   if (path === '/api/auth/login' && method === 'POST') {
     const ip = request.headers.get('cf-connecting-ip') || 'unknown';
     const rate = checkRateLimit(`login:${ip}`, 10, 60);

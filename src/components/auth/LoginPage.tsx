@@ -215,57 +215,51 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <button
                     type="button"
-                    onClick={() => handleQuickFill('rajaganapathy235@gmail.com', '9842755680Qq!')}
-                    className="p-2 bg-purple-950/20 hover:bg-purple-900/30 border border-purple-800/40 rounded-xl text-left transition-all cursor-pointer group"
+                    onClick={async () => {
+                      setError(null);
+                      setLoading(true);
+                      const res = await AuthService.quickSwitchRoleAsync('SUPER_ADMIN');
+                      setLoading(false);
+                      if (res.success && res.session) {
+                        onLoginSuccess(res.session);
+                      } else {
+                        setError(res.error || 'Failed to initialize SuperAdmin demo session');
+                      }
+                    }}
+                    className="p-2.5 bg-purple-950/20 hover:bg-purple-900/30 border border-purple-800/40 rounded-xl text-left transition-all cursor-pointer group"
                   >
-                    <div className="text-[11px] font-bold text-purple-300 group-hover:text-purple-200 truncate">
-                      SuperAdmin Portal
+                    <div className="text-[11px] font-bold text-purple-300 group-hover:text-purple-200 truncate flex items-center justify-between">
+                      <span>SuperAdmin Portal</span>
+                      <Sparkles className="w-3 h-3 text-purple-400" />
                     </div>
-                    <div className="text-[10px] text-slate-400 flex items-center justify-between">
+                    <div className="text-[10px] text-slate-400 flex items-center justify-between mt-0.5">
                       <span className="text-purple-400 font-mono font-bold">Platform Master</span>
-                      <span className="text-[9px] text-slate-500 font-mono">rajaganapathy235@...</span>
+                      <span className="text-[9px] text-emerald-400 font-mono">1-Click Sign In</span>
                     </div>
                   </button>
 
                   <button
                     type="button"
-                    onClick={() => handleQuickFill('hytexcottonmills@gmail.com', 'hytex123')}
-                    className="p-2 bg-slate-950 hover:bg-slate-800 border border-slate-800 rounded-xl text-left transition-all cursor-pointer group"
+                    onClick={async () => {
+                      setError(null);
+                      setLoading(true);
+                      const res = await AuthService.quickSwitchRoleAsync('OWNER');
+                      setLoading(false);
+                      if (res.success && res.session) {
+                        onLoginSuccess(res.session);
+                      } else {
+                        setError(res.error || 'Failed to initialize Tenant Owner demo session');
+                      }
+                    }}
+                    className="p-2.5 bg-slate-950 hover:bg-slate-800 border border-slate-800 rounded-xl text-left transition-all cursor-pointer group"
                   >
-                    <div className="text-[11px] font-bold text-white group-hover:text-blue-400 truncate">
-                      HYTEX COTTON MILLS
+                    <div className="text-[11px] font-bold text-white group-hover:text-blue-400 truncate flex items-center justify-between">
+                      <span>HYTEX COTTON MILLS</span>
+                      <Zap className="w-3 h-3 text-emerald-400" />
                     </div>
-                    <div className="text-[10px] text-slate-400 flex items-center justify-between">
+                    <div className="text-[10px] text-slate-400 flex items-center justify-between mt-0.5">
                       <span className="text-emerald-400 font-mono">Tenant Owner</span>
-                      <span className="text-[9px] text-slate-500 font-mono">hytexcottonmills@...</span>
-                    </div>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => handleQuickFill('murugan.traders@gmail.com', 'murugan123')}
-                    className="p-2 bg-slate-950 hover:bg-slate-800 border border-slate-800 rounded-xl text-left transition-all cursor-pointer group"
-                  >
-                    <div className="text-[11px] font-bold text-white group-hover:text-blue-400 truncate">
-                      Sri Murugan Traders
-                    </div>
-                    <div className="text-[10px] text-slate-400 flex items-center justify-between">
-                      <span className="text-blue-400 font-mono">Business Suite</span>
-                      <span className="text-[9px] text-slate-500 font-mono">murugan.traders@...</span>
-                    </div>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => handleQuickFill('accounts@chennaielectro.in', 'chennai123')}
-                    className="p-2 bg-slate-950 hover:bg-slate-800 border border-slate-800 rounded-xl text-left transition-all cursor-pointer group"
-                  >
-                    <div className="text-[11px] font-bold text-white group-hover:text-blue-400 truncate">
-                      Chennai Electro
-                    </div>
-                    <div className="text-[10px] text-slate-400 flex items-center justify-between">
-                      <span className="text-amber-400 font-mono">Enterprise Workspace</span>
-                      <span className="text-[9px] text-slate-500 font-mono">accounts@chennai...</span>
+                      <span className="text-[9px] text-emerald-400 font-mono">1-Click Sign In</span>
                     </div>
                   </button>
                 </div>
