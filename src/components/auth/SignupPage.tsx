@@ -20,7 +20,6 @@ import {
 } from 'lucide-react';
 import { AuthService } from '../../utils/authService';
 import { AuthSession, SignupTenantPayload } from '../../types/auth';
-import { BrandLogo } from '../common/BrandLogo';
 
 interface SignupPageProps {
   onSignupSuccess: (session: AuthSession) => void;
@@ -132,12 +131,23 @@ export const SignupPage: React.FC<SignupPageProps> = ({
 
       <div className="relative max-w-lg w-full mx-auto space-y-6">
         {/* Brand Header */}
-        <div className="text-center space-y-3">
-          <div className="inline-flex items-center justify-center p-3 rounded-2xl bg-slate-900/80 border border-slate-800 shadow-xl backdrop-blur-md">
-            <BrandLogo size="md" theme="dark" showTagline={true} />
+        <div className="text-center space-y-2">
+          <div className="inline-flex items-center justify-center gap-2.5 px-4 py-2 rounded-2xl bg-slate-900/80 border border-slate-800 shadow-xl backdrop-blur-md">
+            <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center text-white font-black text-lg shadow-md shadow-blue-600/40">
+              K
+            </div>
+            <div className="text-left">
+              <div className="text-base font-black tracking-tight text-white flex items-center gap-1.5">
+                <span>KANNAKU</span>
+                <span className="text-[10px] px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-400 font-mono font-bold">
+                  14-DAY PRO TRIAL
+                </span>
+              </div>
+              <p className="text-[10px] text-slate-400 font-medium">Create Instant GST Billing Workspace</p>
+            </div>
           </div>
 
-          <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight pt-1">
+          <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight pt-2">
             {step === 1 ? 'Start your 14-Day Free Trial' : 'Business Profile & Tax Setup'}
           </h2>
           <p className="text-xs text-slate-400">
@@ -419,7 +429,7 @@ export const SignupPage: React.FC<SignupPageProps> = ({
             </button>
           </div>
           <div className="text-[11px] text-slate-500">
-            By signing up you agree to JustGST Terms of Service & GST Audit Compliance
+            By signing up you agree to Kannaku Terms of Service & GST Audit Compliance
           </div>
         </div>
       </div>

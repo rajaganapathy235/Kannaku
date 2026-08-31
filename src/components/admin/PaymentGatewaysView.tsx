@@ -749,7 +749,7 @@ export const PaymentGatewaysView: React.FC = () => {
                       type="text"
                       value={gw.upiId || ''}
                       onChange={(e) => handleUpdateField('manual_upi', 'upiId', e.target.value)}
-                      placeholder="justgstbilling@okaxis"
+                      placeholder="kannakubilling@okaxis"
                       className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white font-mono text-xs focus:border-amber-500 focus:outline-none"
                     />
                   </div>
@@ -763,7 +763,7 @@ export const PaymentGatewaysView: React.FC = () => {
                       type="text"
                       value={gw.upiPayeeName || ''}
                       onChange={(e) => handleUpdateField('manual_upi', 'upiPayeeName', e.target.value)}
-                      placeholder="JustGST Cloud Billing Platform"
+                      placeholder="Kannaku Cloud Billing Inc"
                       className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white text-xs focus:border-amber-500 focus:outline-none"
                     />
                   </div>

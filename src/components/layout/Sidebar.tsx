@@ -12,7 +12,6 @@ import {
   Wallet,
   Globe,
 } from 'lucide-react';
-import { BrandLogo } from '../common/BrandLogo';
 
 export type NavTab =
   | 'dashboard'
@@ -79,8 +78,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
   return (
     <aside className="w-64 bg-white border-r border-slate-200 flex flex-col shrink-0 min-h-[calc(100vh-4rem)]">
       {/* Brand Header */}
-      <div className="p-4 border-b border-slate-200 flex items-center">
-        <BrandLogo size="md" showTagline={true} />
+      <div className="p-5 border-b border-slate-200 flex items-center gap-3">
+        <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white font-black text-xl shadow-xs">
+          K
+        </div>
+        <div>
+          <span className="text-lg font-black tracking-tight text-slate-900 uppercase">
+            Kannaku
+          </span>
+          <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
+            GST Billing Suite
+          </p>
+        </div>
       </div>
 
       {/* Navigation Links */}

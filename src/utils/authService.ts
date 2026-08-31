@@ -129,7 +129,7 @@ export class AuthService {
             role: user.role,
             adminRole: user.role === 'SUPER_ADMIN' ? 'SUPER_ADMIN' : undefined,
             organizationId: organization?.id || user.organizationId,
-            organizationName: organization?.name || 'JustGST Workspace',
+            organizationName: organization?.name || 'Kannaku Workspace',
             gstin: organization?.register_number || organization?.registerNumber || '33ASWPV8266F1ZW',
             planName: organization?.plan_name || organization?.planName || 'Pro Trader',
             avatarUrl: user.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=1A73E8&color=fff`,

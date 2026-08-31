@@ -305,7 +305,7 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
               <kbd className="px-1.5 py-0.5 bg-white dark:bg-slate-800 border rounded font-mono">⌘K</kbd> to search anywhere
             </span>
           </div>
-          <span className="font-semibold text-slate-700 dark:text-slate-300">JustGST Super Admin Index</span>
+          <span className="font-semibold text-slate-700 dark:text-slate-300">Kannaku Super Admin Index</span>
         </div>
       </div>
     </div>

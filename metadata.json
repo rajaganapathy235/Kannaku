@@ -1,6 +1,6 @@
 {
   "name": "Remix Kannaku - GST Billing \u0026 Invoicing Suite",
-  "description": "JustGST is simple GST billing and invoicing software for Indian businesses. Create GST invoices, manage customers and products, track payments, and run your business from one simple platform.",
+  "description": "Fast GST billing \u0026 accounting web app with Tally-style invoicing, customer/supplier party ledgers, inventory stock, multi-copy A4 PDF printing, and GSTR-1 reports.",
   "requestFramePermissions": [],
   "majorCapabilities": [
     "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"

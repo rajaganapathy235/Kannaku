@@ -267,7 +267,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `justgst_billing_backup_${new Date().toISOString().split('T')[0]}.json`;
+    a.download = `kannaku_billing_backup_${new Date().toISOString().split('T')[0]}.json`;
     a.click();
     URL.revokeObjectURL(url);
   };

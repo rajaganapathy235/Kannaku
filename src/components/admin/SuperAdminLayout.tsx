@@ -103,7 +103,7 @@ export const SuperAdminLayout: React.FC<SuperAdminLayoutProps> = ({
               <div className="min-w-0">
                 <div className="flex items-center gap-1.5">
                   <span className="font-extrabold text-sm tracking-tight text-white uppercase">
-                    JustGST
+                    Kannaku
                   </span>
                   <span className="text-[10px] font-black uppercase px-1.5 py-0.2 rounded-md bg-purple-600/30 text-purple-400 border border-purple-500/40">
                     SUPERADMIN

@@ -159,7 +159,7 @@ GSTIN: ${party.registerNumber || 'URP'}
 • *A/C No:* ${company.bankDetail.accountNumber}
 • *IFSC Code:* ${company.bankDetail.ifscCode}
 
-_Generated via JustGST Ledger_`;
+_Generated via Kannaku GST Ledger_`;
 
     const encoded = encodeURIComponent(message);
     const url = phone

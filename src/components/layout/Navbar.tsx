@@ -57,7 +57,7 @@ export const Navbar: React.FC<NavbarProps> = ({
       case 'settings':
         return 'Company & General Settings';
       default:
-        return 'JustGST Invoicing';
+        return 'Kannaku Invoicing';
     }
   };
 

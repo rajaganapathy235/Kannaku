@@ -102,8 +102,8 @@ export const DEFAULT_PAYMENT_GATEWAYS: SaaSGatewayManagerConfig = {
       name: 'Direct UPI & Bank Transfer',
       isEnabled: true,
       isTestMode: false,
-      upiId: 'justgstbilling@okaxis',
-      upiPayeeName: 'JustGST Cloud Billing Platform',
+      upiId: 'kannakubilling@okaxis',
+      upiPayeeName: 'Kannaku Cloud Billing Inc',
       bankName: 'HDFC Bank Ltd',
       accountNumber: '50200089123456',
       ifscCode: 'HDFC0001234',
@@ -198,7 +198,7 @@ export const INITIAL_EMAIL_TEMPLATES: EmailTemplate[] = [
   {
     id: 'tmpl_welcome',
     key: 'WELCOME_EMAIL',
-    name: 'Welcome to JustGST SaaS',
+    name: 'Welcome to Kannaku SaaS',
     subject: 'Welcome to {{saas_name}} — Set up your GST Billing in 2 minutes',
     description: 'Sent immediately when a new business registers their account',
     variables: ['business_name', 'owner_name', 'saas_name', 'login_url', 'support_email'],
@@ -267,9 +267,9 @@ export const SUBSYSTEMS_HEALTH: SubsystemStatus[] = [
 
 export const DEFAULT_PLATFORM_SETTINGS: PlatformSettings = {
   general: {
-    saasName: 'JustGST Cloud Billing SaaS',
-    tagline: 'Simple GST Billing for Indian Businesses',
-    supportEmail: 'support@justgst.in',
+    saasName: 'Kannaku Cloud Billing SaaS',
+    tagline: 'Enterprise GST Invoicing, Customer Ledgers & Accounting Platform',
+    supportEmail: 'support@kannaku.in',
     supportPhone: '+91 88707 96169',
     defaultCurrency: 'INR (₹)',
     defaultCountry: 'India',
@@ -280,7 +280,7 @@ export const DEFAULT_PLATFORM_SETTINGS: PlatformSettings = {
     gstTaxPercentage: 18,
     trialDurationDays: 7,
     gracePeriodDays: 3,
-    invoicePrefix: 'JUSTGST-INV-2026-',
+    invoicePrefix: 'SAAS-INV-2026-',
     enableAutoDunning: true,
     retryFailedPaymentsCount: 3,
   },
@@ -289,8 +289,8 @@ export const DEFAULT_PLATFORM_SETTINGS: PlatformSettings = {
     smtpPort: 587,
     smtpUser: 'AKIAIOSFODNN7EXAMPLE',
     smtpSecure: true,
-    senderName: 'JustGST Billing Platform',
-    senderEmail: 'notifications@justgst.in',
+    senderName: 'Kannaku Billing Platform',
+    senderEmail: 'notifications@kannaku.in',
     enableEmailDelivery: true,
   },
   notifications: {
@@ -1071,7 +1071,7 @@ export class SaaSAdminDB {
             name: 'Impersonated Workspace',
             slug: 'impersonated-workspace',
             ownerName: 'Workspace Owner',
-            adminEmail: 'tenant@justgst.local',
+            adminEmail: 'tenant@kannaku.local',
             mobile: '+91 98427 55680',
             country: 'India',
             city: 'Chennai',
@@ -1259,7 +1259,7 @@ export class SaaSAdminDB {
   static exportEntirePlatformData(format: 'JSON' | 'CSV', entity?: string): string {
     if (format === 'JSON') {
       const backup = {
-        platform: 'JustGST SaaS Super Admin',
+        platform: 'Kannaku SaaS Super Admin',
         version: '8.0.0-enterprise',
         exportedAt: new Date().toISOString(),
         organizations: this.getOrganizations(),

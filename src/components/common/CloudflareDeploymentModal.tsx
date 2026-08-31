@@ -144,7 +144,7 @@ wrangler pages deploy dist --project-name=kannaku-gst-billing`;
                     <Globe className="w-4 h-4" />
                     <span>Cloudflare Pages</span>
                   </div>
-                  <div className="text-white font-mono font-bold text-sm">justgst.pages.dev</div>
+                  <div className="text-white font-mono font-bold text-sm">kannaku.pages.dev</div>
                   <div className="text-[11px] text-slate-400">Zero-latency Global Static & SSR</div>
                 </div>
 
@@ -162,7 +162,7 @@ wrangler pages deploy dist --project-name=kannaku-gst-billing`;
               <div className="p-4 bg-slate-950 border border-slate-800 rounded-2xl space-y-2">
                 <h4 className="font-bold text-slate-200 flex items-center gap-2">
                   <Cpu className="w-4 h-4 text-orange-400" />
-                  <span>How Cloudflare Hosting & D1 Works for JustGST:</span>
+                  <span>How Cloudflare Hosting & D1 Works for Kannaku:</span>
                 </h4>
                 <ul className="space-y-1.5 text-slate-300 list-disc list-inside">
                   <li>

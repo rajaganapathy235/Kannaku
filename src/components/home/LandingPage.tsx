@@ -23,8 +23,6 @@ import {
   Lock,
 } from 'lucide-react';
 import { AuthSession } from '../../types/auth';
-import { BrandLogo } from '../common/BrandLogo';
-import { BRAND } from '../../config/brand';
 
 interface LandingPageProps {
   onStartTrial: () => void;
@@ -53,8 +51,21 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       <header className="sticky top-0 z-40 w-full bg-white/95 backdrop-blur-md border-b border-slate-200">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           {/* Logo & Identity */}
-          <div className="flex items-center">
-            <BrandLogo size="md" showTagline={true} />
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center text-white font-black text-lg shadow-xs">
+              K
+            </div>
+            <div>
+              <div className="text-base font-black tracking-tight text-slate-900 flex items-center gap-2">
+                <span>KANNAKU</span>
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 font-bold border border-blue-200">
+                  GST Billing
+                </span>
+              </div>
+              <p className="text-[10px] text-slate-500 font-medium hidden sm:block">
+                Simple & Compliant Invoicing
+              </p>
+            </div>
           </div>
 
           {/* Navigation Links (Desktop) */}
@@ -168,7 +179,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   <div className="w-2.5 h-2.5 rounded-full bg-slate-300"></div>
                   <div className="w-2.5 h-2.5 rounded-full bg-slate-300"></div>
                   <span className="text-[11px] font-mono text-slate-400 pl-2">
-                    app.justgst.in/workspace
+                    app.kannaku.in/workspace
                   </span>
                 </div>
                 <span className="text-xs font-bold text-slate-700">
@@ -252,7 +263,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             Built-In Capabilities
           </span>
           <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-            Everything Inside Your JustGST Workspace
+            Everything Inside Your Kannaku Workspace
           </h2>
           <p className="text-xs sm:text-sm text-slate-600">
             A cohesive suite of tools designed strictly for real-world day-to-day trade operations.
@@ -420,7 +431,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             Clear, Transparent Pricing
           </span>
           <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-            JustGST All-in-One Pro Subscription
+            Kannaku All-in-One Pro Subscription
           </h2>
           <p className="text-xs sm:text-sm text-slate-600">
             No hidden tiers or locked features. All plans include 100% of GST invoicing, WhatsApp sharing, stock tracking, and print layouts.
@@ -576,8 +587,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           <div className="space-y-3">
             {[
               {
-                q: 'How does JustGST handle GST calculation for different states?',
-                a: 'JustGST automatically compares your company state code with your client state code. If they are in the same state, it calculates CGST + SGST. If in different states, it automatically routes to IGST.',
+                q: 'How does Kannaku handle GST calculation for different states?',
+                a: 'Kannaku automatically compares your company state code with your client state code. If they are in the same state, it calculates CGST + SGST. If in different states, it automatically routes to IGST.',
               },
               {
                 q: 'How does the Dynamic UPI QR Code work on printed bills?',
@@ -585,7 +596,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               },
               {
                 q: 'Can I print invoices on thermal printers?',
-                a: 'Yes. In addition to standard A4 Color and Classic Corporate formats, JustGST includes a dedicated 80mm Thermal POS slip format for instant counter receipt printing.',
+                a: 'Yes. In addition to standard A4 Color and Classic Corporate formats, Kannaku includes a dedicated 80mm Thermal POS slip format for instant counter receipt printing.',
               },
               {
                 q: 'What happens after the 14-day free trial?',
@@ -622,8 +633,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       <footer className="border-t border-slate-200 bg-slate-50 py-10 text-xs text-slate-500">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="flex items-center">
-              <BrandLogo size="sm" showTagline={false} />
+            <div className="flex items-center gap-3">
+              <div className="w-7 h-7 rounded-lg bg-blue-600 flex items-center justify-center text-white font-bold text-xs">
+                K
+              </div>
+              <span className="font-bold text-slate-900 text-sm">KANNAKU GST BILLING</span>
             </div>
 
             <div className="flex items-center gap-5 text-slate-600 text-xs font-semibold">
@@ -649,7 +663,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           </div>
 
           <div className="border-t border-slate-200 pt-4 flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-slate-400">
-            <p>{BRAND.footerCopyright}</p>
+            <p>© {new Date().getFullYear()} Kannaku. Made in India for Indian Businesses.</p>
             <p>100% CBIC GST Compliant • Thermal & A4 Printing • Dynamic UPI QR</p>
           </div>
         </div>

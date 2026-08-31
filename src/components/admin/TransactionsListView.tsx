@@ -54,7 +54,7 @@ export const TransactionsListView: React.FC = () => {
 
   const handleDownloadReceipt = (txn: SaaSTransaction) => {
     const content = `=====================================================
-JUSTGST SAAS PLATFORM — PAYMENT RECEIPT
+KANNAKU SAAS PLATFORM — PAYMENT RECEIPT
 =====================================================
 Transaction ID: ${txn.id}
 Invoice Reference: ${txn.invoiceNumber || 'N/A'}
@@ -110,7 +110,7 @@ Status: Official Computer Generated Tax Receipt
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `justgst_transactions_${new Date().toISOString().split('T')[0]}.csv`;
+            a.download = `kannaku_transactions_${new Date().toISOString().split('T')[0]}.csv`;
             a.click();
           }}
           className="px-3 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 rounded-xl text-xs font-semibold flex items-center gap-1.5 cursor-pointer"
