@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { CompanyProfile, HsnSummaryItem, Invoice, InvoiceType } from '../../types';
 import { formatNumberIndian } from '../../utils/numberToWords';
+import { calculateItemTaxAndTotals } from '../../utils/taxEngine';
 
 interface ReportsViewProps {
   invoices: Invoice[];
@@ -20,43 +21,60 @@ interface ReportsViewProps {
 }
 
 export const ReportsView: React.FC<ReportsViewProps> = ({
-  invoices,
+  invoices = [],
   company,
 }) => {
   const [reportTab, setReportTab] = useState<'gstr1' | 'sales' | 'purchases'>(
     'gstr1'
   );
 
+  const safeInvoices = Array.isArray(invoices) ? invoices : [];
+
   // Sales Invoices
-  const salesInvoices = invoices.filter(
-    (i) => i.invoiceType === InvoiceType.SALES
+  const salesInvoices = safeInvoices.filter(
+    (i) => i.invoiceType === InvoiceType.SALES || (i as any).type === 'sales'
   );
-  const purchaseInvoices = invoices.filter(
-    (i) => i.invoiceType === InvoiceType.PURCHASE
+  const purchaseInvoices = safeInvoices.filter(
+    (i) => i.invoiceType === InvoiceType.PURCHASE || (i as any).type === 'purchase'
   );
 
-  // Aggregated HSN Summary for GSTR-1
+  // Aggregated HSN Summary for GSTR-1 (Derived on read dynamically)
   const hsnMap: { [key: string]: HsnSummaryItem } = {};
 
   salesInvoices.forEach((inv) => {
-    inv.hsnSummary.forEach((h) => {
-      const key = `${h.hsnCode}_${h.taxPercentage}`;
+    // Derive hsnSummary if not present on invoice (e.g. loaded from DB)
+    const hsnList: HsnSummaryItem[] =
+      Array.isArray(inv.hsnSummary) && inv.hsnSummary.length > 0
+        ? inv.hsnSummary
+        : calculateItemTaxAndTotals(
+            inv.items || [],
+            inv.extraItems || [],
+            inv.modifiers || [],
+            (inv.invoiceTaxType as any) || 'CGST_SGST',
+            inv.calc?.tcsPercentage || 0,
+            inv.calc?.paidAmount || 0
+          ).hsnSummary || [];
+
+    (hsnList || []).forEach((h) => {
+      const hsnCode = h.hsnCode || 'N/A';
+      const taxPercentage = Number(h.taxPercentage || 0);
+      const key = `${hsnCode}_${taxPercentage}`;
       if (!hsnMap[key]) {
         hsnMap[key] = {
-          hsnCode: h.hsnCode,
+          hsnCode,
           taxableAmount: 0,
           cgstAmount: 0,
           sgstAmount: 0,
           igstAmount: 0,
-          taxPercentage: h.taxPercentage,
+          taxPercentage,
           totalTaxAmount: 0,
         };
       }
-      hsnMap[key].taxableAmount += h.taxableAmount;
-      hsnMap[key].cgstAmount += h.cgstAmount;
-      hsnMap[key].sgstAmount += h.sgstAmount;
-      hsnMap[key].igstAmount += h.igstAmount;
-      hsnMap[key].totalTaxAmount += h.totalTaxAmount;
+      hsnMap[key].taxableAmount += Number(h.taxableAmount || 0);
+      hsnMap[key].cgstAmount += Number(h.cgstAmount || 0);
+      hsnMap[key].sgstAmount += Number(h.sgstAmount || 0);
+      hsnMap[key].igstAmount += Number(h.igstAmount || 0);
+      hsnMap[key].totalTaxAmount += Number(h.totalTaxAmount || 0);
     });
   });
 
@@ -326,24 +344,24 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
               <tbody className="divide-y divide-[#DADCE0] font-mono">
                 {salesInvoices.map((inv) => (
                   <tr key={inv.id} className="hover:bg-[#F8F9FA] transition-colors">
-                    <td className="py-3 px-4 text-[#5F6368]">{inv.date}</td>
+                    <td className="py-3 px-4 text-[#5F6368]">{inv.invoiceDate || inv.date || ''}</td>
                     <td className="py-3 px-4 font-semibold text-[#1A73E8]">
                       {inv.invoiceNumber}
                     </td>
                     <td className="py-3 px-4 font-sans font-medium text-[#202124]">
-                      {inv.clientSnapshot?.name}
+                      {inv.clientSnapshot?.name || 'Customer'}
                     </td>
                     <td className="py-3 px-4 text-[#5F6368]">
                       {inv.clientSnapshot?.registerNumber || 'URP'}
                     </td>
                     <td className="py-3 px-4 text-right">
-                      ₹{formatNumberIndian(inv.calc.subTotal)}
+                      ₹{formatNumberIndian(inv.calc?.subTotal || 0)}
                     </td>
                     <td className="py-3 px-4 text-right text-[#5F6368]">
-                      ₹{formatNumberIndian(inv.calc.taxAmount)}
+                      ₹{formatNumberIndian(inv.calc?.taxAmount || 0)}
                     </td>
                     <td className="py-3 px-4 text-right font-bold text-[#202124]">
-                      ₹{formatNumberIndian(inv.calc.billFigure)}
+                      ₹{formatNumberIndian(inv.calc?.billFigure || 0)}
                     </td>
                   </tr>
                 ))}
@@ -376,24 +394,24 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
               <tbody className="divide-y divide-[#DADCE0] font-mono">
                 {purchaseInvoices.map((inv) => (
                   <tr key={inv.id} className="hover:bg-[#F8F9FA] transition-colors">
-                    <td className="py-3 px-4 text-[#5F6368]">{inv.date}</td>
+                    <td className="py-3 px-4 text-[#5F6368]">{inv.invoiceDate || inv.date || ''}</td>
                     <td className="py-3 px-4 font-semibold text-[#1A73E8]">
                       {inv.invoiceNumber}
                     </td>
                     <td className="py-3 px-4 font-sans font-medium text-[#202124]">
-                      {inv.clientSnapshot?.name}
+                      {inv.clientSnapshot?.name || 'Supplier'}
                     </td>
                     <td className="py-3 px-4 text-[#5F6368]">
                       {inv.clientSnapshot?.registerNumber || 'URP'}
                     </td>
                     <td className="py-3 px-4 text-right">
-                      ₹{formatNumberIndian(inv.calc.subTotal)}
+                      ₹{formatNumberIndian(inv.calc?.subTotal || 0)}
                     </td>
                     <td className="py-3 px-4 text-right text-[#5F6368]">
-                      ₹{formatNumberIndian(inv.calc.taxAmount)}
+                      ₹{formatNumberIndian(inv.calc?.taxAmount || 0)}
                     </td>
                     <td className="py-3 px-4 text-right font-bold text-[#202124]">
-                      ₹{formatNumberIndian(inv.calc.billFigure)}
+                      ₹{formatNumberIndian(inv.calc?.billFigure || 0)}
                     </td>
                   </tr>
                 ))}

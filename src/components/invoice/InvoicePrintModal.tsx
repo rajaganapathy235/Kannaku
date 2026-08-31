@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import {
   CompanyProfile,
+  HsnSummaryItem,
   Invoice,
   InvoiceCopyType,
   InvoiceItem,
@@ -21,6 +22,7 @@ import {
 } from '../../types';
 import { amountToIndianWords, formatIndianCurrency, formatNumberIndian } from '../../utils/numberToWords';
 import { downloadInvoiceAsPdf, printDocumentElement } from '../../utils/pdfExport';
+import { calculateItemTaxAndTotals } from '../../utils/taxEngine';
 
 interface InvoicePrintModalProps {
   invoice: Invoice;
@@ -154,11 +156,24 @@ Thank you for your business!`;
     setZoomScale(Number(fitRatio.toFixed(2)));
   };
 
+  const rawItems = Array.isArray(invoice.items) ? invoice.items : [];
   const isInterState = invoice.invoiceTaxType === 'IGST';
-  const totalQuantity = invoice.items.reduce(
-    (sum, item) => sum + (Number(item.qty) || 0),
+  const totalQuantity = rawItems.reduce(
+    (sum, item) => sum + (Number(item?.qty) || 0),
     0
   );
+
+  const hsnSummaryList: HsnSummaryItem[] =
+    Array.isArray(invoice.hsnSummary) && invoice.hsnSummary.length > 0
+      ? invoice.hsnSummary
+      : calculateItemTaxAndTotals(
+          rawItems,
+          invoice.extraItems || [],
+          invoice.modifiers || [],
+          (invoice.invoiceTaxType as any) || 'CGST_SGST',
+          invoice.calc?.tcsPercentage || 0,
+          invoice.calc?.paidAmount || 0
+        ).hsnSummary || [];
 
   const formatVal = (val?: string | number | null) => {
     if (val === undefined || val === null || val === '') return '';
@@ -235,7 +250,7 @@ Thank you for your business!`;
     return pages;
   };
 
-  const itemPages = paginateItems(invoice.items);
+  const itemPages = paginateItems(rawItems);
   const totalPages = itemPages.length;
 
   return (
@@ -983,7 +998,7 @@ Thank you for your business!`;
                                       </tr>
                                     </thead>
                                     <tbody>
-                                      {invoice.hsnSummary.map((hsn, hIdx) => {
+                                      {hsnSummaryList.map((hsn, hIdx) => {
                                         const taxableVal = isNaN(hsn.taxableAmount)
                                           ? 0
                                           : hsn.taxableAmount;

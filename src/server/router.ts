@@ -602,6 +602,18 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
         return errorResponse('Client name and mobile are required', 400);
       }
 
+      // Pre-check: if ID is provided, verify it does not belong to another tenant
+      if (body.id) {
+        const existingClient = await queryFirst<{ organization_id: string }>(
+          db,
+          'SELECT organization_id FROM clients WHERE id = ?',
+          body.id
+        );
+        if (existingClient && existingClient.organization_id !== effectiveOrgId) {
+          return errorResponse('You do not have permission to modify this client', 403);
+        }
+      }
+
       const id = body.id || `client_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
       const balance = Number(body.balance || 0);
 
@@ -623,7 +635,8 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
           state_code = excluded.state_code,
           current_balance = excluded.current_balance,
           client_type = excluded.client_type,
-          updated_at = CURRENT_TIMESTAMP`,
+          updated_at = CURRENT_TIMESTAMP
+        WHERE clients.organization_id = excluded.organization_id`,
         id,
         effectiveOrgId,
         body.name,
@@ -649,6 +662,15 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
 
   if (path.startsWith('/api/clients/') && method === 'PUT') {
     const clientId = path.split('/')[3];
+    const existingClient = await queryFirst<{ organization_id: string }>(
+      db,
+      'SELECT organization_id FROM clients WHERE id = ?',
+      clientId
+    );
+    if (existingClient && existingClient.organization_id !== effectiveOrgId) {
+      return errorResponse('You do not have permission to modify this client', 403);
+    }
+
     const body = (await request.json()) as any;
 
     await execute(
@@ -687,6 +709,15 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
 
   if (path.startsWith('/api/clients/') && method === 'DELETE') {
     const clientId = path.split('/')[3];
+    const existingClient = await queryFirst<{ organization_id: string }>(
+      db,
+      'SELECT organization_id FROM clients WHERE id = ?',
+      clientId
+    );
+    if (existingClient && existingClient.organization_id !== effectiveOrgId) {
+      return errorResponse('You do not have permission to delete this client', 403);
+    }
+
     await execute(
       db,
       'UPDATE clients SET is_active = 0 WHERE id = ? AND organization_id = ?',
@@ -736,6 +767,18 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
         return errorResponse('Product name, HSN code, and selling price are required', 400);
       }
 
+      // Pre-check: if ID is provided, verify it does not belong to another tenant
+      if (body.id) {
+        const existingProd = await queryFirst<{ organization_id: string }>(
+          db,
+          'SELECT organization_id FROM products WHERE id = ?',
+          body.id
+        );
+        if (existingProd && existingProd.organization_id !== effectiveOrgId) {
+          return errorResponse('You do not have permission to modify this product', 403);
+        }
+      }
+
       const id = body.id || `prod_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
 
       await execute(
@@ -759,7 +802,8 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
           subline3 = excluded.subline3,
           barcode = excluded.barcode,
           category = excluded.category,
-          updated_at = CURRENT_TIMESTAMP`,
+          updated_at = CURRENT_TIMESTAMP
+        WHERE products.organization_id = excluded.organization_id`,
         id,
         effectiveOrgId,
         body.name,
@@ -787,6 +831,15 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
 
   if (path.startsWith('/api/products/') && method === 'PUT') {
     const productId = path.split('/')[3];
+    const existingProd = await queryFirst<{ organization_id: string }>(
+      db,
+      'SELECT organization_id FROM products WHERE id = ?',
+      productId
+    );
+    if (existingProd && existingProd.organization_id !== effectiveOrgId) {
+      return errorResponse('You do not have permission to modify this product', 403);
+    }
+
     const body = (await request.json()) as any;
 
     await execute(
@@ -833,6 +886,15 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
 
   if (path.startsWith('/api/products/') && method === 'DELETE') {
     const productId = path.split('/')[3];
+    const existingProd = await queryFirst<{ organization_id: string }>(
+      db,
+      'SELECT organization_id FROM products WHERE id = ?',
+      productId
+    );
+    if (existingProd && existingProd.organization_id !== effectiveOrgId) {
+      return errorResponse('You do not have permission to delete this product', 403);
+    }
+
     await execute(
       db,
       'UPDATE products SET is_active = 0 WHERE id = ? AND organization_id = ?',
@@ -843,7 +905,7 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
   }
 
   // -------------------------------------------------------------
-  // 7. INVOICES & QUOTATIONS CRUD (WITH TCS & ITEMS)
+  // 7. INVOICES & QUOTATIONS CRUD (WITH TCS & ITEMS_JSON OPTIMIZATION)
   // -------------------------------------------------------------
   if (path === '/api/invoices' && method === 'GET') {
     const invoiceRows = await queryAll<any>(
@@ -854,11 +916,52 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
 
     const invoices = await Promise.all(
       invoiceRows.map(async (inv) => {
-        const itemRows = await queryAll<any>(
-          db,
-          'SELECT * FROM invoice_items WHERE invoice_id = ?',
-          inv.id
-        );
+        let items: any[] = [];
+        if (inv.items_json) {
+          try {
+            items = JSON.parse(inv.items_json);
+          } catch {
+            items = [];
+          }
+        } else {
+          // Backward-compatible fallback for older rows without items_json
+          const itemRows = await queryAll<any>(
+            db,
+            'SELECT * FROM invoice_items WHERE invoice_id = ?',
+            inv.id
+          );
+          items = itemRows.map((it) => ({
+            id: it.id,
+            itemId: it.product_id || '',
+            name: it.name,
+            hsnCode: it.hsn_code,
+            qty: it.qty,
+            unit: it.unit,
+            baseRate: it.rate,
+            mrp: it.mrp,
+            inclusiveOrExclusive: it.inclusive_or_exclusive || 'exclusive',
+            isDiscountApplied: it.discount_percentage > 0 || it.discount_amount > 0,
+            flatOrPercentage: 'percentage',
+            discountRate: it.discount_percentage,
+            discountAmount: it.discount_amount,
+            taxPercentage: it.tax_percentage,
+            taxAmount: it.tax_amount,
+            taxDetail: {
+              hsnCode: it.hsn_code,
+              taxable_amount: it.line_total - it.tax_amount,
+              tax_amount: it.tax_amount,
+              data: [
+                { name: 'cgst', per: it.cgst_rate || 0, value: it.cgst_amount || 0 },
+                { name: 'sgst', per: it.sgst_rate || 0, value: it.sgst_amount || 0 },
+                { name: 'igst', per: it.igst_rate || 0, value: it.igst_amount || 0 },
+              ],
+            },
+            subline1: it.subline1 || '',
+            subline2: it.subline2 || '',
+            subline3: it.subline3 || '',
+            lineTotal: it.line_total,
+          }));
+        }
 
         let extraItems: any[] = [];
         let consignee: any = null;
@@ -872,44 +975,13 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
           // ignore parsing error
         }
 
-        const items = itemRows.map((it) => ({
-          id: it.id,
-          itemId: it.product_id || '',
-          name: it.name,
-          hsnCode: it.hsn_code,
-          qty: it.qty,
-          unit: it.unit,
-          baseRate: it.rate,
-          mrp: it.mrp,
-          inclusiveOrExclusive: it.inclusive_or_exclusive || 'exclusive',
-          isDiscountApplied: it.discount_percentage > 0 || it.discount_amount > 0,
-          flatOrPercentage: 'percentage',
-          discountRate: it.discount_percentage,
-          discountAmount: it.discount_amount,
-          taxPercentage: it.tax_percentage,
-          taxAmount: it.tax_amount,
-          taxDetail: {
-            hsnCode: it.hsn_code,
-            taxable_amount: it.line_total - it.tax_amount,
-            tax_amount: it.tax_amount,
-            data: [
-              { name: 'cgst', per: it.cgst_rate || 0, value: it.cgst_amount || 0 },
-              { name: 'sgst', per: it.sgst_rate || 0, value: it.sgst_amount || 0 },
-              { name: 'igst', per: it.igst_rate || 0, value: it.igst_amount || 0 },
-            ],
-          },
-          subline1: it.subline1 || '',
-          subline2: it.subline2 || '',
-          subline3: it.subline3 || '',
-          lineTotal: it.line_total,
-        }));
-
         return {
           id: inv.id,
           invoiceNumber: inv.invoice_number,
           invoiceType: inv.invoice_type,
           invoiceTaxType: inv.igst_amount > 0 ? 'IGST' : 'CGST_SGST',
           invoiceDate: inv.invoice_date,
+          date: inv.invoice_date,
           dueDate: inv.due_date,
           poNumber: inv.po_number || '',
           clientSnapshot: {
@@ -970,10 +1042,22 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
         return errorResponse('Invoice number, client name, and at least one item are required', 400);
       }
 
+      // Pre-check: if ID is provided, verify it does not belong to another tenant
+      if (inv.id) {
+        const existingInv = await queryFirst<{ organization_id: string }>(
+          db,
+          'SELECT organization_id FROM invoices WHERE id = ?',
+          inv.id
+        );
+        if (existingInv && existingInv.organization_id !== effectiveOrgId) {
+          return errorResponse('You do not have permission to modify this invoice', 403);
+        }
+      }
+
       const id = inv.id || `inv_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
       const calc = inv.calc || {};
 
-      // 1. Insert or update Invoice Header
+      // 1. Single-write Insert or update Invoice with items_json optimization (1 D1 row)
       await execute(
         db,
         `INSERT INTO invoices (
@@ -981,8 +1065,8 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
           client_id, client_name, client_gstin, client_address, client_city, client_state, client_mobile,
           sub_total, discount_total, cgst_amount, sgst_amount, igst_amount, total_tax,
           tcs_percentage, tcs_amount, round_off, grand_total, paid_amount, balance_amount,
-          payment_status, print_template, notes, terms, extra_items_json, consignee_json, calc_json, created_by
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          payment_status, print_template, notes, terms, items_json, extra_items_json, consignee_json, calc_json, created_by
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(id) DO UPDATE SET
           invoice_number = excluded.invoice_number,
           invoice_type = excluded.invoice_type,
@@ -1011,9 +1095,11 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
           print_template = excluded.print_template,
           notes = excluded.notes,
           terms = excluded.terms,
+          items_json = excluded.items_json,
           extra_items_json = excluded.extra_items_json,
           consignee_json = excluded.consignee_json,
-          calc_json = excluded.calc_json`,
+          calc_json = excluded.calc_json
+        WHERE invoices.organization_id = excluded.organization_id`,
         id,
         effectiveOrgId,
         inv.invoiceNumber,
@@ -1044,56 +1130,14 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
         inv.printTemplate || 'modern',
         inv.notes || '',
         inv.terms || '',
+        JSON.stringify(inv.items || []),
         JSON.stringify(inv.extraItems || []),
         JSON.stringify(inv.consignee || {}),
         JSON.stringify(calc),
         session.name
       );
 
-      // 2. Clear old items and insert fresh line items
-      await execute(db, 'DELETE FROM invoice_items WHERE invoice_id = ?', id);
-
-      for (const item of inv.items) {
-        const itemId = item.id || `item_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
-        const cgstObj = item.taxDetail?.data?.find((d: any) => d.name === 'cgst');
-        const sgstObj = item.taxDetail?.data?.find((d: any) => d.name === 'sgst');
-        const igstObj = item.taxDetail?.data?.find((d: any) => d.name === 'igst');
-
-        await execute(
-          db,
-          `INSERT INTO invoice_items (
-            id, invoice_id, product_id, name, hsn_code, qty, unit, rate, mrp, inclusive_or_exclusive,
-            discount_percentage, discount_amount, tax_percentage, tax_amount, cgst_rate, cgst_amount,
-            sgst_rate, sgst_amount, igst_rate, igst_amount, line_total, subline1, subline2, subline3
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-          itemId,
-          id,
-          item.itemId || null,
-          item.name,
-          item.hsnCode || '9983',
-          Number(item.qty || 1),
-          item.unit || 'PCS',
-          Number(item.baseRate || 0),
-          Number(item.mrp || item.baseRate || 0),
-          item.inclusiveOrExclusive || 'exclusive',
-          Number(item.discountRate || 0),
-          Number(item.discountAmount || 0),
-          Number(item.taxPercentage || 18),
-          Number(item.taxAmount || 0),
-          Number(cgstObj?.per || 0),
-          Number(cgstObj?.value || 0),
-          Number(sgstObj?.per || 0),
-          Number(sgstObj?.value || 0),
-          Number(igstObj?.per || 0),
-          Number(igstObj?.value || 0),
-          Number(item.lineTotal || 0),
-          item.subline1 || '',
-          item.subline2 || '',
-          item.subline3 || ''
-        );
-      }
-
-      // 3. Create automatic Payment Ledger Entry if paid amount > 0
+      // 2. Create automatic Payment Ledger Entry if paid amount > 0 (1 D1 row)
       if (Number(calc.paidAmount) > 0) {
         const payId = `pay_${id}`;
         await execute(
@@ -1101,7 +1145,8 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
           `INSERT INTO payment_ledgers (
             id, organization_id, client_id, invoice_id, entry_date, payment_type, mode, amount, reference_number, notes
           ) VALUES (?, ?, ?, ?, ?, 'RECEIPT', 'CASH', ?, ?, 'Initial payment on invoice creation')
-          ON CONFLICT(id) DO UPDATE SET amount = excluded.amount`,
+          ON CONFLICT(id) DO UPDATE SET amount = excluded.amount
+          WHERE payment_ledgers.organization_id = excluded.organization_id`,
           payId,
           effectiveOrgId,
           inv.clientSnapshot?.id || null,
@@ -1121,8 +1166,17 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
 
   if (path.startsWith('/api/invoices/') && method === 'DELETE') {
     const invoiceId = path.split('/')[3];
+    const existingInv = await queryFirst<{ organization_id: string }>(
+      db,
+      'SELECT organization_id FROM invoices WHERE id = ?',
+      invoiceId
+    );
+    if (existingInv && existingInv.organization_id !== effectiveOrgId) {
+      return errorResponse('You do not have permission to delete this invoice', 403);
+    }
+
+    await execute(db, 'DELETE FROM invoice_items WHERE invoice_id = ? AND invoice_id IN (SELECT id FROM invoices WHERE organization_id = ?)', invoiceId, effectiveOrgId);
     await execute(db, 'DELETE FROM invoices WHERE id = ? AND organization_id = ?', invoiceId, effectiveOrgId);
-    await execute(db, 'DELETE FROM invoice_items WHERE invoice_id = ?', invoiceId);
     await execute(db, 'DELETE FROM payment_ledgers WHERE invoice_id = ? AND organization_id = ?', invoiceId, effectiveOrgId);
     return jsonResponse({ success: true, message: 'Invoice deleted successfully' });
   }
@@ -1161,13 +1215,59 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
         return errorResponse('Payment amount is required', 400);
       }
 
+      // Pre-check payment ID ownership
+      if (body.id) {
+        const existingPayment = await queryFirst<{ organization_id: string }>(
+          db,
+          'SELECT organization_id FROM payment_ledgers WHERE id = ?',
+          body.id
+        );
+        if (existingPayment && existingPayment.organization_id !== effectiveOrgId) {
+          return errorResponse('You do not have permission to modify this payment', 403);
+        }
+      }
+
+      // Verify invoiceId belongs to effectiveOrgId if provided
+      if (body.invoiceId) {
+        const targetInv = await queryFirst<{ organization_id: string }>(
+          db,
+          'SELECT organization_id FROM invoices WHERE id = ?',
+          body.invoiceId
+        );
+        if (targetInv && targetInv.organization_id !== effectiveOrgId) {
+          return errorResponse('You do not have permission to link payments to this invoice', 403);
+        }
+      }
+
+      // Verify partyId belongs to effectiveOrgId if provided
+      if (body.partyId) {
+        const targetParty = await queryFirst<{ organization_id: string }>(
+          db,
+          'SELECT organization_id FROM clients WHERE id = ?',
+          body.partyId
+        );
+        if (targetParty && targetParty.organization_id !== effectiveOrgId) {
+          return errorResponse('You do not have permission to link payments to this client', 403);
+        }
+      }
+
       const id = body.id || `pay_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
 
       await execute(
         db,
         `INSERT INTO payment_ledgers (
           id, organization_id, client_id, invoice_id, entry_date, payment_type, mode, amount, reference_number, notes
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(id) DO UPDATE SET
+          client_id = excluded.client_id,
+          invoice_id = excluded.invoice_id,
+          entry_date = excluded.entry_date,
+          payment_type = excluded.payment_type,
+          mode = excluded.mode,
+          amount = excluded.amount,
+          reference_number = excluded.reference_number,
+          notes = excluded.notes
+        WHERE payment_ledgers.organization_id = excluded.organization_id`,
         id,
         effectiveOrgId,
         body.partyId || null,
@@ -1187,7 +1287,7 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
           const newPaid = (inv.paid_amount || 0) + Number(body.amount);
           const newBalance = Math.max(0, inv.grand_total - newPaid);
           const status = newBalance <= 0.01 ? 'PAID' : 'PARTIAL';
-          await execute(db, 'UPDATE invoices SET paid_amount = ?, balance_amount = ?, payment_status = ? WHERE id = ?', newPaid, newBalance, status, inv.id);
+          await execute(db, 'UPDATE invoices SET paid_amount = ?, balance_amount = ?, payment_status = ? WHERE id = ? AND organization_id = ?', newPaid, newBalance, status, inv.id, effectiveOrgId);
         }
       }
 
@@ -1199,6 +1299,15 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
 
   if (path.startsWith('/api/payments/') && method === 'DELETE') {
     const paymentId = path.split('/')[3];
+    const existingPayment = await queryFirst<{ organization_id: string }>(
+      db,
+      'SELECT organization_id FROM payment_ledgers WHERE id = ?',
+      paymentId
+    );
+    if (existingPayment && existingPayment.organization_id !== effectiveOrgId) {
+      return errorResponse('You do not have permission to delete this payment', 403);
+    }
+
     await execute(db, 'DELETE FROM payment_ledgers WHERE id = ? AND organization_id = ?', paymentId, effectiveOrgId);
     return jsonResponse({ success: true, message: 'Payment deleted successfully' });
   }
@@ -1248,14 +1357,42 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
       // Migrate Clients
       if (Array.isArray(clients)) {
         for (const c of clients) {
-          if (!c.id || !c.name) continue;
+          if (!c.name) continue;
+          let clientId = c.id;
+          if (clientId) {
+            const existingClient = await queryFirst<{ organization_id: string }>(
+              db,
+              'SELECT organization_id FROM clients WHERE id = ?',
+              clientId
+            );
+            if (existingClient && existingClient.organization_id !== effectiveOrgId) {
+              clientId = `client_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+            }
+          } else {
+            clientId = `client_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+          }
+
           await execute(
             db,
             `INSERT INTO clients (
               id, organization_id, name, company_name, email, mobile, register_number, address, city, state, pin, state_code, opening_balance, current_balance, client_type, is_active
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
-            ON CONFLICT(id) DO NOTHING`,
-            c.id,
+            ON CONFLICT(id) DO UPDATE SET
+              name = excluded.name,
+              company_name = excluded.company_name,
+              email = excluded.email,
+              mobile = excluded.mobile,
+              register_number = excluded.register_number,
+              address = excluded.address,
+              city = excluded.city,
+              state = excluded.state,
+              pin = excluded.pin,
+              state_code = excluded.state_code,
+              current_balance = excluded.current_balance,
+              client_type = excluded.client_type,
+              updated_at = CURRENT_TIMESTAMP
+            WHERE clients.organization_id = excluded.organization_id`,
+            clientId,
             effectiveOrgId,
             c.name,
             c.companyName || c.name,
@@ -1278,14 +1415,45 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
       // Migrate Products
       if (Array.isArray(products)) {
         for (const p of products) {
-          if (!p.id || !p.name) continue;
+          if (!p.name) continue;
+          let prodId = p.id;
+          if (prodId) {
+            const existingProd = await queryFirst<{ organization_id: string }>(
+              db,
+              'SELECT organization_id FROM products WHERE id = ?',
+              prodId
+            );
+            if (existingProd && existingProd.organization_id !== effectiveOrgId) {
+              prodId = `prod_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+            }
+          } else {
+            prodId = `prod_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+          }
+
           await execute(
             db,
             `INSERT INTO products (
               id, organization_id, name, item_code, hsn_code, unit, purchase_rate, sales_rate, mrp, tax_percentage, current_stock, min_stock_alert, subline1, subline2, subline3, barcode, category, is_active
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
-            ON CONFLICT(id) DO NOTHING`,
-            p.id,
+            ON CONFLICT(id) DO UPDATE SET
+              name = excluded.name,
+              item_code = excluded.item_code,
+              hsn_code = excluded.hsn_code,
+              unit = excluded.unit,
+              purchase_rate = excluded.purchase_rate,
+              sales_rate = excluded.sales_rate,
+              mrp = excluded.mrp,
+              tax_percentage = excluded.tax_percentage,
+              current_stock = excluded.current_stock,
+              min_stock_alert = excluded.min_stock_alert,
+              subline1 = excluded.subline1,
+              subline2 = excluded.subline2,
+              subline3 = excluded.subline3,
+              barcode = excluded.barcode,
+              category = excluded.category,
+              updated_at = CURRENT_TIMESTAMP
+            WHERE products.organization_id = excluded.organization_id`,
+            prodId,
             effectiveOrgId,
             p.name,
             p.itemCode || null,
@@ -1310,8 +1478,21 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
       // Migrate Invoices
       if (Array.isArray(invoices)) {
         for (const inv of invoices) {
-          if (!inv.id || !inv.invoiceNumber) continue;
+          if (!inv.invoiceNumber) continue;
           const calc = inv.calc || {};
+          let invoiceId = inv.id;
+          if (invoiceId) {
+            const existingInv = await queryFirst<{ organization_id: string }>(
+              db,
+              'SELECT organization_id FROM invoices WHERE id = ?',
+              invoiceId
+            );
+            if (existingInv && existingInv.organization_id !== effectiveOrgId) {
+              invoiceId = `inv_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+            }
+          } else {
+            invoiceId = `inv_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+          }
 
           await execute(
             db,
@@ -1320,10 +1501,42 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
               client_id, client_name, client_gstin, client_address, client_city, client_state, client_mobile,
               sub_total, discount_total, cgst_amount, sgst_amount, igst_amount, total_tax,
               tcs_percentage, tcs_amount, round_off, grand_total, paid_amount, balance_amount,
-              payment_status, print_template, notes, terms, extra_items_json, consignee_json, calc_json, created_by
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ON CONFLICT(id) DO NOTHING`,
-            inv.id,
+              payment_status, print_template, notes, terms, items_json, extra_items_json, consignee_json, calc_json, created_by
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(id) DO UPDATE SET
+              invoice_number = excluded.invoice_number,
+              invoice_type = excluded.invoice_type,
+              invoice_date = excluded.invoice_date,
+              due_date = excluded.due_date,
+              po_number = excluded.po_number,
+              client_name = excluded.client_name,
+              client_gstin = excluded.client_gstin,
+              client_address = excluded.client_address,
+              client_city = excluded.client_city,
+              client_state = excluded.client_state,
+              client_mobile = excluded.client_mobile,
+              sub_total = excluded.sub_total,
+              discount_total = excluded.discount_total,
+              cgst_amount = excluded.cgst_amount,
+              sgst_amount = excluded.sgst_amount,
+              igst_amount = excluded.igst_amount,
+              total_tax = excluded.total_tax,
+              tcs_percentage = excluded.tcs_percentage,
+              tcs_amount = excluded.tcs_amount,
+              round_off = excluded.round_off,
+              grand_total = excluded.grand_total,
+              paid_amount = excluded.paid_amount,
+              balance_amount = excluded.balance_amount,
+              payment_status = excluded.payment_status,
+              print_template = excluded.print_template,
+              notes = excluded.notes,
+              terms = excluded.terms,
+              items_json = excluded.items_json,
+              extra_items_json = excluded.extra_items_json,
+              consignee_json = excluded.consignee_json,
+              calc_json = excluded.calc_json
+            WHERE invoices.organization_id = excluded.organization_id`,
+            invoiceId,
             effectiveOrgId,
             inv.invoiceNumber,
             inv.invoiceType || 1,
@@ -1353,42 +1566,13 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
             inv.printTemplate || 'modern',
             inv.notes || '',
             inv.terms || '',
+            JSON.stringify(inv.items || []),
             JSON.stringify(inv.extraItems || []),
             JSON.stringify(inv.consignee || {}),
             JSON.stringify(calc),
             session.name
           );
 
-          if (Array.isArray(inv.items)) {
-            for (const it of inv.items) {
-              await execute(
-                db,
-                `INSERT INTO invoice_items (
-                  id, invoice_id, product_id, name, hsn_code, qty, unit, rate, mrp, inclusive_or_exclusive,
-                  discount_percentage, discount_amount, tax_percentage, tax_amount, line_total, subline1, subline2, subline3
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ON CONFLICT(id) DO NOTHING`,
-                it.id || `item_${Math.random().toString(36).substring(2, 8)}`,
-                inv.id,
-                it.itemId || null,
-                it.name,
-                it.hsnCode || '9983',
-                Number(it.qty || 1),
-                it.unit || 'PCS',
-                Number(it.baseRate || 0),
-                Number(it.mrp || it.baseRate || 0),
-                it.inclusiveOrExclusive || 'exclusive',
-                Number(it.discountRate || 0),
-                Number(it.discountAmount || 0),
-                Number(it.taxPercentage || 18),
-                Number(it.taxAmount || 0),
-                Number(it.lineTotal || 0),
-                it.subline1 || '',
-                it.subline2 || '',
-                it.subline3 || ''
-              );
-            }
-          }
           insertedCount.invoices++;
         }
       }
@@ -1396,14 +1580,37 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
       // Migrate Payments
       if (Array.isArray(payments)) {
         for (const p of payments) {
-          if (!p.id || !p.amount) continue;
+          if (!p.amount) continue;
+          let paymentId = p.id;
+          if (paymentId) {
+            const existingPay = await queryFirst<{ organization_id: string }>(
+              db,
+              'SELECT organization_id FROM payment_ledgers WHERE id = ?',
+              paymentId
+            );
+            if (existingPay && existingPay.organization_id !== effectiveOrgId) {
+              paymentId = `pay_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+            }
+          } else {
+            paymentId = `pay_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+          }
+
           await execute(
             db,
             `INSERT INTO payment_ledgers (
               id, organization_id, client_id, invoice_id, entry_date, payment_type, mode, amount, reference_number, notes
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ON CONFLICT(id) DO NOTHING`,
-            p.id,
+            ON CONFLICT(id) DO UPDATE SET
+              client_id = excluded.client_id,
+              invoice_id = excluded.invoice_id,
+              entry_date = excluded.entry_date,
+              payment_type = excluded.payment_type,
+              mode = excluded.mode,
+              amount = excluded.amount,
+              reference_number = excluded.reference_number,
+              notes = excluded.notes
+            WHERE payment_ledgers.organization_id = excluded.organization_id`,
+            paymentId,
             effectiveOrgId,
             p.partyId || null,
             p.invoiceId || null,

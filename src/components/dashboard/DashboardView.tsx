@@ -58,17 +58,18 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const [transactionTimeframe, setTransactionTimeframe] = useState<'week' | 'all'>('week');
 
   // Financial Calculations
-  const salesInvoices = invoices.filter((i) => i.invoiceType === InvoiceType.SALES);
-  const totalSales = salesInvoices.reduce((acc, i) => acc + i.calc.billFigure, 0);
+  const safeInvoices = Array.isArray(invoices) ? invoices : [];
+  const salesInvoices = safeInvoices.filter((i) => i.invoiceType === InvoiceType.SALES);
+  const totalSales = salesInvoices.reduce((acc, i) => acc + (i.calc?.billFigure || 0), 0);
   const totalGstCollected = salesInvoices.reduce(
-    (acc, i) => acc + i.calc.taxAmount,
+    (acc, i) => acc + (i.calc?.taxAmount || 0),
     0
   );
   const totalReceived = payments
     .filter((p) => p.type === 'credit')
-    .reduce((acc, p) => acc + p.amount, 0);
+    .reduce((acc, p) => acc + (p.amount || 0), 0);
   const totalOutstandingDue = salesInvoices.reduce(
-    (acc, i) => acc + i.calc.dueAmount,
+    (acc, i) => acc + (i.calc?.dueAmount || 0),
     0
   );
 
@@ -76,10 +77,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     (p) => p.currentStock <= p.minStockAlert
   );
 
-  const recentInvoices = [...invoices]
+  const recentInvoices = [...safeInvoices]
     .sort(
       (a, b) =>
-        new Date(b.createdOn).getTime() - new Date(a.createdOn).getTime()
+        new Date(b.createdOn || b.invoiceDate || b.date || 0).getTime() -
+        new Date(a.createdOn || a.invoiceDate || a.date || 0).getTime()
     )
     .slice(0, 6);
 
@@ -302,13 +304,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                       {inv.clientSnapshot?.name || 'Cash Customer'}
                     </td>
                     <td className="px-6 py-4 text-slate-500 text-xs font-mono">
-                      {inv.date}
+                      {inv.invoiceDate || inv.date || ''}
                     </td>
                     <td className="px-6 py-4 text-right text-slate-600 font-mono text-xs">
-                      ₹{formatNumberIndian(inv.calc.taxAmount)}
+                      ₹{formatNumberIndian(inv.calc?.taxAmount || 0)}
                     </td>
                     <td className="px-6 py-4 text-right font-black text-slate-900 font-mono text-sm">
-                      ₹{formatNumberIndian(inv.calc.billFigure)}
+                      ₹{formatNumberIndian(inv.calc?.billFigure || 0)}
                     </td>
                     <td className="px-6 py-4 text-center">
                       {getStatusBadge(inv.status)}

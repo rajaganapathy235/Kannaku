@@ -236,6 +236,7 @@ export async function ensureTables(db: D1Database): Promise<void> {
         qr_code_upi TEXT,
         notes TEXT,
         terms TEXT,
+        items_json TEXT,
         extra_items_json TEXT,
         consignee_json TEXT,
         calc_json TEXT,
@@ -467,6 +468,17 @@ export async function ensureTables(db: D1Database): Promise<void> {
       CREATE INDEX IF NOT EXISTS idx_saas_transactions_org ON saas_transactions(organization_id);
       CREATE INDEX IF NOT EXISTS idx_support_tickets_org ON support_tickets(organization_id);
     `);
+
+    // Migration: add items_json to existing invoices table if missing
+    try {
+      const info = await db.prepare('PRAGMA table_info(invoices)').all<{ name: string }>();
+      const cols = info.results || [];
+      if (Array.isArray(cols) && cols.length > 0 && !cols.some((c) => c.name === 'items_json')) {
+        await db.prepare('ALTER TABLE invoices ADD COLUMN items_json TEXT').run();
+      }
+    } catch {
+      // Ignored for dev in-memory shims or if already upgraded
+    }
   } catch (err) {
     console.error('ensureTables warning:', err);
   }

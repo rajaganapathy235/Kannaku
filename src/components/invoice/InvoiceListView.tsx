@@ -257,7 +257,7 @@ export const InvoiceListView: React.FC<InvoiceListViewProps> = ({
                       onClick={() => onViewInvoice(inv)}
                     >
                       <td className="py-4 px-6 font-mono text-slate-500">
-                        {inv.date}
+                        {inv.invoiceDate || inv.date || ''}
                       </td>
                       <td className="py-4 px-6">
                         <div className="font-mono font-bold text-blue-600">
@@ -281,7 +281,7 @@ export const InvoiceListView: React.FC<InvoiceListViewProps> = ({
                       </td>
                       <td className="py-4 px-6">
                         <div className="font-bold text-slate-900">
-                          {inv.clientSnapshot?.name}
+                          {inv.clientSnapshot?.name || 'Customer'}
                         </div>
                         <div className="text-[11px] text-slate-500 font-mono">
                           {inv.clientSnapshot?.city} • GST:{' '}
@@ -296,13 +296,13 @@ export const InvoiceListView: React.FC<InvoiceListViewProps> = ({
                         </span>
                       </td>
                       <td className="py-4 px-6 text-right font-mono font-semibold text-slate-900">
-                        ₹{formatNumberIndian(inv.calc.subTotal)}
+                        ₹{formatNumberIndian(inv.calc?.subTotal || 0)}
                       </td>
                       <td className="py-4 px-6 text-right font-mono text-slate-600">
-                        ₹{formatNumberIndian(inv.calc.taxAmount)}
+                        ₹{formatNumberIndian(inv.calc?.taxAmount || 0)}
                       </td>
                       <td className="py-4 px-6 text-right font-mono font-black text-slate-900 text-sm">
-                        ₹{formatNumberIndian(inv.calc.billFigure)}
+                        ₹{formatNumberIndian(inv.calc?.billFigure || 0)}
                       </td>
                       <td className="py-4 px-6 text-center">
                         {getStatusBadge(inv.status)}
@@ -393,23 +393,23 @@ export const InvoiceListView: React.FC<InvoiceListViewProps> = ({
                         {getStatusBadge(inv.status)}
                       </div>
                       <h4 className="text-sm font-bold text-slate-900 mt-0.5">
-                        {inv.clientSnapshot?.name}
+                        {inv.clientSnapshot?.name || 'Customer'}
                       </h4>
                     </div>
 
                     <div className="text-right">
                       <div className="font-mono font-black text-sm text-slate-900">
-                        ₹{formatNumberIndian(inv.calc.billFigure)}
+                        ₹{formatNumberIndian(inv.calc?.billFigure || 0)}
                       </div>
                       <span className="text-[10px] text-slate-400 font-mono">
-                        {inv.date}
+                        {inv.invoiceDate || inv.date || ''}
                       </span>
                     </div>
                   </div>
 
                   <div className="flex items-center justify-between text-xs text-slate-500 pt-2 border-t border-slate-100">
                     <span>
-                      GST: ₹{formatNumberIndian(inv.calc.taxAmount)} ({inv.invoiceTaxType})
+                      GST: ₹{formatNumberIndian(inv.calc?.taxAmount || 0)} ({inv.invoiceTaxType})
                     </span>
 
                     <div
