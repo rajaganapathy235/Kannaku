@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Building2,
   Search,
@@ -20,6 +20,7 @@ import {
   Shield,
   KeyRound,
   RotateCcw,
+  RefreshCw,
 } from 'lucide-react';
 import { SaaSAdminDB } from '../../utils/adminStorage';
 import {
@@ -90,9 +91,18 @@ export const OrganizationsListView: React.FC<OrganizationsListViewProps> = ({
     setTimeout(() => setToastMessage(null), 3000);
   };
 
-  const reloadData = () => {
-    setOrganizations(SaaSAdminDB.getOrganizations());
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const reloadData = async () => {
+    setIsRefreshing(true);
+    const live = await SaaSAdminDB.getOrganizationsAsync();
+    setOrganizations(live);
+    setIsRefreshing(false);
   };
+
+  useEffect(() => {
+    reloadData();
+  }, []);
 
   const handleToggleSuspend = (org: TenantOrganizationFull) => {
     const isSuspended = org.accountStatus === 'SUSPENDED';
@@ -214,6 +224,15 @@ export const OrganizationsListView: React.FC<OrganizationsListViewProps> = ({
         </div>
 
         <div className="flex items-center gap-2">
+          <button
+            onClick={reloadData}
+            disabled={isRefreshing}
+            className="px-3 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 rounded-xl text-xs font-semibold flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+            title="Sync organizations from Cloudflare D1"
+          >
+            <RefreshCw className={`w-4 h-4 text-sky-400 ${isRefreshing ? 'animate-spin' : ''}`} />
+            <span>{isRefreshing ? 'Syncing...' : 'Sync DB'}</span>
+          </button>
           <button
             onClick={() => {
               const csv = SaaSAdminDB.exportEntirePlatformData('CSV', 'organizations');

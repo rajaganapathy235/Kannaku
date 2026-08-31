@@ -372,18 +372,204 @@ export class ApiService {
 
   // --- SUPER ADMIN ---
   static async getAdminStats() {
-    return this.request('/api/admin/stats');
+    return this.request<any>('/api/admin/stats');
   }
 
   static async getAdminOrganizations() {
-    return this.request('/api/admin/organizations');
+    return this.request<any[]>('/api/admin/organizations');
+  }
+
+  static async createAdminOrganization(org: any) {
+    return this.request('/api/admin/organizations', {
+      method: 'POST',
+      body: JSON.stringify(org),
+    });
+  }
+
+  static async updateAdminOrganization(id: string, org: any) {
+    return this.request(`/api/admin/organizations/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(org),
+    });
+  }
+
+  static async deleteAdminOrganization(id: string) {
+    return this.request(`/api/admin/organizations/${id}`, {
+      method: 'DELETE',
+    });
   }
 
   static async getAdminUsers() {
-    return this.request('/api/admin/users');
+    return this.request<any[]>('/api/admin/users');
+  }
+
+  static async createAdminUser(user: any) {
+    return this.request('/api/admin/users', {
+      method: 'POST',
+      body: JSON.stringify(user),
+    });
+  }
+
+  static async updateAdminUser(id: string, user: any) {
+    return this.request(`/api/admin/users/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(user),
+    });
+  }
+
+  static async deleteAdminUser(id: string) {
+    return this.request(`/api/admin/users/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  static async getAdminPlans() {
+    return this.request<any[]>('/api/admin/plans');
+  }
+
+  static async createAdminPlan(plan: any) {
+    return this.request('/api/admin/plans', {
+      method: 'POST',
+      body: JSON.stringify(plan),
+    });
+  }
+
+  static async updateAdminPlan(id: string, plan: any) {
+    return this.request(`/api/admin/plans/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(plan),
+    });
+  }
+
+  static async getAdminTransactions() {
+    return this.request<any[]>('/api/admin/transactions');
+  }
+
+  static async createAdminTransaction(txn: any) {
+    return this.request('/api/admin/transactions', {
+      method: 'POST',
+      body: JSON.stringify(txn),
+    });
+  }
+
+  static async getAdminCoupons() {
+    return this.request<any[]>('/api/admin/coupons');
+  }
+
+  static async createAdminCoupon(coupon: any) {
+    return this.request('/api/admin/coupons', {
+      method: 'POST',
+      body: JSON.stringify(coupon),
+    });
+  }
+
+  static async deleteAdminCoupon(id: string) {
+    return this.request(`/api/admin/coupons/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  static async getAdminFeatureFlags() {
+    return this.request<any[]>('/api/admin/feature-flags');
+  }
+
+  static async createAdminFeatureFlag(flag: any) {
+    return this.request('/api/admin/feature-flags', {
+      method: 'POST',
+      body: JSON.stringify(flag),
+    });
+  }
+
+  static async updateAdminFeatureFlag(id: string, flag: any) {
+    return this.request(`/api/admin/feature-flags/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(flag),
+    });
+  }
+
+  static async getAdminSupportTickets() {
+    return this.request<any[]>('/api/admin/support-tickets');
+  }
+
+  static async createAdminSupportTicket(ticket: any) {
+    return this.request('/api/admin/support-tickets', {
+      method: 'POST',
+      body: JSON.stringify(ticket),
+    });
+  }
+
+  static async updateAdminSupportTicket(id: string, ticket: any) {
+    return this.request(`/api/admin/support-tickets/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(ticket),
+    });
+  }
+
+  static async getAdminAnnouncements() {
+    return this.request<any[]>('/api/admin/announcements');
+  }
+
+  static async createAdminAnnouncement(ann: any) {
+    return this.request('/api/admin/announcements', {
+      method: 'POST',
+      body: JSON.stringify(ann),
+    });
+  }
+
+  static async deleteAdminAnnouncement(id: string) {
+    return this.request(`/api/admin/announcements/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  static async getAdminEmailTemplates() {
+    return this.request<any[]>('/api/admin/email-templates');
+  }
+
+  static async updateAdminEmailTemplate(id: string, tmpl: any) {
+    return this.request(`/api/admin/email-templates/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(tmpl),
+    });
   }
 
   static async getAdminAuditLogs() {
-    return this.request('/api/admin/audit-logs');
+    return this.request<any[]>('/api/admin/audit-logs');
+  }
+
+  static async createAdminAuditLog(log: any) {
+    return this.request('/api/admin/audit-logs', {
+      method: 'POST',
+      body: JSON.stringify(log),
+    });
+  }
+
+  static async getAdminErrorLogs() {
+    return this.request<any[]>('/api/admin/error-logs');
+  }
+
+  static async getAdminImpersonationSessions() {
+    return this.request<any[]>('/api/admin/impersonation');
+  }
+
+  static async startAdminImpersonation(organizationId: string, reason?: string) {
+    return this.request('/api/admin/impersonation/start', {
+      method: 'POST',
+      body: JSON.stringify({ organizationId, reason }),
+    });
+  }
+
+  static async stopAdminImpersonation() {
+    return this.request('/api/admin/impersonation/stop', {
+      method: 'POST',
+    });
+  }
+
+  static async getAdminDbExplorer(table: string) {
+    return this.request<{ table: string; count: number; rows: any[] }>(`/api/admin/db-explorer?table=${encodeURIComponent(table)}`);
+  }
+
+  static async getAdminActivityFeed() {
+    return this.request<any[]>('/api/admin/activity-feed');
   }
 }

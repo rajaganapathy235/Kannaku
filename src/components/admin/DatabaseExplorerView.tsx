@@ -1,47 +1,70 @@
-import React, { useState } from 'react';
-import { Database, Search, Download, Eye, Table, Code, Copy, Check, Cloud, Zap } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Database, Search, Download, Eye, Table, Code, Copy, Check, Cloud, Zap, RefreshCw } from 'lucide-react';
 import { SaaSAdminDB } from '../../utils/adminStorage';
+import { ApiService } from '../../utils/apiService';
 import { CloudflareDeploymentModal } from '../common/CloudflareDeploymentModal';
 
 export const DatabaseExplorerView: React.FC = () => {
-  const [selectedCollection, setSelectedCollection] = useState<
-    'organizations' | 'users' | 'plans' | 'subscriptions' | 'transactions' | 'audit_logs' | 'coupons'
-  >('organizations');
+  const [selectedCollection, setSelectedCollection] = useState<string>('organizations');
   const [search, setSearch] = useState('');
   const [selectedRecord, setSelectedRecord] = useState<any | null>(null);
   const [copied, setCopied] = useState(false);
   const [isCloudflareModalOpen, setIsCloudflareModalOpen] = useState(false);
+  const [dbRecords, setDbRecords] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
 
   const collections = [
     { id: 'organizations', label: 'Organizations (Tenants)' },
     { id: 'users', label: 'Platform Users' },
-    { id: 'plans', label: 'SaaS Plans' },
-    { id: 'transactions', label: 'Billing Transactions' },
+    { id: 'saas_plans', label: 'SaaS Plans' },
+    { id: 'saas_transactions', label: 'Billing Transactions' },
     { id: 'coupons', label: 'Coupons' },
     { id: 'audit_logs', label: 'Audit Logs' },
+    { id: 'invoices', label: 'Tenant Invoices' },
+    { id: 'clients', label: 'Tenant Clients' },
+    { id: 'products', label: 'Tenant Products' },
+    { id: 'feature_flags', label: 'Feature Flags' },
   ];
 
-  const getData = () => {
-    switch (selectedCollection) {
-      case 'organizations':
-        return SaaSAdminDB.getOrganizations();
-      case 'users':
-        return SaaSAdminDB.getUsers();
-      case 'plans':
-        return SaaSAdminDB.getPlans();
-      case 'transactions':
-        return SaaSAdminDB.getTransactions();
-      case 'coupons':
-        return SaaSAdminDB.getCoupons();
-      case 'audit_logs':
-        return SaaSAdminDB.getAuditLogs();
-      default:
-        return [];
+  const fetchTableData = async (table: string) => {
+    setLoading(true);
+    const res = await ApiService.getAdminDbExplorer(table);
+    if (res.success && res.data && res.data.rows) {
+      setDbRecords(res.data.rows);
+    } else {
+      // Fallback to local cache if offline or demo
+      switch (table) {
+        case 'organizations':
+          setDbRecords(SaaSAdminDB.getOrganizations());
+          break;
+        case 'users':
+          setDbRecords(SaaSAdminDB.getUsers());
+          break;
+        case 'saas_plans':
+          setDbRecords(SaaSAdminDB.getPlans());
+          break;
+        case 'saas_transactions':
+          setDbRecords(SaaSAdminDB.getTransactions());
+          break;
+        case 'coupons':
+          setDbRecords(SaaSAdminDB.getCoupons());
+          break;
+        case 'audit_logs':
+          setDbRecords(SaaSAdminDB.getAuditLogs());
+          break;
+        default:
+          setDbRecords([]);
+      }
     }
+    setLoading(false);
   };
 
-  const records = getData();
-  const filtered = records.filter((r) =>
+  useEffect(() => {
+    fetchTableData(selectedCollection);
+    setSelectedRecord(null);
+  }, [selectedCollection]);
+
+  const filtered = dbRecords.filter((r) =>
     JSON.stringify(r).toLowerCase().includes(search.toLowerCase())
   );
 
@@ -58,20 +81,30 @@ export const DatabaseExplorerView: React.FC = () => {
         <div>
           <h1 className="text-xl font-black text-white tracking-tight flex items-center gap-2">
             <Database className="w-6 h-6 text-blue-400" />
-            <span>Platform Database & Schema Explorer</span>
+            <span>Cloudflare D1 Database & Schema Explorer</span>
           </h1>
           <p className="text-xs text-slate-400 mt-0.5">
-            Low-level read-only schema inspector, record browser, and Cloudflare D1 SQL export
+            Live SQL table inspector, real-time D1 record browser, and data diagnostics
           </p>
         </div>
 
-        <button
-          onClick={() => setIsCloudflareModalOpen(true)}
-          className="px-3.5 py-2 bg-orange-600/20 hover:bg-orange-600/30 text-orange-400 border border-orange-500/40 rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer shadow-xs self-start sm:self-auto"
-        >
-          <Zap className="w-4 h-4 text-orange-400" />
-          <span>Cloudflare D1 & Edge Hosting</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => fetchTableData(selectedCollection)}
+            disabled={loading}
+            className="px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 rounded-xl text-xs font-semibold flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 text-sky-400 ${loading ? 'animate-spin' : ''}`} />
+            <span>{loading ? 'Querying D1...' : 'Refresh SQL'}</span>
+          </button>
+          <button
+            onClick={() => setIsCloudflareModalOpen(true)}
+            className="px-3.5 py-2 bg-orange-600/20 hover:bg-orange-600/30 text-orange-400 border border-orange-500/40 rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer shadow-xs self-start sm:self-auto"
+          >
+            <Zap className="w-4 h-4 text-orange-400" />
+            <span>Cloudflare D1 Setup</span>
+          </button>
+        </div>
       </div>
 
       {/* Collection tabs */}

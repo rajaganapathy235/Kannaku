@@ -46,16 +46,25 @@ export const AuditLogsView: React.FC<AuditLogsViewProps> = ({
   const [actionFilter, setActionFilter] = useState<string>('ALL');
   const [selectedSessionDetail, setSelectedSessionDetail] = useState<ImpersonationSession | null>(null);
 
-  const reloadData = () => {
-    setSessions(SaaSAdminDB.getImpersonationSessions());
-    setAuditLogs(SaaSAdminDB.getAuditLogs());
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const reloadData = async () => {
+    setIsRefreshing(true);
+    const [liveSessions, liveLogs] = await Promise.all([
+      SaaSAdminDB.getImpersonationSessionsAsync(),
+      SaaSAdminDB.getAuditLogsAsync(),
+    ]);
+    setSessions(liveSessions);
+    setAuditLogs(liveLogs);
     setActiveSession(SaaSAdminDB.getActiveImpersonationSession());
+    setIsRefreshing(false);
   };
 
   useEffect(() => {
+    reloadData();
     const interval = setInterval(() => {
       setActiveSession(SaaSAdminDB.getActiveImpersonationSession());
-    }, 2000);
+    }, 3000);
     return () => clearInterval(interval);
   }, []);
 

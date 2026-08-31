@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Building2,
   Users,
@@ -20,6 +20,7 @@ import {
   ShieldCheck,
   CheckCircle2,
   Receipt,
+  RefreshCw,
 } from 'lucide-react';
 import { SaaSAdminDB } from '../../utils/adminStorage';
 import { SuperAdminDashboardStats, TenantOrganizationFull, AuditLogEntry } from '../../types/admin';
@@ -40,9 +41,23 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   onOpenCreateCoupon,
   onImpersonate,
 }) => {
-  const stats: SuperAdminDashboardStats = SaaSAdminDB.getDashboardStats();
-  const orgs: TenantOrganizationFull[] = SaaSAdminDB.getOrganizations();
-  const recentLogs: AuditLogEntry[] = SaaSAdminDB.getAuditLogs().slice(0, 6);
+  const [stats, setStats] = useState<SuperAdminDashboardStats>(SaaSAdminDB.getDashboardStats());
+  const [orgs, setOrgs] = useState<TenantOrganizationFull[]>(SaaSAdminDB.getOrganizations());
+  const [recentLogs, setRecentLogs] = useState<AuditLogEntry[]>(SaaSAdminDB.getAuditLogs().slice(0, 6));
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const refreshData = async () => {
+    setIsRefreshing(true);
+    await SaaSAdminDB.syncWithDatabase();
+    setStats(SaaSAdminDB.getDashboardStats());
+    setOrgs(SaaSAdminDB.getOrganizations());
+    setRecentLogs(SaaSAdminDB.getAuditLogs().slice(0, 6));
+    setIsRefreshing(false);
+  };
+
+  useEffect(() => {
+    refreshData();
+  }, []);
 
   const kpis: {
     id: string;
@@ -232,6 +247,15 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
 
         {/* Quick Action Buttons */}
         <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={refreshData}
+            disabled={isRefreshing}
+            className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+            title="Sync all metrics directly from Cloudflare D1 database"
+          >
+            <RefreshCw className={`w-4 h-4 text-sky-400 ${isRefreshing ? 'animate-spin' : ''}`} />
+            <span>{isRefreshing ? 'Syncing...' : 'Sync DB'}</span>
+          </button>
           <button
             onClick={onOpenCreateOrg}
             className="px-3.5 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-blue-900/30 flex items-center gap-1.5 cursor-pointer active:scale-95"

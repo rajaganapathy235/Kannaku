@@ -314,6 +314,147 @@ export async function ensureTables(db: D1Database): Promise<void> {
         reason TEXT
       );
 
+      CREATE TABLE IF NOT EXISTS saas_plans (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        code TEXT NOT NULL,
+        tagline TEXT,
+        monthly_price_inr REAL DEFAULT 0,
+        six_month_price_inr REAL DEFAULT 0,
+        three_month_price_inr REAL DEFAULT 0,
+        yearly_price_inr REAL DEFAULT 0,
+        trial_duration_days INTEGER DEFAULT 7,
+        is_popular INTEGER DEFAULT 0,
+        is_archived INTEGER DEFAULT 0,
+        limits_json TEXT,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS saas_transactions (
+        id TEXT PRIMARY KEY,
+        organization_id TEXT NOT NULL,
+        organization_name TEXT NOT NULL,
+        amount REAL NOT NULL,
+        currency TEXT DEFAULT 'INR',
+        payment_method TEXT DEFAULT 'UPI',
+        payment_provider TEXT DEFAULT 'Cashfree',
+        status TEXT DEFAULT 'SUCCESSFUL',
+        date TEXT DEFAULT CURRENT_TIMESTAMP,
+        invoice_number TEXT,
+        subscription_id TEXT,
+        plan_name TEXT,
+        billing_cycle TEXT DEFAULT 'YEARLY',
+        receipt_url TEXT,
+        gateway_ref_id TEXT,
+        failure_reason TEXT,
+        refund_amount REAL DEFAULT 0,
+        refund_date TEXT,
+        customer_email TEXT
+      );
+
+      CREATE TABLE IF NOT EXISTS coupons (
+        id TEXT PRIMARY KEY,
+        code TEXT UNIQUE NOT NULL,
+        discount_type TEXT NOT NULL,
+        discount_value REAL NOT NULL,
+        duration_type TEXT NOT NULL,
+        expiry_date TEXT NOT NULL,
+        usage_limit INTEGER DEFAULT 100,
+        used_count INTEGER DEFAULT 0,
+        per_user_limit INTEGER DEFAULT 1,
+        plan_restrictions_json TEXT,
+        status TEXT DEFAULT 'ACTIVE',
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS feature_flags (
+        id TEXT PRIMARY KEY,
+        key TEXT UNIQUE NOT NULL,
+        name TEXT NOT NULL,
+        description TEXT,
+        category TEXT DEFAULT 'Billing',
+        scope TEXT DEFAULT 'GLOBAL',
+        is_enabled_global INTEGER DEFAULT 1,
+        enabled_plans_json TEXT,
+        targeted_org_ids_json TEXT,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS support_tickets (
+        id TEXT PRIMARY KEY,
+        organization_id TEXT NOT NULL,
+        organization_name TEXT NOT NULL,
+        user_id TEXT NOT NULL,
+        user_name TEXT NOT NULL,
+        user_email TEXT NOT NULL,
+        subject TEXT NOT NULL,
+        category TEXT DEFAULT 'Billing & Invoicing',
+        priority TEXT DEFAULT 'MEDIUM',
+        status TEXT DEFAULT 'OPEN',
+        assigned_admin_name TEXT,
+        messages_json TEXT,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS announcements (
+        id TEXT PRIMARY KEY,
+        title TEXT NOT NULL,
+        message TEXT NOT NULL,
+        type TEXT DEFAULT 'INFO',
+        start_date TEXT NOT NULL,
+        end_date TEXT NOT NULL,
+        target_audience TEXT DEFAULT 'ALL',
+        target_plans_json TEXT,
+        target_org_ids_json TEXT,
+        is_active INTEGER DEFAULT 1,
+        is_dismissible INTEGER DEFAULT 1,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS email_templates (
+        id TEXT PRIMARY KEY,
+        key TEXT UNIQUE NOT NULL,
+        name TEXT NOT NULL,
+        subject TEXT NOT NULL,
+        description TEXT,
+        variables_json TEXT,
+        body_html TEXT NOT NULL,
+        is_enabled INTEGER DEFAULT 1,
+        updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS platform_settings (
+        section TEXT PRIMARY KEY,
+        settings_json TEXT NOT NULL,
+        updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS system_error_logs (
+        id TEXT PRIMARY KEY,
+        error_type TEXT NOT NULL,
+        message TEXT NOT NULL,
+        organization_id TEXT,
+        organization_name TEXT,
+        user_email TEXT,
+        endpoint TEXT,
+        http_status INTEGER,
+        first_seen TEXT DEFAULT CURRENT_TIMESTAMP,
+        last_seen TEXT DEFAULT CURRENT_TIMESTAMP,
+        occurrences INTEGER DEFAULT 1,
+        status TEXT DEFAULT 'UNRESOLVED',
+        stack_trace TEXT
+      );
+
+      CREATE TABLE IF NOT EXISTS payment_gateway_configs (
+        provider TEXT PRIMARY KEY,
+        config_json TEXT NOT NULL,
+        is_enabled INTEGER DEFAULT 0,
+        updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+      );
+
       CREATE INDEX IF NOT EXISTS idx_platform_users_email ON platform_users(email);
       CREATE INDEX IF NOT EXISTS idx_platform_users_org ON platform_users(organization_id);
       CREATE INDEX IF NOT EXISTS idx_clients_org ON clients(organization_id);
@@ -323,6 +464,8 @@ export async function ensureTables(db: D1Database): Promise<void> {
       CREATE INDEX IF NOT EXISTS idx_invoice_items_inv ON invoice_items(invoice_id);
       CREATE INDEX IF NOT EXISTS idx_payment_ledgers_org ON payment_ledgers(organization_id);
       CREATE INDEX IF NOT EXISTS idx_audit_logs_org ON audit_logs(organization_id);
+      CREATE INDEX IF NOT EXISTS idx_saas_transactions_org ON saas_transactions(organization_id);
+      CREATE INDEX IF NOT EXISTS idx_support_tickets_org ON support_tickets(organization_id);
     `);
   } catch (err) {
     console.error('ensureTables warning:', err);
@@ -440,6 +583,148 @@ export async function seedInitialTenants(db: D1Database, env: any = {}): Promise
         'OWNER',
         'ACTIVE'
       );
+    }
+
+    // Ensure SaaS Plans exist
+    const planCount = await queryFirst<{ count: number }>(db, 'SELECT COUNT(*) as count FROM saas_plans');
+    if (!planCount || planCount.count === 0) {
+      const defaultLimits = JSON.stringify({
+        maxUsers: 999,
+        maxInvoicesPerMonth: 999999,
+        maxQuotationsPerMonth: 999999,
+        maxCustomers: 999999,
+        maxProducts: 999999,
+        pdfGenerationsLimit: 999999,
+        hasMultiUser: true,
+        hasGstReports: true,
+        hasCustomBranding: true,
+        hasDigitalStampSign: true,
+        hasInventoryAlerts: true,
+        hasTallyPrintFormats: true,
+        hasUpiQrPayment: true,
+        hasPurchaseLedger: true,
+      });
+
+      await execute(
+        db,
+        `INSERT OR IGNORE INTO saas_plans (
+          id, name, code, tagline, monthly_price_inr, six_month_price_inr, three_month_price_inr, yearly_price_inr, trial_duration_days, is_popular, is_archived, limits_json
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        'plan_all_in_one_pro',
+        'All-in-One Growth Plan',
+        'ALL_IN_ONE',
+        'Single comprehensive plan with ALL GST invoicing, Tally multi-copy prints & compliance features unlocked',
+        99,
+        474,
+        237,
+        588,
+        7,
+        1,
+        0,
+        defaultLimits
+      );
+    }
+
+    // Ensure Feature Flags exist
+    const flagCount = await queryFirst<{ count: number }>(db, 'SELECT COUNT(*) as count FROM feature_flags');
+    if (!flagCount || flagCount.count === 0) {
+      const flags = [
+        {
+          id: 'flag_tally_format',
+          key: 'tally_print_formats',
+          name: 'Tally-Style Multi-Copy Invoice Prints',
+          description: 'Enable Original/Duplicate/Triplicate 3-page & 2-page Tally layout PDFs',
+          category: 'Billing',
+          scope: 'GLOBAL',
+          isEnabledGlobal: 1,
+        },
+        {
+          id: 'flag_gst_einvoice',
+          key: 'gst_einvoicing_ready',
+          name: 'GST e-Invoicing & IRN Export',
+          description: 'Real-time JSON payload generation for GST e-Invoice Portal',
+          category: 'GST',
+          scope: 'GLOBAL',
+          isEnabledGlobal: 1,
+        },
+        {
+          id: 'flag_whatsapp_dispatch',
+          key: 'whatsapp_quick_share',
+          name: 'WhatsApp Direct Invoice Link Sharing',
+          description: 'Instant WhatsApp web/mobile billing dispatch to clients',
+          category: 'Communication',
+          scope: 'GLOBAL',
+          isEnabledGlobal: 1,
+        },
+        {
+          id: 'flag_audit_trail',
+          key: 'immutable_audit_trail',
+          name: 'Strict System & Tax Audit Trail',
+          description: 'Full immutable logging of tax edits, invoice numbers, and user operations',
+          category: 'Security',
+          scope: 'GLOBAL',
+          isEnabledGlobal: 1,
+        },
+      ];
+
+      for (const f of flags) {
+        await execute(
+          db,
+          `INSERT OR IGNORE INTO feature_flags (
+            id, key, name, description, category, scope, is_enabled_global, enabled_plans_json, targeted_org_ids_json
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          f.id,
+          f.key,
+          f.name,
+          f.description,
+          f.category,
+          f.scope,
+          f.isEnabledGlobal,
+          JSON.stringify(['ALL_IN_ONE']),
+          JSON.stringify([])
+        );
+      }
+    }
+
+    // Ensure Email Templates exist
+    const templateCount = await queryFirst<{ count: number }>(db, 'SELECT COUNT(*) as count FROM email_templates');
+    if (!templateCount || templateCount.count === 0) {
+      const templates = [
+        {
+          id: 'tmpl_inv_ready',
+          key: 'invoice_ready',
+          name: 'Tax Invoice Dispatch',
+          subject: 'Tax Invoice {{invoice_number}} from {{business_name}}',
+          description: 'Sent automatically or manually when a tax invoice is finalized',
+          variables: JSON.stringify(['business_name', 'invoice_number', 'amount', 'due_date', 'pdf_link']),
+          bodyHtml: '<p>Dear Customer,</p><p>Please find attached Tax Invoice <strong>{{invoice_number}}</strong> for <strong>₹{{amount}}</strong>.</p><p>Regards,<br>{{business_name}}</p>',
+        },
+        {
+          id: 'tmpl_payment_rcvd',
+          key: 'payment_received',
+          name: 'Payment Receipt Confirmation',
+          subject: 'Payment Received: ₹{{amount}} for Invoice {{invoice_number}}',
+          description: 'Dispatched to customer when payment ledger entry is posted',
+          variables: JSON.stringify(['business_name', 'invoice_number', 'amount', 'mode', 'reference']),
+          bodyHtml: '<p>Dear Customer,</p><p>We have successfully received payment of <strong>₹{{amount}}</strong> via {{mode}} (Ref: {{reference}}).</p><p>Thank you for your business!</p>',
+        },
+      ];
+
+      for (const t of templates) {
+        await execute(
+          db,
+          `INSERT OR IGNORE INTO email_templates (
+            id, key, name, subject, description, variables_json, body_html, is_enabled
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, 1)`,
+          t.id,
+          t.key,
+          t.name,
+          t.subject,
+          t.description,
+          t.variables,
+          t.bodyHtml
+        );
+      }
     }
   } catch (err) {
     console.error('seedInitialTenants warning:', err);

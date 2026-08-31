@@ -21,6 +21,7 @@ import {
   TenantOrganizationFull,
 } from '../types/admin';
 import { KannakuDB } from './storage';
+import { ApiService } from './apiService';
 
 const STORAGE_KEYS = {
   ADMIN_USER: 'kannaku_active_admin_user',
@@ -116,10 +117,10 @@ export const DEFAULT_PLANS: SaaSPlan[] = [
     name: 'All-in-One Growth Plan',
     code: 'ALL_IN_ONE',
     tagline: 'Single comprehensive plan with ALL GST invoicing, Tally multi-copy prints & compliance features unlocked',
-    monthlyPriceInr: 99, // ₹99 / month
-    sixMonthPriceInr: 474, // ₹79 / month (₹474 for 6 mos)
-    threeMonthPriceInr: 237, // ₹79 / month (₹237 for 3 mos)
-    yearlyPriceInr: 588, // ₹49 / month (₹588 for 12 mos)
+    monthlyPriceInr: 99,
+    sixMonthPriceInr: 474,
+    threeMonthPriceInr: 237,
+    yearlyPriceInr: 588,
     trialDurationDays: 7,
     isPopular: true,
     limits: {
@@ -143,459 +144,10 @@ export const DEFAULT_PLANS: SaaSPlan[] = [
   },
 ];
 
-export const INITIAL_ORGANIZATIONS: TenantOrganizationFull[] = [
-  {
-    id: 'org_hytex_cotton',
-    name: 'HYTEX COTTON MILLS',
-    slug: 'hytex-cotton',
-    ownerName: 'K. Vasanthi',
-    adminEmail: 'hytexcottonmills@gmail.com',
-    mobile: '8870796169',
-    country: 'India',
-    city: 'Tiruppur',
-    state: 'Tamil Nadu',
-    registerNumber: '33ASWPV8266F1ZW',
-    planId: 'plan_pro',
-    planName: 'Pro Trader',
-    subscriptionStatus: 'ACTIVE',
-    accountStatus: 'ACTIVE',
-    billingCycle: 'YEARLY',
-    subscriptionStartDate: '2026-01-15T08:00:00Z',
-    renewalDate: '2027-01-15T08:00:00Z',
-    mrr: 499,
-    usersCount: 4,
-    usage: {
-      invoicesCreated: 148,
-      estimatesCreated: 34,
-      customersCount: 42,
-      suppliersCount: 16,
-      productsCount: 68,
-      pdfGenerationsCount: 380,
-      gstTaxHandledInr: 284500,
-      paymentLedgerEntries: 112,
-    },
-    createdDate: '2026-01-15T08:00:00Z',
-    lastActive: new Date().toISOString(),
-    paymentProvider: 'cashfree',
-    customDomain: 'billing.hytexmills.com',
-    notes: 'Premium textile manufacturer in Tiruppur hub. Auto-renew enabled.',
-  },
-  {
-    id: 'org_sri_murugan',
-    name: 'Sri Murugan Traders & Co',
-    slug: 'murugan-traders',
-    ownerName: 'M. Shanmugam',
-    adminEmail: 'murugan.traders@gmail.com',
-    mobile: '9841098765',
-    country: 'India',
-    city: 'Erode',
-    state: 'Tamil Nadu',
-    registerNumber: '33AAACM4589K1Z2',
-    planId: 'plan_business',
-    planName: 'Annual Business Suite',
-    subscriptionStatus: 'ACTIVE',
-    accountStatus: 'ACTIVE',
-    billingCycle: 'YEARLY',
-    subscriptionStartDate: '2026-02-10T10:00:00Z',
-    renewalDate: '2027-02-10T10:00:00Z',
-    mrr: 832,
-    usersCount: 8,
-    usage: {
-      invoicesCreated: 520,
-      estimatesCreated: 92,
-      customersCount: 180,
-      suppliersCount: 45,
-      productsCount: 310,
-      pdfGenerationsCount: 1180,
-      gstTaxHandledInr: 945200,
-      paymentLedgerEntries: 430,
-    },
-    createdDate: '2026-02-10T10:00:00Z',
-    lastActive: '2026-08-25T16:30:00Z',
-    paymentProvider: 'razorpay',
-    customDomain: 'gst.murugantraders.in',
-  },
-  {
-    id: 'org_chennai_electro',
-    name: 'Chennai Electro & Solar Tech',
-    slug: 'chennai-electro',
-    ownerName: 'A. Ramanathan',
-    adminEmail: 'accounts@chennaielectro.in',
-    mobile: '9789012345',
-    country: 'India',
-    city: 'Chennai',
-    state: 'Tamil Nadu',
-    registerNumber: '33BBPME9823P1ZQ',
-    planId: 'plan_enterprise',
-    planName: 'Enterprise Custom',
-    subscriptionStatus: 'ACTIVE',
-    accountStatus: 'ACTIVE',
-    billingCycle: 'YEARLY',
-    subscriptionStartDate: '2026-03-01T09:00:00Z',
-    renewalDate: '2027-03-01T09:00:00Z',
-    mrr: 2082,
-    usersCount: 18,
-    usage: {
-      invoicesCreated: 1240,
-      estimatesCreated: 410,
-      customersCount: 520,
-      suppliersCount: 94,
-      productsCount: 850,
-      pdfGenerationsCount: 3400,
-      gstTaxHandledInr: 2840000,
-      paymentLedgerEntries: 1650,
-    },
-    createdDate: '2026-03-01T09:00:00Z',
-    lastActive: '2026-08-26T04:15:00Z',
-    paymentProvider: 'dodopayments',
-    customDomain: 'erp.chennaielectro.in',
-  },
-  {
-    id: 'org_apex_logistics',
-    name: 'Apex Logistics & Freight Corp',
-    slug: 'apex-logistics',
-    ownerName: 'Rohan Deshmukh',
-    adminEmail: 'finance@apexlogistics.in',
-    mobile: '9820055443',
-    country: 'India',
-    city: 'Mumbai',
-    state: 'Maharashtra',
-    registerNumber: '27AALCA1209L1Z8',
-    planId: 'plan_starter',
-    planName: 'Starter Business',
-    subscriptionStatus: 'TRIAL',
-    accountStatus: 'ACTIVE',
-    billingCycle: 'TRIAL',
-    subscriptionStartDate: '2026-08-15T11:00:00Z',
-    renewalDate: '2026-08-29T11:00:00Z',
-    trialEndDate: '2026-08-29T11:00:00Z',
-    mrr: 0,
-    usersCount: 2,
-    usage: {
-      invoicesCreated: 18,
-      estimatesCreated: 6,
-      customersCount: 14,
-      suppliersCount: 5,
-      productsCount: 22,
-      pdfGenerationsCount: 42,
-      gstTaxHandledInr: 32000,
-      paymentLedgerEntries: 15,
-    },
-    createdDate: '2026-08-15T11:00:00Z',
-    lastActive: '2026-08-25T19:00:00Z',
-    paymentProvider: 'cashfree',
-    notes: 'Trial expires in 3 days. High activity level.',
-  },
-  {
-    id: 'org_karnataka_silks',
-    name: 'Karnataka Heritage Silks',
-    slug: 'karnataka-silks',
-    ownerName: 'Sunita Hegde',
-    adminEmail: 'orders@karnatakasilks.com',
-    mobile: '9980123456',
-    country: 'India',
-    city: 'Bengaluru',
-    state: 'Karnataka',
-    registerNumber: '29ABCDE1234F1Z5',
-    planId: 'plan_pro',
-    planName: 'Pro Trader',
-    subscriptionStatus: 'PAST_DUE',
-    accountStatus: 'ACTIVE',
-    billingCycle: 'MONTHLY',
-    subscriptionStartDate: '2026-05-10T12:00:00Z',
-    renewalDate: '2026-08-24T12:00:00Z',
-    mrr: 599,
-    usersCount: 3,
-    usage: {
-      invoicesCreated: 88,
-      estimatesCreated: 14,
-      customersCount: 65,
-      suppliersCount: 20,
-      productsCount: 110,
-      pdfGenerationsCount: 190,
-      gstTaxHandledInr: 168000,
-      paymentLedgerEntries: 45,
-    },
-    createdDate: '2026-05-10T12:00:00Z',
-    lastActive: '2026-08-24T14:10:00Z',
-    paymentProvider: 'stripe',
-    notes: 'Renewal card failed on Aug 24. Auto retry in 48h.',
-  },
-  {
-    id: 'org_delhi_hardware',
-    name: 'Capital Fasteners & Hardware',
-    slug: 'capital-hardware',
-    ownerName: 'Vikas Gupta',
-    adminEmail: 'sales@capitalfasteners.in',
-    mobile: '9811122334',
-    country: 'India',
-    city: 'Delhi',
-    state: 'Delhi',
-    registerNumber: '07AAECF5521L1ZM',
-    planId: 'plan_starter',
-    planName: 'Starter Business',
-    subscriptionStatus: 'CANCELLED',
-    accountStatus: 'SUSPENDED',
-    billingCycle: 'MONTHLY',
-    subscriptionStartDate: '2026-02-01T10:00:00Z',
-    renewalDate: '2026-07-01T10:00:00Z',
-    mrr: 0,
-    usersCount: 1,
-    usage: {
-      invoicesCreated: 42,
-      estimatesCreated: 8,
-      customersCount: 30,
-      suppliersCount: 12,
-      productsCount: 45,
-      pdfGenerationsCount: 60,
-      gstTaxHandledInr: 49000,
-      paymentLedgerEntries: 12,
-    },
-    createdDate: '2026-02-01T10:00:00Z',
-    lastActive: '2026-07-15T09:00:00Z',
-    paymentProvider: 'cashfree',
-    notes: 'Account suspended by request. Business pivot.',
-  },
-  {
-    id: 'org_kerala_spices',
-    name: 'Malabar Spices & Agro Exports',
-    slug: 'malabar-spices',
-    ownerName: 'T. K. Mathew',
-    adminEmail: 'info@malabarspices.co.in',
-    mobile: '9447123987',
-    country: 'India',
-    city: 'Kochi',
-    state: 'Kerala',
-    registerNumber: '32AADCM9921K1ZZ',
-    planId: 'plan_pro',
-    planName: 'Pro Trader',
-    subscriptionStatus: 'ACTIVE',
-    accountStatus: 'ACTIVE',
-    billingCycle: 'YEARLY',
-    subscriptionStartDate: '2026-04-12T10:00:00Z',
-    renewalDate: '2027-04-12T10:00:00Z',
-    mrr: 499,
-    usersCount: 4,
-    usage: {
-      invoicesCreated: 310,
-      estimatesCreated: 75,
-      customersCount: 140,
-      suppliersCount: 38,
-      productsCount: 88,
-      pdfGenerationsCount: 720,
-      gstTaxHandledInr: 680000,
-      paymentLedgerEntries: 280,
-    },
-    createdDate: '2026-04-12T10:00:00Z',
-    lastActive: '2026-08-25T18:45:00Z',
-    paymentProvider: 'razorpay',
-  },
-];
-
-export const INITIAL_USERS: PlatformUser[] = [
-  {
-    id: 'usr_vasanthi',
-    organizationId: 'org_hytex_cotton',
-    organizationName: 'HYTEX COTTON MILLS',
-    name: 'K. Vasanthi',
-    email: 'hytexcottonmills@gmail.com',
-    phone: '8870796169',
-    role: 'OWNER',
-    status: 'ACTIVE',
-    planName: 'Pro Trader',
-    lastLogin: '2026-08-26T02:10:00Z',
-    createdDate: '2026-01-15T08:00:00Z',
-  },
-  {
-    id: 'usr_murugan_owner',
-    organizationId: 'org_sri_murugan',
-    organizationName: 'Sri Murugan Traders & Co',
-    name: 'M. Shanmugam',
-    email: 'murugan.traders@gmail.com',
-    phone: '9841098765',
-    role: 'OWNER',
-    status: 'ACTIVE',
-    planName: 'Annual Business Suite',
-    lastLogin: '2026-08-25T16:30:00Z',
-    createdDate: '2026-02-10T10:00:00Z',
-  },
-  {
-    id: 'usr_chennai_admin',
-    organizationId: 'org_chennai_electro',
-    organizationName: 'Chennai Electro & Solar Tech',
-    name: 'A. Ramanathan',
-    email: 'accounts@chennaielectro.in',
-    phone: '9789012345',
-    role: 'OWNER',
-    status: 'ACTIVE',
-    planName: 'Enterprise Custom',
-    lastLogin: '2026-08-26T04:15:00Z',
-    createdDate: '2026-03-01T09:00:00Z',
-  },
-  {
-    id: 'usr_apex_finance',
-    organizationId: 'org_apex_logistics',
-    organizationName: 'Apex Logistics & Freight Corp',
-    name: 'Rohan Deshmukh',
-    email: 'finance@apexlogistics.in',
-    phone: '9820055443',
-    role: 'OWNER',
-    status: 'ACTIVE',
-    planName: 'Starter Business',
-    lastLogin: '2026-08-25T19:00:00Z',
-    createdDate: '2026-08-15T11:00:00Z',
-  },
-  {
-    id: 'usr_karnataka_owner',
-    organizationId: 'org_karnataka_silks',
-    organizationName: 'Karnataka Heritage Silks',
-    name: 'Sunita Hegde',
-    email: 'orders@karnatakasilks.com',
-    phone: '9980123456',
-    role: 'OWNER',
-    status: 'ACTIVE',
-    planName: 'Pro Trader',
-    lastLogin: '2026-08-24T14:10:00Z',
-    createdDate: '2026-05-10T12:00:00Z',
-  },
-];
-
-export const INITIAL_TRANSACTIONS: SaaSTransaction[] = [
-  {
-    id: 'txn_109284',
-    organizationId: 'org_hytex_cotton',
-    organizationName: 'HYTEX COTTON MILLS',
-    amount: 5990,
-    currency: 'INR',
-    paymentMethod: 'UPI',
-    paymentProvider: 'Cashfree',
-    status: 'SUCCESSFUL',
-    date: '2026-01-15T08:05:00Z',
-    invoiceNumber: 'SAAS-INV-2026-0081',
-    subscriptionId: 'sub_hytex_pro',
-    planName: 'Pro Trader (Annual)',
-    billingCycle: 'YEARLY',
-    receiptUrl: 'https://billing.kannaku.in/receipts/txn_109284.pdf',
-    gatewayRefId: 'cf_order_883912048',
-    customerEmail: 'hytexcottonmills@gmail.com',
-  },
-  {
-    id: 'txn_109350',
-    organizationId: 'org_sri_murugan',
-    organizationName: 'Sri Murugan Traders & Co',
-    amount: 9990,
-    currency: 'INR',
-    paymentMethod: 'Credit Card',
-    paymentProvider: 'Razorpay',
-    status: 'SUCCESSFUL',
-    date: '2026-02-10T10:05:00Z',
-    invoiceNumber: 'SAAS-INV-2026-0112',
-    subscriptionId: 'sub_murugan_biz',
-    planName: 'Annual Business Suite',
-    billingCycle: 'YEARLY',
-    receiptUrl: 'https://billing.kannaku.in/receipts/txn_109350.pdf',
-    gatewayRefId: 'pay_rzp_994821034',
-    customerEmail: 'murugan.traders@gmail.com',
-  },
-  {
-    id: 'txn_109412',
-    organizationId: 'org_chennai_electro',
-    organizationName: 'Chennai Electro & Solar Tech',
-    amount: 24990,
-    currency: 'INR',
-    paymentMethod: 'Net Banking',
-    paymentProvider: 'Dodo Payments',
-    status: 'SUCCESSFUL',
-    date: '2026-03-01T09:10:00Z',
-    invoiceNumber: 'SAAS-INV-2026-0189',
-    subscriptionId: 'sub_electro_ent',
-    planName: 'Enterprise Custom',
-    billingCycle: 'YEARLY',
-    receiptUrl: 'https://billing.kannaku.in/receipts/txn_109412.pdf',
-    gatewayRefId: 'dodo_ch_881920194',
-    customerEmail: 'accounts@chennaielectro.in',
-  },
-  {
-    id: 'txn_109502',
-    organizationId: 'org_karnataka_silks',
-    organizationName: 'Karnataka Heritage Silks',
-    amount: 599,
-    currency: 'INR',
-    paymentMethod: 'Credit Card',
-    paymentProvider: 'Stripe',
-    status: 'FAILED',
-    date: '2026-08-24T12:00:00Z',
-    subscriptionId: 'sub_karnataka_pro',
-    planName: 'Pro Trader (Monthly)',
-    billingCycle: 'MONTHLY',
-    gatewayRefId: 'ch_3Pf9812401',
-    failureReason: 'Card issuer declined: Insufficient funds / Daily limit exceeded.',
-    customerEmail: 'orders@karnatakasilks.com',
-  },
-  {
-    id: 'txn_109520',
-    organizationId: 'org_kerala_spices',
-    organizationName: 'Malabar Spices & Agro Exports',
-    amount: 5990,
-    currency: 'INR',
-    paymentMethod: 'UPI',
-    paymentProvider: 'Razorpay',
-    status: 'SUCCESSFUL',
-    date: '2026-04-12T10:05:00Z',
-    invoiceNumber: 'SAAS-INV-2026-0244',
-    subscriptionId: 'sub_malabar_pro',
-    planName: 'Pro Trader (Annual)',
-    billingCycle: 'YEARLY',
-    receiptUrl: 'https://billing.kannaku.in/receipts/txn_109520.pdf',
-    gatewayRefId: 'pay_rzp_771920391',
-    customerEmail: 'info@malabarspices.co.in',
-  },
-];
-
-export const INITIAL_COUPONS: SaaSCoupon[] = [
-  {
-    id: 'cpn_diwali2026',
-    code: 'FESTIVE30',
-    discountType: 'PERCENTAGE',
-    discountValue: 30,
-    durationType: 'ANNUAL',
-    expiryDate: '2026-11-30T23:59:59Z',
-    usageLimit: 500,
-    usedCount: 142,
-    perUserLimit: 1,
-    planRestrictions: ['plan_pro', 'plan_business'],
-    status: 'ACTIVE',
-    createdOn: '2026-08-01T00:00:00Z',
-  },
-  {
-    id: 'cpn_welcome100',
-    code: 'STARTGST',
-    discountType: 'FIXED',
-    discountValue: 500,
-    durationType: 'ONE_TIME',
-    expiryDate: '2026-12-31T23:59:59Z',
-    usageLimit: 1000,
-    usedCount: 388,
-    perUserLimit: 1,
-    planRestrictions: [],
-    status: 'ACTIVE',
-    createdOn: '2026-01-01T00:00:00Z',
-  },
-  {
-    id: 'cpn_earlybird',
-    code: 'FOUNDER50',
-    discountType: 'PERCENTAGE',
-    discountValue: 50,
-    durationType: 'RECURRING',
-    expiryDate: '2026-06-30T00:00:00Z',
-    usageLimit: 50,
-    usedCount: 50,
-    perUserLimit: 1,
-    planRestrictions: ['plan_business', 'plan_enterprise'],
-    status: 'EXPIRED',
-    createdOn: '2026-01-01T00:00:00Z',
-  },
-];
+export const INITIAL_ORGANIZATIONS: TenantOrganizationFull[] = [];
+export const INITIAL_USERS: PlatformUser[] = [];
+export const INITIAL_TRANSACTIONS: SaaSTransaction[] = [];
+export const INITIAL_COUPONS: SaaSCoupon[] = [];
 
 export const INITIAL_FEATURE_FLAGS: FeatureFlag[] = [
   {
@@ -606,20 +158,7 @@ export const INITIAL_FEATURE_FLAGS: FeatureFlag[] = [
     category: 'Billing',
     scope: 'GLOBAL',
     isEnabledGlobal: true,
-    enabledPlans: ['plan_free', 'plan_starter', 'plan_pro', 'plan_business', 'plan_enterprise'],
-    targetedOrgIds: [],
-    createdOn: '2026-01-10T00:00:00Z',
-    updatedOn: '2026-08-20T00:00:00Z',
-  },
-  {
-    id: 'ff_gstr1_export',
-    key: 'ENABLE_GSTR1_ADVANCED_AUDIT',
-    name: 'GSTR-1 JSON & Excel Tax Audit Export',
-    description: 'Enables HSN summary, B2B, B2CL, and credit note tax tables for direct GST portal filing',
-    category: 'GST',
-    scope: 'PLAN',
-    isEnabledGlobal: false,
-    enabledPlans: ['plan_starter', 'plan_pro', 'plan_business', 'plan_enterprise'],
+    enabledPlans: ['plan_all_in_one_pro'],
     targetedOrgIds: [],
     createdOn: '2026-01-10T00:00:00Z',
     updatedOn: '2026-08-20T00:00:00Z',
@@ -632,7 +171,7 @@ export const INITIAL_FEATURE_FLAGS: FeatureFlag[] = [
     category: 'Billing',
     scope: 'GLOBAL',
     isEnabledGlobal: true,
-    enabledPlans: ['plan_starter', 'plan_pro', 'plan_business', 'plan_enterprise'],
+    enabledPlans: ['plan_all_in_one_pro'],
     targetedOrgIds: [],
     createdOn: '2026-02-01T00:00:00Z',
     updatedOn: '2026-08-25T00:00:00Z',
@@ -645,140 +184,15 @@ export const INITIAL_FEATURE_FLAGS: FeatureFlag[] = [
     category: 'Billing',
     scope: 'GLOBAL',
     isEnabledGlobal: true,
-    enabledPlans: ['plan_free', 'plan_starter', 'plan_pro', 'plan_business', 'plan_enterprise'],
+    enabledPlans: ['plan_all_in_one_pro'],
     targetedOrgIds: [],
     createdOn: '2026-03-01T00:00:00Z',
     updatedOn: '2026-08-25T00:00:00Z',
   },
-  {
-    id: 'ff_inventory_stock_alerts',
-    key: 'ENABLE_INVENTORY_STOCK_ALERTS',
-    name: 'Low Stock Alerts & Real-Time Quantity Deduction',
-    description: 'Warns billing clerks when product stock falls below minimum reorder threshold',
-    category: 'Billing',
-    scope: 'PLAN',
-    isEnabledGlobal: false,
-    enabledPlans: ['plan_starter', 'plan_pro', 'plan_business', 'plan_enterprise'],
-    targetedOrgIds: ['org_hytex_cotton', 'org_chennai_electro'],
-    createdOn: '2026-07-15T00:00:00Z',
-    updatedOn: '2026-08-25T00:00:00Z',
-  },
 ];
 
-export const INITIAL_SUPPORT_TICKETS: SupportTicket[] = [
-  {
-    id: 'tkt_8821',
-    organizationId: 'org_karnataka_silks',
-    organizationName: 'Karnataka Heritage Silks',
-    userId: 'usr_karnataka_owner',
-    userName: 'Sunita Hegde',
-    userEmail: 'orders@karnatakasilks.com',
-    subject: 'Renewal payment failed on card, please unlock temporary grace period',
-    category: 'Subscription & Payment',
-    priority: 'HIGH',
-    status: 'IN_PROGRESS',
-    assignedAdminName: 'Rajaganapathy S.',
-    createdDate: '2026-08-24T13:00:00Z',
-    lastUpdated: '2026-08-25T09:30:00Z',
-    messages: [
-      {
-        id: 'msg_1',
-        senderName: 'Sunita Hegde',
-        senderRole: 'USER',
-        message: 'Hello Admin, our corporate credit card limit had an issue yesterday during auto-debit. We have updated the card with our bank today. Could you please grant a 3-day grace period so our billing staff is not blocked?',
-        timestamp: '2026-08-24T13:00:00Z',
-      },
-      {
-        id: 'msg_2',
-        senderName: 'Rajaganapathy S.',
-        senderRole: 'ADMIN',
-        message: 'Hello Sunita, I have reviewed your account and extended your grace period through August 29. The automated retry is scheduled for tomorrow at 10:00 AM.',
-        timestamp: '2026-08-25T09:30:00Z',
-      },
-    ],
-  },
-  {
-    id: 'tkt_8819',
-    organizationId: 'org_hytex_cotton',
-    organizationName: 'HYTEX COTTON MILLS',
-    userId: 'usr_vasanthi',
-    userName: 'K. Vasanthi',
-    userEmail: 'hytexcottonmills@gmail.com',
-    subject: 'Request assistance with custom rubber stamp generator positioning',
-    category: 'Billing & Invoicing',
-    priority: 'LOW',
-    status: 'RESOLVED',
-    assignedAdminName: 'Rajaganapathy S.',
-    createdDate: '2026-08-22T10:15:00Z',
-    lastUpdated: '2026-08-22T14:20:00Z',
-    messages: [
-      {
-        id: 'msg_3',
-        senderName: 'K. Vasanthi',
-        senderRole: 'USER',
-        message: 'The new stamp preview looks great on A4, but is it possible to center-align the circular authorized signatory text?',
-        timestamp: '2026-08-22T10:15:00Z',
-      },
-      {
-        id: 'msg_4',
-        senderName: 'Rajaganapathy S.',
-        senderRole: 'ADMIN',
-        message: 'We have pushed an update with fine-tuned SVG vector arcs for the circular stamp. You can re-generate it in Settings.',
-        timestamp: '2026-08-22T14:20:00Z',
-      },
-    ],
-  },
-  {
-    id: 'tkt_8830',
-    organizationId: 'org_apex_logistics',
-    organizationName: 'Apex Logistics & Freight Corp',
-    userId: 'usr_apex_finance',
-    userName: 'Rohan Deshmukh',
-    userEmail: 'finance@apexlogistics.in',
-    subject: 'Interested in upgrading to Annual Enterprise for 10 users',
-    category: 'Subscription & Payment',
-    priority: 'MEDIUM',
-    status: 'OPEN',
-    createdDate: '2026-08-25T18:00:00Z',
-    lastUpdated: '2026-08-25T18:00:00Z',
-    messages: [
-      {
-        id: 'msg_5',
-        senderName: 'Rohan Deshmukh',
-        senderRole: 'USER',
-        message: 'We are enjoying the trial and have tested our e-Way bills. We would like to convert our trial to Enterprise Annual with invoice PO billing. Please share bank NEFT details.',
-        timestamp: '2026-08-25T18:00:00Z',
-      },
-    ],
-  },
-];
-
-export const INITIAL_ANNOUNCEMENTS: PlatformAnnouncement[] = [
-  {
-    id: 'ann_gst_portal_aug2026',
-    title: 'GST Portal Scheduled Maintenance — Aug 28 (00:00 - 04:00 IST)',
-    message: 'The GST System Portal will undergo scheduled server maintenance this Thursday. e-Way bill and GSTR-1 real-time validation will be queued automatically.',
-    type: 'INFO',
-    startDate: '2026-08-25T00:00:00Z',
-    endDate: '2026-08-29T23:59:59Z',
-    targetAudience: 'ALL',
-    isActive: true,
-    isDismissible: true,
-    createdOn: '2026-08-25T00:00:00Z',
-  },
-  {
-    id: 'ann_tally_v4_engine',
-    title: 'New Feature: Tally-Style Multi-Copy Invoice PDF Printing Engine Released',
-    message: 'You can now print Original for Recipient, Duplicate for Transporter, and Triplicate for Supplier in high-definition vector A4 format with integrated digital stamp & signature.',
-    type: 'UPDATE',
-    startDate: '2026-08-20T00:00:00Z',
-    endDate: '2026-09-10T23:59:59Z',
-    targetAudience: 'ALL',
-    isActive: true,
-    isDismissible: true,
-    createdOn: '2026-08-20T00:00:00Z',
-  },
-];
+export const INITIAL_SUPPORT_TICKETS: SupportTicket[] = [];
+export const INITIAL_ANNOUNCEMENTS: PlatformAnnouncement[] = [];
 
 export const INITIAL_EMAIL_TEMPLATES: EmailTemplate[] = [
   {
@@ -810,265 +224,44 @@ export const INITIAL_EMAIL_TEMPLATES: EmailTemplate[] = [
     isEnabled: true,
     lastEdited: '2026-08-20T10:00:00Z',
   },
-  {
-    id: 'tmpl_trial_expiring',
-    key: 'TRIAL_EXPIRING',
-    name: 'Trial Expiring Reminder',
-    subject: 'Your {{saas_name}} Free Trial is ending in {{days_left}} days',
-    description: 'Sent 3 days and 1 day before trial expiration',
-    variables: ['business_name', 'days_left', 'expiry_date', 'upgrade_url'],
-    bodyHtml: `<h2>Keep Your Billing Running Smoothly</h2>
-<p>Hi {{business_name}},</p>
-<p>Your free trial of {{saas_name}} will expire on <strong>{{expiry_date}}</strong> ({{days_left}} days left).</p>
-<p>Upgrade now to ensure zero interruption to your daily tax invoicing and WhatsApp ledger notifications.</p>
-<p><a href="{{upgrade_url}}" style="display:inline-block;padding:10px 20px;background:#2563eb;color:#fff;text-decoration:none;border-radius:8px;font-weight:bold;">Upgrade Subscription</a></p>`,
-    isEnabled: true,
-    lastEdited: '2026-08-20T10:00:00Z',
-  },
 ];
 
-export const INITIAL_IMPERSONATION_SESSIONS: ImpersonationSession[] = [
-  {
-    id: 'imp_sess_101',
-    adminId: 'admin_owner_01',
-    adminName: 'Rajaganapathy S.',
-    adminEmail: 'rajaganapathy2024@gmail.com',
-    adminRole: 'SUPER_ADMIN',
-    organizationId: 'org_hytex_cotton',
-    organizationName: 'HYTEX COTTON MILLS',
-    tenantEmail: 'hytexcottonmills@gmail.com',
-    tenantOwner: 'K. Vasanthi',
-    reason: 'Verified Tiruppur textile GST rates (5% vs 12%) and customized Tally 3-copy invoice header alignment',
-    startedAt: '2026-08-25T11:15:00Z',
-    endedAt: '2026-08-25T11:28:42Z',
-    durationSeconds: 822,
-    ipAddress: '103.117.238.12',
-    status: 'COMPLETED',
-  },
-  {
-    id: 'imp_sess_102',
-    adminId: 'admin_owner_01',
-    adminName: 'Rajaganapathy S.',
-    adminEmail: 'rajaganapathy2024@gmail.com',
-    adminRole: 'SUPER_ADMIN',
-    organizationId: 'org_sri_murugan',
-    organizationName: 'Sri Murugan Traders & Co',
-    tenantEmail: 'murugan.traders@gmail.com',
-    tenantOwner: 'M. Shanmugam',
-    reason: 'Assisted customer with outstanding customer ledger balance reconciliation and WhatsApp reminder test',
-    startedAt: '2026-08-24T16:30:00Z',
-    endedAt: '2026-08-24T16:41:15Z',
-    durationSeconds: 675,
-    ipAddress: '103.117.238.12',
-    status: 'COMPLETED',
-  },
-  {
-    id: 'imp_sess_103',
-    adminId: 'admin_owner_01',
-    adminName: 'Rajaganapathy S.',
-    adminEmail: 'rajaganapathy2024@gmail.com',
-    adminRole: 'SUPER_ADMIN',
-    organizationId: 'org_kerala_spices',
-    organizationName: 'Malabar Spices & Agro Exports',
-    tenantEmail: 'info@malabarspices.co.in',
-    tenantOwner: 'T. K. Mathew',
-    reason: 'Assisted onboarding with multi-rate spice HSN codes and interstate IGST calculation test',
-    startedAt: '2026-08-23T09:20:00Z',
-    endedAt: '2026-08-23T09:35:10Z',
-    durationSeconds: 910,
-    ipAddress: '103.117.238.12',
-    status: 'COMPLETED',
-  },
-];
-
-export const INITIAL_AUDIT_LOGS: AuditLogEntry[] = [
-  {
-    id: 'aud_991205',
-    adminId: 'admin_owner_01',
-    adminName: 'Rajaganapathy S.',
-    adminRole: 'SUPER_ADMIN',
-    action: 'START_IMPERSONATION',
-    targetType: 'IMPERSONATION',
-    targetId: 'org_hytex_cotton',
-    targetName: 'HYTEX COTTON MILLS',
-    organizationId: 'org_hytex_cotton',
-    organizationName: 'HYTEX COTTON MILLS',
-    ipAddress: '103.117.238.12',
-    timestamp: '2026-08-25T11:15:00Z',
-    newValue: 'Support Session: Verified Tiruppur textile GST rates & customized Tally 3-copy invoice header',
-    status: 'SUCCESS',
-  },
-  {
-    id: 'aud_991206',
-    adminId: 'admin_owner_01',
-    adminName: 'Rajaganapathy S.',
-    adminRole: 'SUPER_ADMIN',
-    action: 'EXIT_IMPERSONATION',
-    targetType: 'IMPERSONATION',
-    targetId: 'org_hytex_cotton',
-    targetName: 'HYTEX COTTON MILLS',
-    organizationId: 'org_hytex_cotton',
-    organizationName: 'HYTEX COTTON MILLS',
-    ipAddress: '103.117.238.12',
-    timestamp: '2026-08-25T11:28:42Z',
-    newValue: 'Exited support session (Duration: 13m 42s)',
-    status: 'SUCCESS',
-  },
-  {
-    id: 'aud_991201',
-    adminId: 'admin_owner_01',
-    adminName: 'Rajaganapathy S.',
-    adminRole: 'SUPER_ADMIN',
-    action: 'UPGRADE_ORGANIZATION_PLAN',
-    targetType: 'ORGANIZATION',
-    targetId: 'org_sri_murugan',
-    targetName: 'Sri Murugan Traders & Co',
-    organizationId: 'org_sri_murugan',
-    organizationName: 'Sri Murugan Traders & Co',
-    ipAddress: '103.117.238.12',
-    timestamp: '2026-08-25T14:20:00Z',
-    previousValue: 'Starter Business (₹299/mo)',
-    newValue: 'Annual Business Suite (₹9,990/yr)',
-    status: 'SUCCESS',
-  },
-  {
-    id: 'aud_991202',
-    adminId: 'admin_owner_01',
-    adminName: 'Rajaganapathy S.',
-    adminRole: 'SUPER_ADMIN',
-    action: 'EXTEND_TRIAL_PERIOD',
-    targetType: 'ORGANIZATION',
-    targetId: 'org_apex_logistics',
-    targetName: 'Apex Logistics & Freight Corp',
-    organizationId: 'org_apex_logistics',
-    organizationName: 'Apex Logistics & Freight Corp',
-    ipAddress: '103.117.238.12',
-    timestamp: '2026-08-25T15:00:00Z',
-    previousValue: 'Expiry: 2026-08-22',
-    newValue: 'Expiry: 2026-08-29 (+7 Days Extended)',
-    status: 'SUCCESS',
-  },
-  {
-    id: 'aud_991203',
-    adminId: 'admin_owner_01',
-    adminName: 'Rajaganapathy S.',
-    adminRole: 'SUPER_ADMIN',
-    action: 'UPDATE_FEATURE_FLAG',
-    targetType: 'FEATURE_FLAG',
-    targetId: 'ff_wa_reminders',
-    targetName: 'ENABLE_WHATSAPP_REMINDERS',
-    ipAddress: '103.117.238.12',
-    timestamp: '2026-08-25T15:45:00Z',
-    previousValue: 'Enabled for PRO, BUSINESS',
-    newValue: 'Enabled Globally for all paid tiers',
-    status: 'SUCCESS',
-  },
-  {
-    id: 'aud_991204',
-    adminId: 'admin_owner_01',
-    adminName: 'Rajaganapathy S.',
-    adminRole: 'SUPER_ADMIN',
-    action: 'CREATE_PROMOTIONAL_COUPON',
-    targetType: 'COUPON',
-    targetId: 'cpn_diwali2026',
-    targetName: 'FESTIVE30',
-    ipAddress: '103.117.238.12',
-    timestamp: '2026-08-25T16:10:00Z',
-    newValue: '30% Off Annual Plans (Max 500 Redemptions)',
-    status: 'SUCCESS',
-  },
-];
-
-export const INITIAL_ERROR_LOGS: SystemErrorLog[] = [
-  {
-    id: 'err_502_card',
-    errorType: 'PaymentGatewayFailure',
-    message: 'Card recurring mandate declined with code 502_INSUFFICIENT_FUNDS',
-    organizationId: 'org_karnataka_silks',
-    organizationName: 'Karnataka Heritage Silks',
-    userEmail: 'orders@karnatakasilks.com',
-    endpoint: 'POST /api/v1/billing/subscriptions/charge',
-    httpStatus: 402,
-    firstSeen: '2026-08-24T18:12:00Z',
-    lastSeen: '2026-08-25T03:40:00Z',
-    occurrences: 3,
-    status: 'RESOLVED',
-    stackTrace: 'PaymentError: Card mandate failed at PaymentGatewayService.chargeCardMandate (/server/services/billing.ts:184:22)',
-  },
-  {
-    id: 'err_422_gstin',
-    errorType: 'GSTINValidationWarning',
-    message: 'GSTIN portal checksum mismatch during customer master bulk import',
-    organizationId: 'org_apex_logistics',
-    organizationName: 'Apex Logistics & Freight Corp',
-    userEmail: 'finance@apexlogistics.in',
-    endpoint: 'POST /api/v1/tenants/apex-logistics/customers/import',
-    httpStatus: 422,
-    firstSeen: '2026-08-25T11:00:00Z',
-    lastSeen: '2026-08-25T11:22:00Z',
-    occurrences: 2,
-    status: 'INVESTIGATING',
-    stackTrace: 'ValidationError: Invalid 15-character GSTIN state code checksum at validateGSTIN (/src/utils/gstCalculations.ts:45:10)',
-  },
-];
+export const INITIAL_IMPERSONATION_SESSIONS: ImpersonationSession[] = [];
+export const INITIAL_AUDIT_LOGS: AuditLogEntry[] = [];
+export const INITIAL_ERROR_LOGS: SystemErrorLog[] = [];
 
 export const SUBSYSTEMS_HEALTH: SubsystemStatus[] = [
   {
-    name: 'Core Application API Gateway',
+    name: 'Cloudflare Workers Edge API',
     category: 'Core API',
     status: 'HEALTHY',
-    responseTimeMs: 38,
-    uptimePercentage: 99.98,
-    details: 'Serving 4,200 req/min across Asia-South edge cluster.',
+    responseTimeMs: 28,
+    uptimePercentage: 100.0,
+    details: 'Serving globally distributed serverless requests with sub-50ms latency.',
   },
   {
-    name: 'Multi-Tenant PostgreSQL Database',
+    name: 'Cloudflare D1 Relational Database',
     category: 'Database',
     status: 'HEALTHY',
-    responseTimeMs: 14,
-    uptimePercentage: 99.99,
-    details: 'PgBouncer connection pool healthy. 48 active connections.',
+    responseTimeMs: 12,
+    uptimePercentage: 100.0,
+    details: 'D1 serverless SQLite cluster active and synchronized.',
   },
   {
-    name: 'Authentication & Session Auth',
+    name: 'Authentication & PBKDF2 Hashing',
     category: 'Authentication',
     status: 'HEALTHY',
-    responseTimeMs: 22,
+    responseTimeMs: 18,
     uptimePercentage: 100.0,
-    details: 'JWT validation & 2FA verifications operational.',
+    details: 'HMAC-SHA256 JWT tokens & PBKDF2 password derivation operational.',
   },
   {
-    name: 'Encrypted Storage & Invoice CDN',
-    category: 'Storage & CDN',
-    status: 'HEALTHY',
-    responseTimeMs: 45,
-    uptimePercentage: 99.95,
-    details: 'S3-compatible object store 24.2 GB consumed.',
-  },
-  {
-    name: 'Cashfree & Razorpay Gateway Webhooks',
+    name: 'Payment Gateways & Webhooks',
     category: 'Payment Gateways',
     status: 'HEALTHY',
-    responseTimeMs: 110,
-    uptimePercentage: 99.94,
-    details: 'Webhook queue processing with 0 dropped events.',
-  },
-  {
-    name: 'Email SMTP Dispatcher (Amazon SES)',
-    category: 'Email SMTP',
-    status: 'HEALTHY',
-    responseTimeMs: 85,
-    uptimePercentage: 99.9,
-    details: 'Delivery rate 99.8%. Bounce rate 0.04%.',
-  },
-  {
-    name: 'Meta WhatsApp Business Cloud API',
-    category: 'WhatsApp Business API',
-    status: 'HEALTHY',
-    responseTimeMs: 140,
-    uptimePercentage: 99.7,
-    lastIncident: '2026-08-24 (Minor socket delay)',
-    details: 'Direct messaging and wa.me invoice links active.',
+    responseTimeMs: 45,
+    uptimePercentage: 99.98,
+    details: 'Dodo Payments & Cashfree ready to process checkouts.',
   },
 ];
 
@@ -1085,8 +278,8 @@ export const DEFAULT_PLATFORM_SETTINGS: PlatformSettings = {
   billing: {
     defaultCurrency: 'INR',
     gstTaxPercentage: 18,
-    trialDurationDays: 14,
-    gracePeriodDays: 5,
+    trialDurationDays: 7,
+    gracePeriodDays: 3,
     invoicePrefix: 'SAAS-INV-2026-',
     enableAutoDunning: true,
     retryFailedPaymentsCount: 3,
@@ -1106,7 +299,7 @@ export const DEFAULT_PLATFORM_SETTINGS: PlatformSettings = {
     notifyOnTrialExpiring: true,
     notifyOnNewSignup: true,
     adminNotificationEmail: 'rajaganapathy235@gmail.com',
-    slackWebhookUrl: 'https://hooks.slack.com/services/T00/B00/XXXXXX',
+    slackWebhookUrl: '',
   },
   security: {
     sessionTimeoutMinutes: 60,
@@ -1163,6 +356,85 @@ export class SaaSAdminDB {
     }
   }
 
+  /**
+   * Complete Database Synchronization:
+   * Fetches real records from Cloudflare D1 via /api/admin/* endpoints
+   * and synchronizes the local cache.
+   */
+  static async syncWithDatabase(): Promise<boolean> {
+    try {
+      const [
+        orgsRes,
+        usersRes,
+        plansRes,
+        txnsRes,
+        couponsRes,
+        flagsRes,
+        ticketsRes,
+        annRes,
+        tmplRes,
+        logsRes,
+        errsRes,
+        sessRes,
+      ] = await Promise.allSettled([
+        ApiService.getAdminOrganizations(),
+        ApiService.getAdminUsers(),
+        ApiService.getAdminPlans(),
+        ApiService.getAdminTransactions(),
+        ApiService.getAdminCoupons(),
+        ApiService.getAdminFeatureFlags(),
+        ApiService.getAdminSupportTickets(),
+        ApiService.getAdminAnnouncements(),
+        ApiService.getAdminEmailTemplates(),
+        ApiService.getAdminAuditLogs(),
+        ApiService.getAdminErrorLogs(),
+        ApiService.getAdminImpersonationSessions(),
+      ]);
+
+      if (orgsRes.status === 'fulfilled' && orgsRes.value.success && orgsRes.value.data) {
+        this.saveOrganizations(orgsRes.value.data);
+      }
+      if (usersRes.status === 'fulfilled' && usersRes.value.success && usersRes.value.data) {
+        this.saveUsers(usersRes.value.data);
+      }
+      if (plansRes.status === 'fulfilled' && plansRes.value.success && plansRes.value.data) {
+        this.savePlans(plansRes.value.data);
+      }
+      if (txnsRes.status === 'fulfilled' && txnsRes.value.success && txnsRes.value.data) {
+        this.saveTransactions(txnsRes.value.data);
+      }
+      if (couponsRes.status === 'fulfilled' && couponsRes.value.success && couponsRes.value.data) {
+        this.saveCoupons(couponsRes.value.data);
+      }
+      if (flagsRes.status === 'fulfilled' && flagsRes.value.success && flagsRes.value.data) {
+        this.saveFeatureFlags(flagsRes.value.data);
+      }
+      if (ticketsRes.status === 'fulfilled' && ticketsRes.value.success && ticketsRes.value.data) {
+        this.saveSupportTickets(ticketsRes.value.data);
+      }
+      if (annRes.status === 'fulfilled' && annRes.value.success && annRes.value.data) {
+        this.saveAnnouncements(annRes.value.data);
+      }
+      if (tmplRes.status === 'fulfilled' && tmplRes.value.success && tmplRes.value.data) {
+        this.saveEmailTemplates(tmplRes.value.data);
+      }
+      if (logsRes.status === 'fulfilled' && logsRes.value.success && logsRes.value.data) {
+        this.saveAuditLogs(logsRes.value.data);
+      }
+      if (errsRes.status === 'fulfilled' && errsRes.value.success && errsRes.value.data) {
+        this.saveErrorLogs(errsRes.value.data);
+      }
+      if (sessRes.status === 'fulfilled' && sessRes.value.success && sessRes.value.data) {
+        this.saveImpersonationSessions(sessRes.value.data);
+      }
+
+      return true;
+    } catch (err) {
+      console.warn('[SaaSAdminDB] Sync with database warning:', err);
+      return false;
+    }
+  }
+
   // Organizations
   static getOrganizations(): TenantOrganizationFull[] {
     try {
@@ -1171,6 +443,15 @@ export class SaaSAdminDB {
     } catch {
       return INITIAL_ORGANIZATIONS;
     }
+  }
+
+  static async getOrganizationsAsync(): Promise<TenantOrganizationFull[]> {
+    const res = await ApiService.getAdminOrganizations();
+    if (res.success && res.data) {
+      this.saveOrganizations(res.data);
+      return res.data;
+    }
+    return this.getOrganizations();
   }
 
   static saveOrganizations(orgs: TenantOrganizationFull[]): void {
@@ -1182,14 +463,20 @@ export class SaaSAdminDB {
     const idx = list.findIndex((o) => o.id === org.id);
     if (idx >= 0) {
       list[idx] = org;
+      ApiService.updateAdminOrganization(org.id, org).catch((err) =>
+        console.error('[SaaSAdminDB] Failed to update organization in DB:', err)
+      );
     } else {
       list.unshift(org);
+      ApiService.createAdminOrganization(org).catch((err) =>
+        console.error('[SaaSAdminDB] Failed to create organization in DB:', err)
+      );
     }
     this.saveOrganizations(list);
 
     // Synchronize company profile if this is the active tenant
     const activeTenantId = KannakuDB.getActiveTenantId();
-    if (activeTenantId === org.id || org.id === 'org_hytex_cotton') {
+    if (activeTenantId === org.id) {
       const company = KannakuDB.getCompanyProfile();
       KannakuDB.saveCompanyProfile({
         ...company,
@@ -1204,6 +491,9 @@ export class SaaSAdminDB {
   static deleteOrganization(id: string): void {
     const list = this.getOrganizations().filter((o) => o.id !== id);
     this.saveOrganizations(list);
+    ApiService.deleteAdminOrganization(id).catch((err) =>
+      console.error('[SaaSAdminDB] Failed to delete organization from DB:', err)
+    );
   }
 
   // Plans
@@ -1216,6 +506,15 @@ export class SaaSAdminDB {
     }
   }
 
+  static async getPlansAsync(): Promise<SaaSPlan[]> {
+    const res = await ApiService.getAdminPlans();
+    if (res.success && res.data) {
+      this.savePlans(res.data);
+      return res.data;
+    }
+    return this.getPlans();
+  }
+
   static savePlans(plans: SaaSPlan[]): void {
     localStorage.setItem(STORAGE_KEYS.PLANS, JSON.stringify(plans));
   }
@@ -1225,8 +524,14 @@ export class SaaSAdminDB {
     const idx = list.findIndex((p) => p.id === plan.id);
     if (idx >= 0) {
       list[idx] = plan;
+      ApiService.updateAdminPlan(plan.id, plan).catch((err) =>
+        console.error('[SaaSAdminDB] Failed to update plan in DB:', err)
+      );
     } else {
       list.push(plan);
+      ApiService.createAdminPlan(plan).catch((err) =>
+        console.error('[SaaSAdminDB] Failed to create plan in DB:', err)
+      );
     }
     this.savePlans(list);
   }
@@ -1246,6 +551,15 @@ export class SaaSAdminDB {
     }
   }
 
+  static async getUsersAsync(): Promise<PlatformUser[]> {
+    const res = await ApiService.getAdminUsers();
+    if (res.success && res.data) {
+      this.saveUsers(res.data);
+      return res.data;
+    }
+    return this.getUsers();
+  }
+
   static saveUsers(users: PlatformUser[]): void {
     localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
   }
@@ -1255,8 +569,14 @@ export class SaaSAdminDB {
     const idx = list.findIndex((u) => u.id === user.id);
     if (idx >= 0) {
       list[idx] = user;
+      ApiService.updateAdminUser(user.id, user).catch((err) =>
+        console.error('[SaaSAdminDB] Failed to update user in DB:', err)
+      );
     } else {
       list.unshift(user);
+      ApiService.createAdminUser(user).catch((err) =>
+        console.error('[SaaSAdminDB] Failed to create user in DB:', err)
+      );
     }
     this.saveUsers(list);
   }
@@ -1264,6 +584,9 @@ export class SaaSAdminDB {
   static deleteUser(id: string): void {
     const list = this.getUsers().filter((u) => u.id !== id);
     this.saveUsers(list);
+    ApiService.deleteAdminUser(id).catch((err) =>
+      console.error('[SaaSAdminDB] Failed to delete user from DB:', err)
+    );
   }
 
   // Transactions
@@ -1274,6 +597,15 @@ export class SaaSAdminDB {
     } catch {
       return INITIAL_TRANSACTIONS;
     }
+  }
+
+  static async getTransactionsAsync(): Promise<SaaSTransaction[]> {
+    const res = await ApiService.getAdminTransactions();
+    if (res.success && res.data) {
+      this.saveTransactions(res.data);
+      return res.data;
+    }
+    return this.getTransactions();
   }
 
   static saveTransactions(txns: SaaSTransaction[]): void {
@@ -1289,6 +621,9 @@ export class SaaSAdminDB {
       list.unshift(txn);
     }
     this.saveTransactions(list);
+    ApiService.createAdminTransaction(txn).catch((err) =>
+      console.error('[SaaSAdminDB] Failed to save transaction in DB:', err)
+    );
   }
 
   // Coupons
@@ -1299,6 +634,15 @@ export class SaaSAdminDB {
     } catch {
       return INITIAL_COUPONS;
     }
+  }
+
+  static async getCouponsAsync(): Promise<SaaSCoupon[]> {
+    const res = await ApiService.getAdminCoupons();
+    if (res.success && res.data) {
+      this.saveCoupons(res.data);
+      return res.data;
+    }
+    return this.getCoupons();
   }
 
   static saveCoupons(coupons: SaaSCoupon[]): void {
@@ -1314,11 +658,17 @@ export class SaaSAdminDB {
       list.unshift(coupon);
     }
     this.saveCoupons(list);
+    ApiService.createAdminCoupon(coupon).catch((err) =>
+      console.error('[SaaSAdminDB] Failed to save coupon in DB:', err)
+    );
   }
 
   static deleteCoupon(id: string): void {
     const list = this.getCoupons().filter((c) => c.id !== id);
     this.saveCoupons(list);
+    ApiService.deleteAdminCoupon(id).catch((err) =>
+      console.error('[SaaSAdminDB] Failed to delete coupon in DB:', err)
+    );
   }
 
   // Feature Flags
@@ -1331,6 +681,15 @@ export class SaaSAdminDB {
     }
   }
 
+  static async getFeatureFlagsAsync(): Promise<FeatureFlag[]> {
+    const res = await ApiService.getAdminFeatureFlags();
+    if (res.success && res.data) {
+      this.saveFeatureFlags(res.data);
+      return res.data;
+    }
+    return this.getFeatureFlags();
+  }
+
   static saveFeatureFlags(flags: FeatureFlag[]): void {
     localStorage.setItem(STORAGE_KEYS.FEATURE_FLAGS, JSON.stringify(flags));
   }
@@ -1340,8 +699,14 @@ export class SaaSAdminDB {
     const idx = list.findIndex((f) => f.id === flag.id);
     if (idx >= 0) {
       list[idx] = flag;
+      ApiService.updateAdminFeatureFlag(flag.id, flag).catch((err) =>
+        console.error('[SaaSAdminDB] Failed to update feature flag in DB:', err)
+      );
     } else {
       list.push(flag);
+      ApiService.createAdminFeatureFlag(flag).catch((err) =>
+        console.error('[SaaSAdminDB] Failed to create feature flag in DB:', err)
+      );
     }
     this.saveFeatureFlags(list);
   }
@@ -1356,6 +721,15 @@ export class SaaSAdminDB {
     }
   }
 
+  static async getSupportTicketsAsync(): Promise<SupportTicket[]> {
+    const res = await ApiService.getAdminSupportTickets();
+    if (res.success && res.data) {
+      this.saveSupportTickets(res.data);
+      return res.data;
+    }
+    return this.getSupportTickets();
+  }
+
   static saveSupportTickets(tickets: SupportTicket[]): void {
     localStorage.setItem(STORAGE_KEYS.SUPPORT_TICKETS, JSON.stringify(tickets));
   }
@@ -1365,8 +739,14 @@ export class SaaSAdminDB {
     const idx = list.findIndex((t) => t.id === ticket.id);
     if (idx >= 0) {
       list[idx] = ticket;
+      ApiService.updateAdminSupportTicket(ticket.id, ticket).catch((err) =>
+        console.error('[SaaSAdminDB] Failed to update support ticket in DB:', err)
+      );
     } else {
       list.unshift(ticket);
+      ApiService.createAdminSupportTicket(ticket).catch((err) =>
+        console.error('[SaaSAdminDB] Failed to create support ticket in DB:', err)
+      );
     }
     this.saveSupportTickets(list);
   }
@@ -1379,6 +759,15 @@ export class SaaSAdminDB {
     } catch {
       return INITIAL_ANNOUNCEMENTS;
     }
+  }
+
+  static async getAnnouncementsAsync(): Promise<PlatformAnnouncement[]> {
+    const res = await ApiService.getAdminAnnouncements();
+    if (res.success && res.data) {
+      this.saveAnnouncements(res.data);
+      return res.data;
+    }
+    return this.getAnnouncements();
   }
 
   static saveAnnouncements(announcements: PlatformAnnouncement[]): void {
@@ -1394,11 +783,17 @@ export class SaaSAdminDB {
       list.unshift(announcement);
     }
     this.saveAnnouncements(list);
+    ApiService.createAdminAnnouncement(announcement).catch((err) =>
+      console.error('[SaaSAdminDB] Failed to create announcement in DB:', err)
+    );
   }
 
   static deleteAnnouncement(id: string): void {
     const list = this.getAnnouncements().filter((a) => a.id !== id);
     this.saveAnnouncements(list);
+    ApiService.deleteAdminAnnouncement(id).catch((err) =>
+      console.error('[SaaSAdminDB] Failed to delete announcement in DB:', err)
+    );
   }
 
   // Email Templates
@@ -1411,6 +806,15 @@ export class SaaSAdminDB {
     }
   }
 
+  static async getEmailTemplatesAsync(): Promise<EmailTemplate[]> {
+    const res = await ApiService.getAdminEmailTemplates();
+    if (res.success && res.data) {
+      this.saveEmailTemplates(res.data);
+      return res.data;
+    }
+    return this.getEmailTemplates();
+  }
+
   static saveEmailTemplates(templates: EmailTemplate[]): void {
     localStorage.setItem(STORAGE_KEYS.EMAIL_TEMPLATES, JSON.stringify(templates));
   }
@@ -1420,6 +824,9 @@ export class SaaSAdminDB {
     const idx = list.findIndex((t) => t.id === template.id);
     if (idx >= 0) {
       list[idx] = template;
+      ApiService.updateAdminEmailTemplate(template.id, template).catch((err) =>
+        console.error('[SaaSAdminDB] Failed to update email template in DB:', err)
+      );
     } else {
       list.push(template);
     }
@@ -1434,6 +841,15 @@ export class SaaSAdminDB {
     } catch {
       return INITIAL_AUDIT_LOGS;
     }
+  }
+
+  static async getAuditLogsAsync(): Promise<AuditLogEntry[]> {
+    const res = await ApiService.getAdminAuditLogs();
+    if (res.success && res.data) {
+      this.saveAuditLogs(res.data);
+      return res.data;
+    }
+    return this.getAuditLogs();
   }
 
   static saveAuditLogs(logs: AuditLogEntry[]): void {
@@ -1476,6 +892,10 @@ export class SaaSAdminDB {
     const logs = this.getAuditLogs();
     logs.unshift(newEntry);
     this.saveAuditLogs(logs);
+
+    ApiService.createAdminAuditLog(newEntry).catch((err) =>
+      console.error('[SaaSAdminDB] Failed to log action in DB:', err)
+    );
   }
 
   // Error Logs
@@ -1486,6 +906,15 @@ export class SaaSAdminDB {
     } catch {
       return INITIAL_ERROR_LOGS;
     }
+  }
+
+  static async getErrorLogsAsync(): Promise<SystemErrorLog[]> {
+    const res = await ApiService.getAdminErrorLogs();
+    if (res.success && res.data) {
+      this.saveErrorLogs(res.data);
+      return res.data;
+    }
+    return this.getErrorLogs();
   }
 
   static saveErrorLogs(errors: SystemErrorLog[]): void {
@@ -1523,6 +952,15 @@ export class SaaSAdminDB {
     } catch {
       return INITIAL_IMPERSONATION_SESSIONS;
     }
+  }
+
+  static async getImpersonationSessionsAsync(): Promise<ImpersonationSession[]> {
+    const res = await ApiService.getAdminImpersonationSessions();
+    if (res.success && res.data) {
+      this.saveImpersonationSessions(res.data);
+      return res.data;
+    }
+    return this.getImpersonationSessions();
   }
 
   static saveImpersonationSessions(sessions: ImpersonationSession[]): void {
@@ -1582,7 +1020,6 @@ export class SaaSAdminDB {
       const data = localStorage.getItem(STORAGE_KEYS.PAYMENT_GATEWAYS);
       if (!data) return DEFAULT_PAYMENT_GATEWAYS;
       const parsed = JSON.parse(data);
-      // Ensure all gateways exist in case of partial upgrade
       return {
         activeProvider: parsed.activeProvider || DEFAULT_PAYMENT_GATEWAYS.activeProvider,
         gateways: {
@@ -1599,51 +1036,75 @@ export class SaaSAdminDB {
     localStorage.setItem(STORAGE_KEYS.PAYMENT_GATEWAYS, JSON.stringify(config));
   }
 
-  static getActivePaymentGateway(): PaymentGatewayConfig {
-    const manager = this.getPaymentGatewaysConfig();
-    return manager.gateways[manager.activeProvider] || manager.gateways.dodopayments;
+  static getActivePaymentGateway(): any {
+    const config = this.getPaymentGatewaysConfig();
+    const provider = config.activeProvider;
+    return config.gateways[provider] || config.gateways.razorpay;
   }
 
-  static setActivePaymentGateway(provider: PaymentGatewayProvider): void {
-    const manager = this.getPaymentGatewaysConfig();
-    manager.activeProvider = provider;
-    this.savePaymentGatewaysConfig(manager);
-    this.logAction(
-      'CHANGE_ACTIVE_PAYMENT_GATEWAY',
-      'SETTING',
-      provider,
-      provider.toUpperCase(),
-      { newVal: `Active SaaS Payment Gateway switched to ${provider}` }
-    );
+  static setActivePaymentGateway(provider: string): void {
+    const config = this.getPaymentGatewaysConfig();
+    config.activeProvider = provider as any;
+    this.savePaymentGatewaysConfig(config);
   }
 
-  static updateGatewayConfig(provider: PaymentGatewayProvider, partial: Partial<PaymentGatewayConfig>): void {
-    const manager = this.getPaymentGatewaysConfig();
-    manager.gateways[provider] = {
-      ...manager.gateways[provider],
-      ...partial,
-    };
-    this.savePaymentGatewaysConfig(manager);
-    this.logAction(
-      'UPDATE_GATEWAY_CONFIG',
-      'SETTING',
-      provider,
-      manager.gateways[provider].name,
-      { newVal: `Updated credentials / config for ${provider}` }
-    );
+  static updateGatewayConfig(provider: string, updates: any): void {
+    const config = this.getPaymentGatewaysConfig();
+    if (config.gateways[provider as keyof typeof config.gateways]) {
+      config.gateways[provider as keyof typeof config.gateways] = {
+        ...config.gateways[provider as keyof typeof config.gateways],
+        ...updates,
+      };
+      this.savePaymentGatewaysConfig(config);
+    }
   }
 
-  // Impersonation Handler
-  static startImpersonation(orgId: string, reason?: string, supportTicketId?: string): ImpersonationSession | null {
-    const org = this.getOrganizations().find((o) => o.id === orgId);
-    if (!org) return null;
+  static startImpersonation(
+    orgOrId: TenantOrganizationFull | string,
+    adminUser?: AdminUser,
+    reason?: string
+  ): ImpersonationSession {
+    const org: TenantOrganizationFull =
+      typeof orgOrId === 'string'
+        ? this.getOrganizations().find((o) => o.id === orgOrId) || {
+            id: orgOrId,
+            name: 'Impersonated Workspace',
+            slug: 'impersonated-workspace',
+            ownerName: 'Workspace Owner',
+            adminEmail: 'tenant@kannaku.local',
+            mobile: '+91 98427 55680',
+            country: 'India',
+            city: 'Chennai',
+            state: 'Tamil Nadu',
+            registerNumber: '33AABCK1234F1Z5',
+            planId: 'pro',
+            planName: 'Professional Plan',
+            subscriptionStatus: 'ACTIVE',
+            accountStatus: 'ACTIVE',
+            billingCycle: 'YEARLY',
+            subscriptionStartDate: new Date().toISOString(),
+            renewalDate: new Date(Date.now() + 365 * 86400000).toISOString(),
+            trialEndDate: new Date(Date.now() + 14 * 86400000).toISOString(),
+            mrr: 49,
+            usersCount: 1,
+            usage: {
+              invoicesCreated: 0,
+              estimatesCreated: 0,
+              customersCount: 0,
+              suppliersCount: 0,
+              productsCount: 0,
+              pdfGenerationsCount: 0,
+              gstTaxHandledInr: 0,
+              paymentLedgerEntries: 0,
+            },
+            createdDate: new Date().toISOString(),
+            lastActive: new Date().toISOString(),
+          }
+        : orgOrId;
 
-    const admin = this.getActiveAdminUser();
-    const sessionId = `imp_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
-    const sessionReason = reason?.trim() || 'Support & Troubleshooting Session';
-
+    const admin = adminUser || this.getActiveAdminUser();
     const newSession: ImpersonationSession = {
-      id: sessionId,
+      id: `imp_sess_${Date.now()}`,
       adminId: admin.id,
       adminName: admin.name,
       adminEmail: admin.email,
@@ -1652,28 +1113,16 @@ export class SaaSAdminDB {
       organizationName: org.name,
       tenantEmail: org.adminEmail,
       tenantOwner: org.ownerName,
-      reason: sessionReason,
-      supportTicketId,
+      reason: reason || 'Support and diagnostics session initiated from Super Admin Portal',
       startedAt: new Date().toISOString(),
-      ipAddress: '103.117.238.12 (Admin Secure Terminal)',
+      ipAddress: '103.117.238.12',
       status: 'ACTIVE',
     };
 
-    // Close any previous active sessions
-    const sessions = this.getImpersonationSessions().map((s) =>
-      s.status === 'ACTIVE'
-        ? {
-            ...s,
-            status: 'COMPLETED' as const,
-            endedAt: new Date().toISOString(),
-            durationSeconds: Math.max(1, Math.round((Date.now() - new Date(s.startedAt).getTime()) / 1000)),
-          }
-        : s
-    );
+    const sessions = this.getImpersonationSessions();
     sessions.unshift(newSession);
     this.saveImpersonationSessions(sessions);
 
-    this.setImpersonatedOrgId(orgId);
     this.logAction(
       'START_IMPERSONATION',
       'IMPERSONATION',
@@ -1682,21 +1131,15 @@ export class SaaSAdminDB {
       {
         orgId: org.id,
         orgName: org.name,
-        newVal: `Support Session: ${sessionReason} (Operator: ${admin.name})`,
+        newVal: `Support session started. Reason: ${reason || 'Diagnostics'}`,
       }
     );
 
-    // Switch active workspace in customer client
-    const currentProfile = KannakuDB.getCompanyProfile();
-    KannakuDB.saveCompanyProfile({
-      ...currentProfile,
-      name: org.name,
-      email: org.adminEmail,
-      mobile: org.mobile,
-      registerNumber: org.registerNumber,
-      city: org.city,
-      state: org.state,
-    });
+    ApiService.startAdminImpersonation(org.id, reason).catch((err) =>
+      console.error('[SaaSAdminDB] Failed to start impersonation on server:', err)
+    );
+
+    this.setImpersonatedOrgId(org.id);
     KannakuDB.setActiveTenantId(org.id);
     this.setPortalMode('CUSTOMER');
 
@@ -1742,6 +1185,10 @@ export class SaaSAdminDB {
         }
       );
     }
+
+    ApiService.stopAdminImpersonation().catch((err) =>
+      console.error('[SaaSAdminDB] Failed to stop impersonation on server:', err)
+    );
 
     this.setImpersonatedOrgId(null);
     this.setPortalMode('ADMIN');
@@ -1790,14 +1237,22 @@ export class SaaSAdminDB {
       monthlyRecurringRevenue: totalMRR,
       annualRecurringRevenue: totalARR,
       revenueThisMonth: revenueThisMonth,
-      revenueLastMonth: Math.round(revenueThisMonth * 0.86),
-      newSignupsThisMonth: 8,
-      churnedOrganizationsThisMonth: 1,
+      revenueLastMonth: 0,
+      newSignupsThisMonth: orgs.length,
+      churnedOrganizationsThisMonth: 0,
       failedPaymentsCount: failedPayments,
       openSupportTickets: openTickets,
-      mrrGrowthPct: 16.4,
-      trialToPaidConversionPct: 68.2,
+      mrrGrowthPct: 0,
+      trialToPaidConversionPct: trialOrgs + activeOrgs > 0 ? Math.round((activeOrgs / (trialOrgs + activeOrgs)) * 100) : 0,
     };
+  }
+
+  static async getDashboardStatsAsync(): Promise<SuperAdminDashboardStats> {
+    const res = await ApiService.getAdminStats();
+    if (res.success && res.data) {
+      return res.data;
+    }
+    return this.getDashboardStats();
   }
 
   // Database Export Helper
@@ -1863,7 +1318,6 @@ export class SaaSAdminDB {
       return [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
     }
 
-    // CSV format for specific entity
     if (entity === 'organizations' || !entity) {
       const orgs = this.getOrganizations();
       const headers = ['ID', 'Name', 'Owner', 'Email', 'Mobile', 'GSTIN', 'Plan', 'SubStatus', 'AccStatus', 'MRR_INR', 'Users', 'Invoices', 'CreatedDate'];
@@ -1879,7 +1333,7 @@ export class SaaSAdminDB {
         o.accountStatus,
         o.mrr,
         o.usersCount,
-        o.usage.invoicesCreated,
+        o.usage?.invoicesCreated || 0,
         o.createdDate,
       ]);
       return [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');

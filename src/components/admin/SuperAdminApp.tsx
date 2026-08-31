@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { SuperAdminLayout, AdminNavTab } from './SuperAdminLayout';
+import { SaaSAdminDB } from '../../utils/adminStorage';
 import { AdminDashboardView } from './AdminDashboardView';
 import { OrganizationsListView } from './OrganizationsListView';
 import { PlansManagementView } from './PlansManagementView';
@@ -36,6 +37,11 @@ export const SuperAdminApp: React.FC<SuperAdminAppProps> = ({
   onOpenHomepage,
 }) => {
   const [activeTab, setActiveTab] = useState<AdminNavTab>('dashboard');
+
+  useEffect(() => {
+    // Initial sync of all data collections directly from Cloudflare D1
+    SaaSAdminDB.syncWithDatabase();
+  }, []);
 
   return (
     <SuperAdminLayout

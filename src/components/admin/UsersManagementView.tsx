@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Users,
   Search,
@@ -13,6 +13,7 @@ import {
   Mail,
   Building2,
   Calendar,
+  RefreshCw,
 } from 'lucide-react';
 import { SaaSAdminDB } from '../../utils/adminStorage';
 import { PlatformUser } from '../../types/admin';
@@ -22,10 +23,18 @@ export const UsersManagementView: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('ALL');
   const [statusFilter, setStatusFilter] = useState('ALL');
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const reloadData = () => {
-    setUsers(SaaSAdminDB.getUsers());
+  const reloadData = async () => {
+    setIsRefreshing(true);
+    const live = await SaaSAdminDB.getUsersAsync();
+    setUsers(live);
+    setIsRefreshing(false);
   };
+
+  useEffect(() => {
+    reloadData();
+  }, []);
 
   const handleToggleStatus = (user: PlatformUser) => {
     const isSuspended = user.status === 'SUSPENDED';
@@ -79,6 +88,16 @@ export const UsersManagementView: React.FC = () => {
             Global directory of tenant owners and administrative accounts across all organizations
           </p>
         </div>
+
+        <button
+          onClick={reloadData}
+          disabled={isRefreshing}
+          className="px-3.5 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 rounded-xl text-xs font-semibold flex items-center gap-1.5 cursor-pointer disabled:opacity-50 self-start sm:self-auto"
+          title="Sync user accounts from Cloudflare D1"
+        >
+          <RefreshCw className={`w-3.5 h-3.5 text-emerald-400 ${isRefreshing ? 'animate-spin' : ''}`} />
+          <span>{isRefreshing ? 'Syncing...' : 'Sync DB'}</span>
+        </button>
       </div>
 
       {/* Filter toolbar */}
