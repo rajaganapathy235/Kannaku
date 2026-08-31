@@ -765,7 +765,7 @@ export default function App() {
             </span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="font-medium text-slate-500">Kannaku GST Invoicing Suite</span>
+            <span className="font-medium text-slate-500">JustGST Invoicing Suite</span>
           </div>
         </footer>
       </div>

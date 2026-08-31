@@ -108,7 +108,7 @@ export const AuditLogsView: React.FC<AuditLogsViewProps> = ({
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `kannaku_${entity}_${new Date().toISOString().split('T')[0]}.csv`;
+    a.download = `justgst_${entity}_${new Date().toISOString().split('T')[0]}.csv`;
     a.click();
   };
 

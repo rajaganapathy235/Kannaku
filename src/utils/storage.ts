@@ -39,15 +39,15 @@ export const DEFAULT_DEVOPS_CONFIG: MasterDevOpsConfig = {
   schemaVersion: 'v4.2.0-multitenant-rls',
   lastMigrationDate: '2026-08-25T11:00:00Z',
   
-  githubRepoUrl: 'https://github.com/kannaku-saas/kannaku-gst-billing',
+  githubRepoUrl: 'https://github.com/justgst-saas/justgst-billing',
   gitBranch: 'main',
   lastCommitSha: '3f81e2b4',
   lastCommitMessage: 'feat(multi-tenant): centralized supabase rls isolation & wa.me invoice links',
   lastCommitDate: '2026-08-25T11:30:00Z',
   webhookStatus: 'ACTIVE',
   
-  vercelProjectId: 'prj_kannaku_saas_production',
-  vercelProductionDomain: 'kannaku-billing.vercel.app',
+  vercelProjectId: 'prj_justgst_saas_production',
+  vercelProductionDomain: 'justgst-billing.vercel.app',
   vercelDeploymentStatus: 'READY',
   lastDeployedAt: '2026-08-25T11:42:00Z',
   vercelEnvVars: [
@@ -71,10 +71,10 @@ export const DEFAULT_DEVOPS_CONFIG: MasterDevOpsConfig = {
 
 export const DEFAULT_TENANTS: TenantOrganization[] = [
   {
-    id: 'tenant_kannaku_hq',
-    name: 'Kannaku Infotech & Trade Pvt Ltd',
-    slug: 'kannaku-hq',
-    adminEmail: 'billing@kannaku.in',
+    id: 'tenant_justgst_hq',
+    name: 'JustGST Infotech & Trade Pvt Ltd',
+    slug: 'justgst-hq',
+    adminEmail: 'billing@justgst.in',
     mobile: '+91 98401 23456',
     registerNumber: '33AABCK1234F1Z9',
     plan: 'Enterprise Pro',
@@ -83,7 +83,7 @@ export const DEFAULT_TENANTS: TenantOrganization[] = [
     totalInvoices: 48,
     totalRevenue: 642500,
     createdOn: '2026-01-15T08:00:00Z',
-    customDomain: 'billing.kannakuhq.in',
+    customDomain: 'billing.justgst.in',
     supabaseSchema: 'public',
   },
   {
@@ -1292,7 +1292,7 @@ export class KannakuDB {
 
   static exportAllData(): string {
     const backup = {
-      app: 'Kannaku',
+      app: 'JustGST',
       version: '7.1.7',
       exportedAt: new Date().toISOString(),
       company: this.getCompanyProfile(),

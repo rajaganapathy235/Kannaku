@@ -517,7 +517,7 @@ export async function seedInitialTenants(db: D1Database, env: any = {}): Promise
           id, name, slug, owner_name, admin_email, mobile, country, state, register_number, plan_id, plan_name, subscription_status
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         'org_platform_master',
-        'Kannaku Master Operations',
+        'JustGST Master Operations',
         'platform-master',
         'Rajaganapathy S.',
         'rajaganapathy235@gmail.com',

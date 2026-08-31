@@ -132,7 +132,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
     link.setAttribute('href', encodedUri);
     link.setAttribute(
       'download',
-      `Kannaku_GSTR1_HSN_Summary_${new Date().toISOString().split('T')[0]}.csv`
+      `JustGST_GSTR1_HSN_Summary_${new Date().toISOString().split('T')[0]}.csv`
     );
     document.body.appendChild(link);
     link.click();

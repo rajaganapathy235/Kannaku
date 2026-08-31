@@ -8,7 +8,7 @@ export const EmailTemplatesView: React.FC = () => {
   const [selectedTemplate, setSelectedTemplate] = useState<EmailTemplate>(templates[0] || null);
   const [subject, setSubject] = useState(templates[0]?.subject || '');
   const [body, setBody] = useState(templates[0]?.bodyHtml || '');
-  const [testEmail, setTestEmail] = useState('admin@kannaku.in');
+  const [testEmail, setTestEmail] = useState('admin@justgst.in');
   const [testSent, setTestSent] = useState(false);
 
   const handleSelectTemplate = (t: EmailTemplate) => {

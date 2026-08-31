@@ -15,7 +15,7 @@ export const DataExportCenterView: React.FC = () => {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `kannaku_${collection}_export_${new Date().toISOString().split('T')[0]}.${ext}`;
+      a.download = `justgst_${collection}_export_${new Date().toISOString().split('T')[0]}.${ext}`;
       a.click();
       setDownloading(null);
     }, 400);

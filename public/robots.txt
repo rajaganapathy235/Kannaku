@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /super-admin/
+
+Sitemap: https://justgst.in/sitemap.xml

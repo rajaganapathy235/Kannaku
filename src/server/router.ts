@@ -37,7 +37,7 @@ export async function authenticateRequest(
     token = authHeader.substring(7).trim();
   } else {
     const cookieHeader = request.headers.get('Cookie') || request.headers.get('cookie') || '';
-    const match = cookieHeader.match(/kannaku_session=([^;]+)/);
+    const match = cookieHeader.match(/(?:justgst_session|kannaku_session)=([^;]+)/);
     if (match) {
       token = match[1];
     }
@@ -103,7 +103,7 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
   if (path === '/api/health') {
     return jsonResponse({
       status: 'healthy',
-      app: env.APP_NAME || 'Kanakku GST Billing SaaS',
+      app: env.APP_NAME || 'JustGST Billing SaaS',
       database: 'connected',
       timestamp: new Date().toISOString(),
     });
