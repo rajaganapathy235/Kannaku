@@ -133,7 +133,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       trend: '+6 DAU',
       trendType: 'positive',
       icon: Activity,
-      color: 'from-cyan-500/20 to-cyan-600/10 text-cyan-400 border-cyan-500/30',
+      color: 'from-brand-500/20 to-brand-600/10 text-brand-400 border-brand-500/30',
       targetTab: 'users',
     },
     {
@@ -144,7 +144,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       trend: '+₹640 this mo',
       trendType: 'positive',
       icon: TrendingUp,
-      color: 'from-purple-500/20 to-purple-600/10 text-purple-400 border-purple-500/30',
+      color: 'from-brand-500/20 to-brand-600/10 text-brand-400 border-brand-500/30',
       targetTab: 'analytics_revenue',
     },
     {
@@ -155,7 +155,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       trend: 'Healthy trajectory',
       trendType: 'positive',
       icon: CreditCard,
-      color: 'from-violet-500/20 to-violet-600/10 text-violet-400 border-violet-500/30',
+      color: 'from-emerald-500/20 to-emerald-600/10 text-emerald-400 border-emerald-500/30',
       targetTab: 'analytics_revenue',
     },
     {
@@ -188,7 +188,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       trend: '+4 this week',
       trendType: 'positive',
       icon: Sparkles,
-      color: 'from-teal-500/20 to-teal-600/10 text-teal-400 border-teal-500/30',
+      color: 'from-brand-500/20 to-brand-600/10 text-brand-400 border-brand-500/30',
       targetTab: 'organizations',
     },
     {
@@ -379,9 +379,9 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
           </button>
           <button
             onClick={onOpenCreateOrg}
-            className="p-3 bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-teal-500/40 rounded-xl text-left transition-all cursor-pointer group"
+            className="p-3 bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-brand-500/40 rounded-xl text-left transition-all cursor-pointer group"
           >
-            <PlusCircle className="w-4 h-4 text-teal-400 mb-1.5 group-hover:scale-110 transition-transform" />
+            <PlusCircle className="w-4 h-4 text-brand-400 mb-1.5 group-hover:scale-110 transition-transform" />
             <div className="text-xs font-bold text-white">New Tenant Org</div>
             <div className="text-[10px] text-slate-400">Manual workspace provision</div>
           </button>

@@ -96,7 +96,7 @@ export const SuperAdminLayout: React.FC<SuperAdminLayoutProps> = ({
         {/* Brand Header */}
         <div className="h-16 px-4 border-b border-slate-800/80 flex items-center justify-between">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-600 to-indigo-700 flex items-center justify-center text-white font-black text-lg shadow-md shadow-purple-900/30 shrink-0">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center text-white font-black text-lg shadow-md shadow-brand-900/30 shrink-0">
               <Shield className="w-5 h-5" />
             </div>
             {!sidebarCollapsed && (
@@ -105,7 +105,7 @@ export const SuperAdminLayout: React.FC<SuperAdminLayoutProps> = ({
                   <span className="font-extrabold text-sm tracking-tight text-white uppercase">
                     JustGST
                   </span>
-                  <span className="text-[10px] font-black uppercase px-1.5 py-0.2 rounded-md bg-purple-600/30 text-purple-400 border border-purple-500/40">
+                  <span className="text-[10px] font-black uppercase px-1.5 py-0.2 rounded-md bg-brand-500/20 text-brand-300 border border-brand-500/40">
                     SUPERADMIN
                   </span>
                 </div>
@@ -135,14 +135,14 @@ export const SuperAdminLayout: React.FC<SuperAdminLayoutProps> = ({
                 title={sidebarCollapsed ? item.label : undefined}
                 className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer text-left group ${
                   isActive
-                    ? 'bg-purple-600 text-white shadow-md font-bold shadow-purple-900/40'
+                    ? 'bg-brand-600 text-white shadow-md font-bold shadow-brand-900/40'
                     : 'text-slate-400 hover:bg-slate-900 hover:text-slate-100'
                 }`}
               >
                 <div className="flex items-center gap-3 min-w-0">
                   <Icon
                     className={`w-4 h-4 shrink-0 transition-transform group-hover:scale-110 ${
-                      isActive ? 'text-white' : 'text-slate-400 group-hover:text-purple-400'
+                      isActive ? 'text-white' : 'text-slate-400 group-hover:text-brand-400'
                     }`}
                   />
                   {!sidebarCollapsed && <span className="truncate">{item.label}</span>}
@@ -174,7 +174,7 @@ export const SuperAdminLayout: React.FC<SuperAdminLayoutProps> = ({
               <span>{activeGateway.name}</span>
               <button
                 onClick={() => onTabChange('gateways')}
-                className="text-[10px] text-purple-400 hover:underline cursor-pointer"
+                className="text-[10px] text-brand-400 hover:underline cursor-pointer"
               >
                 Change
               </button>
@@ -186,7 +186,7 @@ export const SuperAdminLayout: React.FC<SuperAdminLayoutProps> = ({
         <div className="p-3 border-t border-slate-800/80 bg-slate-950">
           <button
             onClick={onSwitchToCustomerApp}
-            className="w-full flex items-center justify-center gap-2 px-3 py-2.5 bg-slate-900 hover:bg-slate-800 text-purple-400 hover:text-purple-300 border border-slate-800 rounded-xl text-xs font-bold transition-all cursor-pointer active:scale-98 shadow-xs"
+            className="w-full flex items-center justify-center gap-2 px-3 py-2.5 bg-slate-900 hover:bg-slate-800 text-brand-400 hover:text-brand-300 border border-slate-800 rounded-xl text-xs font-bold transition-all cursor-pointer active:scale-98 shadow-xs"
           >
             <ArrowRightLeft className="w-4 h-4 shrink-0" />
             {!sidebarCollapsed && <span>Open Client Billing App</span>}
@@ -211,7 +211,7 @@ export const SuperAdminLayout: React.FC<SuperAdminLayoutProps> = ({
             {/* Active Payment Gateway Badge */}
             <div
               onClick={() => onTabChange('gateways')}
-              className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-purple-950/40 border border-purple-500/30 text-purple-200 text-xs font-semibold cursor-pointer hover:bg-purple-950/60 transition-colors"
+              className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-brand-950/40 border border-brand-500/30 text-brand-200 text-xs font-semibold cursor-pointer hover:bg-brand-950/60 transition-colors"
             >
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
               <span>Gateway:</span>
@@ -226,9 +226,9 @@ export const SuperAdminLayout: React.FC<SuperAdminLayoutProps> = ({
               <button
                 onClick={onOpenHomepage}
                 title="View Public Product Homepage"
-                className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-blue-600/15 hover:bg-blue-600/25 text-blue-400 border border-blue-500/30 rounded-xl text-xs font-bold transition-colors cursor-pointer"
+                className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-brand-600/15 hover:bg-brand-600/25 text-brand-400 border border-brand-500/30 rounded-xl text-xs font-bold transition-colors cursor-pointer"
               >
-                <Globe className="w-3.5 h-3.5 text-blue-400" />
+                <Globe className="w-3.5 h-3.5 text-brand-400" />
                 <span>Homepage</span>
               </button>
             )}
@@ -247,7 +247,7 @@ export const SuperAdminLayout: React.FC<SuperAdminLayoutProps> = ({
             <button
               onClick={onSwitchToCustomerApp}
               title="Launch Customer Invoicing View"
-              className="hidden md:flex items-center gap-1.5 px-3 py-1.5 bg-purple-600/10 hover:bg-purple-600/20 text-purple-400 border border-purple-500/30 rounded-xl text-xs font-bold transition-colors cursor-pointer"
+              className="hidden md:flex items-center gap-1.5 px-3 py-1.5 bg-brand-600/10 hover:bg-brand-600/20 text-brand-400 border border-brand-500/30 rounded-xl text-xs font-bold transition-colors cursor-pointer"
             >
               <ExternalLink className="w-3.5 h-3.5" />
               <span>Customer View</span>
@@ -264,7 +264,7 @@ export const SuperAdminLayout: React.FC<SuperAdminLayoutProps> = ({
                 <div className="text-xs font-bold text-white truncate max-w-[140px]">
                   {adminUser.name}
                 </div>
-                <div className="text-[10px] font-semibold text-purple-400 truncate">
+                <div className="text-[10px] font-semibold text-brand-400 truncate">
                   SUPER ADMIN
                 </div>
               </div>

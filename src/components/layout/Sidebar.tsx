@@ -98,14 +98,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
               onClick={() => onTabChange(item.id)}
               className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg font-semibold text-xs transition-colors cursor-pointer text-left ${
                 isActive
-                  ? 'bg-blue-50 text-blue-700 font-bold border border-blue-200/60'
+                  ? 'bg-brand-50 text-brand-700 font-bold border border-brand-200/60'
                   : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
               }`}
             >
               <div className="flex items-center gap-2.5">
                 <Icon
                   className={`w-4 h-4 ${
-                    isActive ? 'text-blue-600' : 'text-slate-400'
+                    isActive ? 'text-brand-600' : 'text-slate-400'
                   }`}
                 />
                 <span>{item.label}</span>
@@ -114,7 +114,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <span
                   className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
                     isActive
-                      ? 'bg-blue-600 text-white'
+                      ? 'bg-brand-600 text-white'
                       : 'bg-slate-100 text-slate-600'
                   }`}
                 >
@@ -136,13 +136,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
         <div className="text-xs text-slate-500 flex justify-between items-center font-medium">
           <span>Invoices Recorded</span>
-          <span className="font-mono text-[11px] font-bold text-blue-600">
+          <span className="font-mono text-[11px] font-bold text-brand-600">
             {invoicesCount}
           </span>
         </div>
         <div className="mt-2 h-1.5 w-full bg-slate-200 rounded-full overflow-hidden">
           <div
-            className="h-full bg-blue-600 rounded-full transition-all duration-500"
+            className="h-full bg-brand-600 rounded-full transition-all duration-500"
             style={{ width: `${Math.min(100, Math.max(15, invoicesCount * 12))}%` }}
           ></div>
         </div>
@@ -152,7 +152,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             onClick={onOpenHomepage}
             className="mt-3 w-full py-1.5 px-3 bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 shadow-2xs transition-colors cursor-pointer"
           >
-            <Globe className="w-3.5 h-3.5 text-blue-600" />
+            <Globe className="w-3.5 h-3.5 text-brand-600" />
             <span>Product Homepage</span>
           </button>
         )}
@@ -162,7 +162,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             onClick={onOpenSuperAdmin}
             className="mt-2 w-full py-2 px-3 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-2 shadow-xs transition-colors cursor-pointer"
           >
-            <Shield className="w-3.5 h-3.5 text-purple-400" />
+            <Shield className="w-3.5 h-3.5 text-brand-400" />
             <span>Super Admin Portal</span>
           </button>
         )}

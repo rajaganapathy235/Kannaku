@@ -46,7 +46,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans antialiased selection:bg-blue-600 selection:text-white">
+    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans antialiased selection:bg-brand-600 selection:text-white">
       {/* Top Navigation */}
       <header className="sticky top-0 z-40 w-full bg-white/95 backdrop-blur-md border-b border-slate-200">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
@@ -62,16 +62,16 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
           {/* Navigation Links (Desktop) */}
           <nav className="hidden md:flex items-center gap-7 text-xs font-semibold text-slate-600">
-            <a href="#features" className="hover:text-blue-600 transition-colors">
+            <a href="#features" className="hover:text-brand-600 transition-colors">
               Features
             </a>
-            <a href="#templates" className="hover:text-blue-600 transition-colors">
+            <a href="#templates" className="hover:text-brand-600 transition-colors">
               Print Formats
             </a>
-            <a href="#pricing" className="hover:text-blue-600 transition-colors">
+            <a href="#pricing" className="hover:text-brand-600 transition-colors">
               Pricing Plans
             </a>
-            <a href="#faq" className="hover:text-blue-600 transition-colors">
+            <a href="#faq" className="hover:text-brand-600 transition-colors">
               FAQ
             </a>
           </nav>
@@ -81,7 +81,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             {session ? (
               <button
                 onClick={onEnterDemoApp}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer active:scale-98"
+                className="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer active:scale-98"
               >
                 <span>Go to Workspace</span>
                 <ArrowRight className="w-3.5 h-3.5" />
@@ -96,7 +96,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 </button>
                 <button
                   onClick={onStartTrial}
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer active:scale-98"
+                  className="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer active:scale-98"
                 >
                   <span>14-Day Free Trial</span>
                   <ArrowRight className="w-3.5 h-3.5" />
@@ -123,7 +123,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           </div>
 
           {/* Trust Pill */}
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-50 border border-blue-200 text-xs text-blue-800 font-medium shadow-2xs">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-brand-50 border border-brand-200 text-xs text-brand-800 font-medium shadow-2xs">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
             <span>Complete Indian GST Invoicing & Accounting Suite</span>
           </div>
@@ -131,7 +131,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           {/* Main Title */}
           <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-slate-900 tracking-tight leading-[1.15]">
             GST Billing Made Fast,{' '}
-            <span className="text-blue-600">Accurate, and Effortless.</span>
+            <span className="text-brand-600">Accurate, and Effortless.</span>
           </h1>
 
           <p className="text-sm sm:text-base text-slate-600 max-w-2xl mx-auto leading-relaxed">
@@ -142,7 +142,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
             <button
               onClick={onStartTrial}
-              className="w-full sm:w-auto px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-sm transition-all shadow-md shadow-blue-600/20 flex items-center justify-center gap-2 cursor-pointer active:scale-98"
+              className="w-full sm:w-auto px-6 py-3 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-xl text-sm transition-all shadow-md shadow-brand-600/20 flex items-center justify-center gap-2 cursor-pointer active:scale-98"
             >
               <span>Start 14-Day Free Trial</span>
               <ArrowRight className="w-4 h-4" />
@@ -152,7 +152,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               onClick={onEnterDemoApp}
               className="w-full sm:w-auto px-6 py-3 bg-white hover:bg-slate-100 text-slate-700 font-bold border border-slate-300 rounded-xl text-sm transition-all flex items-center justify-center gap-2 cursor-pointer shadow-2xs"
             >
-              <Play className="w-4 h-4 text-blue-600 fill-blue-600" />
+              <Play className="w-4 h-4 text-brand-600 fill-brand-600" />
               <span>Explore Live Workspace</span>
             </button>
           </div>
@@ -200,7 +200,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 </div>
                 <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80">
                   <div className="text-[11px] text-slate-500 font-semibold">GST Collected</div>
-                  <div className="text-base font-black text-blue-600 font-mono">₹2,27,240</div>
+                  <div className="text-base font-black text-brand-600 font-mono">₹2,27,240</div>
                   <div className="text-[10px] text-slate-500">CGST + SGST</div>
                 </div>
                 <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80">
@@ -219,7 +219,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               <div className="border border-slate-200 rounded-xl overflow-hidden">
                 <div className="bg-slate-50 px-4 py-2.5 border-b border-slate-200 flex items-center justify-between text-xs font-bold text-slate-700">
                   <span>Recent Tax Invoices</span>
-                  <span className="text-[11px] text-blue-600 font-medium">Auto Place-of-Supply IGST/CGST</span>
+                  <span className="text-[11px] text-brand-600 font-medium">Auto Place-of-Supply IGST/CGST</span>
                 </div>
                 <div className="divide-y divide-slate-100 text-xs">
                   <div className="px-4 py-3 flex items-center justify-between">
@@ -263,7 +263,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       {/* What's in the App Section */}
       <section id="features" className="py-16 sm:py-20 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
         <div className="text-center max-w-2xl mx-auto space-y-2">
-          <span className="text-xs font-bold text-blue-600 uppercase tracking-wider">
+          <span className="text-xs font-bold text-brand-600 uppercase tracking-wider">
             Built-In Capabilities
           </span>
           <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
@@ -277,7 +277,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {/* Module 1: Invoicing */}
           <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-3">
-            <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-600">
+            <div className="w-10 h-10 rounded-xl bg-brand-50 border border-brand-200 flex items-center justify-center text-brand-600">
               <FileText className="w-5 h-5" />
             </div>
             <h3 className="text-sm font-bold text-slate-900">GST Tax Invoices & Estimates</h3>
@@ -299,7 +299,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
           {/* Module 3: Client & Supplier Ledgers */}
           <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-3">
-            <div className="w-10 h-10 rounded-xl bg-purple-50 border border-purple-200 flex items-center justify-center text-purple-600">
+            <div className="w-10 h-10 rounded-xl bg-brand-50 border border-brand-200 flex items-center justify-center text-brand-600">
               <Users className="w-5 h-5" />
             </div>
             <h3 className="text-sm font-bold text-slate-900">Customer & Supplier Ledgers</h3>
@@ -321,7 +321,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
           {/* Module 5: Payment Records */}
           <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-3">
-            <div className="w-10 h-10 rounded-xl bg-sky-50 border border-sky-200 flex items-center justify-center text-sky-600">
+            <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600">
               <Wallet className="w-5 h-5" />
             </div>
             <h3 className="text-sm font-bold text-slate-900">Payment Reconciliation</h3>
@@ -332,7 +332,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
           {/* Module 6: GST Reports & Daybook */}
           <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-3">
-            <div className="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-200 flex items-center justify-center text-indigo-600">
+            <div className="w-10 h-10 rounded-xl bg-brand-50 border border-brand-200 flex items-center justify-center text-brand-600">
               <BarChart3 className="w-5 h-5" />
             </div>
             <h3 className="text-sm font-bold text-slate-900">GSTR-1 Reports & Daybook</h3>
@@ -347,7 +347,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       <section id="templates" className="py-16 bg-white border-y border-slate-200">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
           <div className="text-center max-w-2xl mx-auto space-y-2">
-            <span className="text-xs font-bold text-blue-600 uppercase tracking-wider">
+            <span className="text-xs font-bold text-brand-600 uppercase tracking-wider">
               Print Formats
             </span>
             <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
@@ -362,7 +362,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             {/* Format 1 */}
             <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
               <div className="aspect-[4/3] rounded-xl bg-white border border-slate-200 p-4 flex flex-col justify-between shadow-2xs">
-                <div className="flex justify-between items-center text-[10px] font-bold text-blue-600">
+                <div className="flex justify-between items-center text-[10px] font-bold text-brand-600">
                   <span>TAX INVOICE</span>
                   <span className="text-slate-400 font-mono">Original</span>
                 </div>
@@ -431,7 +431,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       {/* Pricing Section (Verified with SubscriptionView rates) */}
       <section id="pricing" className="py-16 sm:py-20 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
         <div className="text-center max-w-2xl mx-auto space-y-2">
-          <span className="text-xs font-bold text-blue-600 uppercase tracking-wider">
+          <span className="text-xs font-bold text-brand-600 uppercase tracking-wider">
             Clear, Transparent Pricing
           </span>
           <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
@@ -486,18 +486,18 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
           {/* 6 Months */}
           <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-2xs flex flex-col justify-between space-y-6 relative">
-            <div className="absolute -top-3 right-4 px-2.5 py-0.5 bg-blue-600 text-white text-[10px] font-bold rounded-full uppercase tracking-wider">
+            <div className="absolute -top-3 right-4 px-2.5 py-0.5 bg-brand-600 text-white text-[10px] font-bold rounded-full uppercase tracking-wider">
               Save 20%
             </div>
 
             <div className="space-y-4">
               <div>
-                <span className="text-xs font-bold text-blue-700">6 Months (Semi-Annual)</span>
+                <span className="text-xs font-bold text-brand-700">6 Months (Semi-Annual)</span>
                 <p className="text-[11px] text-slate-500 mt-0.5">Billed ₹474 every 6 months</p>
               </div>
 
               <div className="flex items-baseline gap-1">
-                <span className="text-3xl font-black text-blue-600 font-mono">₹79</span>
+                <span className="text-3xl font-black text-brand-600 font-mono">₹79</span>
                 <span className="text-xs text-slate-500">/ month (₹474 total)</span>
               </div>
 
@@ -523,14 +523,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
             <button
               onClick={onStartTrial}
-              className="w-full py-2.5 bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold rounded-xl text-xs transition-colors cursor-pointer border border-blue-200"
+              className="w-full py-2.5 bg-brand-50 hover:bg-brand-100 text-brand-700 font-bold rounded-xl text-xs transition-colors cursor-pointer border border-brand-200"
             >
               Start 14-Day Free Trial
             </button>
           </div>
 
           {/* 12 Months (Best Value) */}
-          <div className="p-6 rounded-2xl bg-white border-2 border-blue-600 shadow-md flex flex-col justify-between space-y-6 relative">
+          <div className="p-6 rounded-2xl bg-white border-2 border-brand-600 shadow-md flex flex-col justify-between space-y-6 relative">
             <div className="absolute -top-3 right-4 px-2.5 py-0.5 bg-emerald-600 text-white text-[10px] font-bold rounded-full uppercase tracking-wider">
               Save 50% • Best Value
             </div>
@@ -568,7 +568,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
             <button
               onClick={onStartTrial}
-              className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs transition-colors cursor-pointer shadow-xs active:scale-98"
+              className="w-full py-2.5 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-xl text-xs transition-colors cursor-pointer shadow-xs active:scale-98"
             >
               Claim 14-Day Free Trial
             </button>
@@ -580,7 +580,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       <section id="faq" className="py-16 bg-white border-t border-slate-200">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
           <div className="text-center space-y-2">
-            <span className="text-xs font-bold text-blue-600 uppercase tracking-wider">
+            <span className="text-xs font-bold text-brand-600 uppercase tracking-wider">
               Answers
             </span>
             <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
@@ -613,12 +613,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               >
                 <button
                   onClick={() => toggleFaq(idx)}
-                  className="w-full px-5 py-3.5 text-left flex items-center justify-between text-xs sm:text-sm font-bold text-slate-800 hover:text-blue-600 transition-colors cursor-pointer"
+                  className="w-full px-5 py-3.5 text-left flex items-center justify-between text-xs sm:text-sm font-bold text-slate-800 hover:text-brand-600 transition-colors cursor-pointer"
                 >
                   <span>{faq.q}</span>
                   <ChevronDown
                     className={`w-4 h-4 text-slate-400 transition-transform ${
-                      activeFaq === idx ? 'rotate-180 text-blue-600' : ''
+                      activeFaq === idx ? 'rotate-180 text-brand-600' : ''
                     }`}
                   />
                 </button>
@@ -649,13 +649,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             <div className="flex items-center gap-5 text-slate-600 text-xs font-semibold">
               <button
                 onClick={onEnterDemoApp}
-                className="hover:text-blue-600 transition-colors cursor-pointer"
+                className="hover:text-brand-600 transition-colors cursor-pointer"
               >
                 Open Workspace
               </button>
               <button
                 onClick={onSignIn}
-                className="hover:text-blue-600 transition-colors cursor-pointer"
+                className="hover:text-brand-600 transition-colors cursor-pointer"
               >
                 Sign In
               </button>

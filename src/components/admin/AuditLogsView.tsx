@@ -131,7 +131,7 @@ export const AuditLogsView: React.FC<AuditLogsViewProps> = ({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-slate-800">
         <div>
           <h1 className="text-xl font-black text-white tracking-tight flex items-center gap-2.5">
-            <History className="w-6 h-6 text-purple-400" />
+            <History className="w-6 h-6 text-brand-400" />
             <span>Activity & Support Impersonation Audit Trail</span>
           </h1>
           <p className="text-xs text-slate-400 mt-0.5">
@@ -190,7 +190,7 @@ export const AuditLogsView: React.FC<AuditLogsViewProps> = ({
         <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
           <div className="flex items-center justify-between text-slate-400 text-xs font-medium">
             <span>Unique Tenants Assisted</span>
-            <Building2 className="w-4 h-4 text-purple-400" />
+            <Building2 className="w-4 h-4 text-brand-400" />
           </div>
           <div className="text-2xl font-black text-white">{uniqueTenants}</div>
           <p className="text-[11px] text-slate-500">Distinct customer businesses supported</p>
@@ -244,7 +244,7 @@ export const AuditLogsView: React.FC<AuditLogsViewProps> = ({
           }}
           className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
             viewTab === 'impersonation'
-              ? 'bg-purple-600 text-white shadow-md shadow-purple-900/30'
+              ? 'bg-brand-600 text-white shadow-md shadow-brand-900/30'
               : 'bg-slate-950 text-slate-400 hover:text-white hover:bg-slate-900 border border-slate-800'
           }`}
         >
@@ -259,7 +259,7 @@ export const AuditLogsView: React.FC<AuditLogsViewProps> = ({
           }}
           className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
             viewTab === 'all_actions'
-              ? 'bg-purple-600 text-white shadow-md shadow-purple-900/30'
+              ? 'bg-brand-600 text-white shadow-md shadow-brand-900/30'
               : 'bg-slate-950 text-slate-400 hover:text-white hover:bg-slate-900 border border-slate-800'
           }`}
         >
@@ -281,7 +281,7 @@ export const AuditLogsView: React.FC<AuditLogsViewProps> = ({
                 ? 'Search tenant, operator, reason, email...'
                 : 'Search admin, action, target entity...'
             }
-            className="w-full pl-9 pr-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-purple-500"
+            className="w-full pl-9 pr-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-brand-500"
           />
         </div>
 
@@ -294,7 +294,7 @@ export const AuditLogsView: React.FC<AuditLogsViewProps> = ({
                   onClick={() => setStatusFilter(st)}
                   className={`px-3 py-1 rounded-lg font-bold text-[11px] transition-all cursor-pointer ${
                     statusFilter === st
-                      ? 'bg-purple-600 text-white shadow-xs'
+                      ? 'bg-brand-600 text-white shadow-xs'
                       : 'text-slate-400 hover:text-white'
                   }`}
                 >

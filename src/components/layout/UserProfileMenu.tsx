@@ -75,7 +75,7 @@ export const UserProfileMenu: React.FC<UserProfileMenuProps> = ({
           <div className="px-4 py-3 border-b border-slate-100 space-y-1">
             <div className="font-bold text-slate-900 text-sm flex items-center justify-between">
               <span className="truncate">{user?.name || 'K. Vasanthi'}</span>
-              <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-blue-50 text-blue-700 border border-blue-200">
+              <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-brand-50 text-brand-700 border border-brand-200">
                 {user?.role || 'OWNER'}
               </span>
             </div>
@@ -93,7 +93,7 @@ export const UserProfileMenu: React.FC<UserProfileMenuProps> = ({
                 setIsOpen(false);
                 onOpenSettings();
               }}
-              className="w-full px-4 py-2 text-left text-slate-700 hover:bg-slate-50 hover:text-blue-600 flex items-center gap-2.5 transition-colors cursor-pointer font-medium"
+              className="w-full px-4 py-2 text-left text-slate-700 hover:bg-slate-50 hover:text-brand-600 flex items-center gap-2.5 transition-colors cursor-pointer font-medium"
             >
               <Building2 className="w-4 h-4 text-slate-400" />
               <span>Company Profile & Settings</span>
@@ -105,9 +105,9 @@ export const UserProfileMenu: React.FC<UserProfileMenuProps> = ({
                   setIsOpen(false);
                   onOpenHomepage();
                 }}
-                className="w-full px-4 py-2 text-left text-blue-600 hover:bg-blue-50 flex items-center gap-2.5 transition-colors cursor-pointer font-semibold"
+                className="w-full px-4 py-2 text-left text-brand-600 hover:bg-brand-50 flex items-center gap-2.5 transition-colors cursor-pointer font-semibold"
               >
-                <Globe className="w-4 h-4 text-blue-500" />
+                <Globe className="w-4 h-4 text-brand-500" />
                 <span>Product Homepage</span>
               </button>
             )}
@@ -118,9 +118,9 @@ export const UserProfileMenu: React.FC<UserProfileMenuProps> = ({
                   setIsOpen(false);
                   onOpenSuperAdmin();
                 }}
-                className="w-full px-4 py-2 text-left text-purple-700 hover:bg-purple-50 flex items-center gap-2.5 transition-colors cursor-pointer font-bold"
+                className="w-full px-4 py-2 text-left text-brand-700 hover:bg-brand-50 flex items-center gap-2.5 transition-colors cursor-pointer font-bold"
               >
-                <Shield className="w-4 h-4 text-purple-600" />
+                <Shield className="w-4 h-4 text-brand-600" />
                 <span>SuperAdmin Console</span>
               </button>
             )}

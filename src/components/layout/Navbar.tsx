@@ -82,7 +82,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         <div className="hidden lg:flex items-center gap-2 px-2.5 py-1 bg-slate-100 text-slate-700 rounded-md text-xs font-medium shrink-0 border border-slate-200">
           <Building2 className="w-3.5 h-3.5 text-slate-500" />
           <span className="truncate max-w-[200px] font-semibold">{company.name}</span>
-          <span className="font-mono text-[11px] text-blue-600">({company.registerNumber})</span>
+          <span className="font-mono text-[11px] text-brand-600">({company.registerNumber})</span>
         </div>
       </div>
 
@@ -96,14 +96,14 @@ export const Navbar: React.FC<NavbarProps> = ({
               value={searchTerm}
               onChange={(e) => onSearchChange(e.target.value)}
               placeholder="Search records..."
-              className="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-md text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-blue-600 transition-colors"
+              className="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-md text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-brand-600 transition-colors"
             />
           </div>
         )}
 
         <button
           onClick={onNewInvoice}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg font-semibold text-xs shadow-xs transition-colors flex items-center gap-1.5 active:scale-98"
+          className="bg-brand-600 hover:bg-brand-700 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg font-semibold text-xs shadow-xs transition-colors flex items-center gap-1.5 active:scale-98"
           title="Create New GST Tax Invoice"
         >
           <PlusCircle className="w-4 h-4" />
@@ -117,7 +117,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             className="bg-slate-900 hover:bg-slate-800 text-slate-100 border border-slate-700 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-lg font-bold text-xs shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer"
             title="Open Platform Super Admin Portal"
           >
-            <Shield className="w-3.5 h-3.5 text-purple-400" />
+            <Shield className="w-3.5 h-3.5 text-brand-400" />
             <span className="hidden md:inline">Admin Portal</span>
           </button>
         )}
