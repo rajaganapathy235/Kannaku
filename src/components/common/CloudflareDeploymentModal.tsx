@@ -162,7 +162,7 @@ wrangler pages deploy dist --project-name=kannaku-gst-billing`;
               <div className="p-4 bg-slate-950 border border-slate-800 rounded-2xl space-y-2">
                 <h4 className="font-bold text-slate-200 flex items-center gap-2">
                   <Cpu className="w-4 h-4 text-orange-400" />
-                  <span>How Cloudflare Hosting & D1 Works for Kannaku:</span>
+                  <span>How Cloudflare Hosting & D1 Works for JustGST:</span>
                 </h4>
                 <ul className="space-y-1.5 text-slate-300 list-disc list-inside">
                   <li>

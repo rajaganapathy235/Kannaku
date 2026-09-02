@@ -152,7 +152,7 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
         date: new Date().toISOString(),
         status: 'SUCCESSFUL',
         subscriptionId: `sub_${Date.now()}`,
-        customerEmail: company.email || activeOrg?.adminEmail || 'admin@kannaku.in',
+        customerEmail: company.email || activeOrg?.adminEmail || 'admin@justgst.in',
       };
       SaaSAdminDB.saveTransaction(newTxn);
 

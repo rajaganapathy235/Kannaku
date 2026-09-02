@@ -79,19 +79,12 @@ export const LoginPage: React.FC<LoginPageProps> = ({
       <div className="relative max-w-md w-full mx-auto space-y-6">
         {/* Brand Header */}
         <div className="text-center space-y-2">
-          <div className="inline-flex items-center justify-center gap-2.5 px-4 py-2 rounded-2xl bg-slate-900/80 border border-slate-800 shadow-xl backdrop-blur-md">
-            <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center text-white font-black text-lg shadow-md shadow-blue-600/40">
-              K
-            </div>
-            <div className="text-left">
-              <div className="text-base font-black tracking-tight text-white flex items-center gap-1.5">
-                <span>KANNAKU</span>
-                <span className="text-[10px] px-1.5 py-0.2 rounded bg-blue-500/20 text-blue-400 font-mono font-bold">
-                  GST V4.2
-                </span>
-              </div>
-              <p className="text-[10px] text-slate-400 font-medium">Next-Gen Multi-Tenant ERP & Billing</p>
-            </div>
+          <div className="inline-flex items-center justify-center p-3 rounded-2xl bg-slate-900/90 border border-slate-800 shadow-xl backdrop-blur-md">
+            <img
+              src="/logo-horizontal.svg"
+              alt="JustGST"
+              className="h-9 w-auto object-contain brightness-110"
+            />
           </div>
 
           <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight pt-2">

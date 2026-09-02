@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 48" fill="none" width="220" height="48">
+  <!-- Brand Icon / Emblem -->
+  <g transform="translate(4, 4)">
+    <rect width="40" height="40" rx="10" fill="url(#brandGrad)" />
+    <path d="M12 28L18 34L29 16" stroke="#ffffff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M14 14H24M14 20H20" stroke="rgba(255,255,255,0.4)" stroke-width="2" stroke-linecap="round"/>
+  </g>
+  
+  <!-- Wordmark -->
+  <text x="54" y="32" font-family="-apple-system, BlinkMacSystemFont, 'Plus Jakarta Sans', Inter, sans-serif" font-size="25" font-weight="800" letter-spacing="-0.5">
+    <tspan fill="#0f172a" class="dark:fill-white">Just</tspan><tspan fill="#059669">GST</tspan>
+  </text>
+
+  <!-- Gradients -->
+  <defs>
+    <linearGradient id="brandGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10b981" />
+      <stop offset="100%" stop-color="#047857" />
+    </linearGradient>
+  </defs>
+</svg>

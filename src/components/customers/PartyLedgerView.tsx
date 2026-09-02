@@ -305,7 +305,7 @@ GSTIN: ${party.registerNumber || 'URP'}
 • IFSC Code: ${company.bankDetail.ifscCode}
 • UPI ID: ${company.bankDetail.upiId}
 
-_Generated via Kannaku GST Ledger_`;
+_Generated via JustGST Ledger_`;
 
     const encoded = encodeURIComponent(message);
     const url = phone
