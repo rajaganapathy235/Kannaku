@@ -19,7 +19,7 @@ export const LiveActivityFeedView: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-slate-800">
         <div>
           <h1 className="text-xl font-black text-white tracking-tight flex items-center gap-2">
-            <History className="w-6 h-6 text-blue-400" />
+            <History className="w-6 h-6 text-brand-400" />
             <span>Real-time Live Platform Activity Stream</span>
           </h1>
           <p className="text-xs text-slate-400 mt-0.5">
@@ -45,7 +45,7 @@ export const LiveActivityFeedView: React.FC = () => {
                   </span>
                 </div>
                 <div className="text-slate-400">
-                  Initiated by <strong className="text-blue-400">{log.adminName}</strong> on target{' '}
+                  Initiated by <strong className="text-brand-400">{log.adminName}</strong> on target{' '}
                   <strong className="text-slate-200">{log.targetName}</strong>
                 </div>
                 {log.newValue && (

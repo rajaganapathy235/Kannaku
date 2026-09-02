@@ -146,7 +146,7 @@ export const CreateEditOrgModal: React.FC<CreateEditOrgModalProps> = ({
       <div className="w-full max-w-2xl bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
         <div className="p-5 border-b border-slate-800 bg-slate-950 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-600/20 text-blue-400 rounded-xl">
+            <div className="p-2 bg-brand-600/20 text-brand-400 rounded-xl">
               <Building2 className="w-5 h-5" />
             </div>
             <div>
@@ -176,7 +176,7 @@ export const CreateEditOrgModal: React.FC<CreateEditOrgModalProps> = ({
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="e.g. Apex Logistics Pvt Ltd"
-                className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-blue-500"
+                className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-brand-500"
               />
             </div>
 
@@ -188,7 +188,7 @@ export const CreateEditOrgModal: React.FC<CreateEditOrgModalProps> = ({
                 value={ownerName}
                 onChange={(e) => setOwnerName(e.target.value)}
                 placeholder="e.g. Rajesh Sharma"
-                className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-blue-500"
+                className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-brand-500"
               />
             </div>
 
@@ -200,7 +200,7 @@ export const CreateEditOrgModal: React.FC<CreateEditOrgModalProps> = ({
                 value={adminEmail}
                 onChange={(e) => setAdminEmail(e.target.value)}
                 placeholder="rajesh@apexlogistics.in"
-                className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-blue-500"
+                className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-brand-500"
               />
             </div>
 
@@ -211,7 +211,7 @@ export const CreateEditOrgModal: React.FC<CreateEditOrgModalProps> = ({
                 value={mobile}
                 onChange={(e) => setMobile(e.target.value)}
                 placeholder="+91 98450 12345"
-                className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-blue-500"
+                className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-brand-500"
               />
             </div>
 
@@ -222,7 +222,7 @@ export const CreateEditOrgModal: React.FC<CreateEditOrgModalProps> = ({
                 value={registerNumber}
                 onChange={(e) => setRegisterNumber(e.target.value)}
                 placeholder="29AAAAA0000A1Z5"
-                className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-blue-500 font-mono"
+                className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-brand-500 font-mono"
               />
             </div>
 
@@ -323,7 +323,7 @@ export const CreateEditOrgModal: React.FC<CreateEditOrgModalProps> = ({
             </button>
             <button
               type="submit"
-              className="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold flex items-center gap-2 cursor-pointer shadow-md shadow-blue-900/30"
+              className="px-5 py-2 bg-brand-600 hover:bg-brand-500 text-white rounded-xl font-bold flex items-center gap-2 cursor-pointer shadow-md shadow-brand-900/30"
             >
               <Check className="w-4 h-4" />
               <span>{organizationToEdit ? 'Save Changes' : 'Provision Organization'}</span>

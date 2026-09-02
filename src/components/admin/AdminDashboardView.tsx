@@ -78,7 +78,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       trend: '+12.5%',
       trendType: 'positive',
       icon: Building2,
-      color: 'from-blue-500/20 to-blue-600/10 text-blue-400 border-blue-500/30',
+      color: 'from-brand-500/20 to-brand-600/10 text-brand-400 border-brand-500/30',
       targetTab: 'organizations',
     },
     {
@@ -122,7 +122,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       trend: '+18.2%',
       trendType: 'positive',
       icon: Users,
-      color: 'from-indigo-500/20 to-indigo-600/10 text-indigo-400 border-indigo-500/30',
+      color: 'from-brand-500/20 to-brand-600/10 text-brand-400 border-brand-500/30',
       targetTab: 'users',
     },
     {
@@ -229,7 +229,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   return (
     <div className="space-y-6">
       {/* Top Banner Executive Greeting */}
-      <div className="p-6 rounded-2xl bg-gradient-to-r from-blue-900/40 via-slate-900 to-indigo-950/40 border border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="p-6 rounded-2xl bg-gradient-to-r from-brand-900/40 via-slate-900 to-brand-950/40 border border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight">
@@ -258,7 +258,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
           </button>
           <button
             onClick={onOpenCreateOrg}
-            className="px-3.5 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-blue-900/30 flex items-center gap-1.5 cursor-pointer active:scale-95"
+            className="px-3.5 py-2 bg-brand-600 hover:bg-brand-500 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-brand-900/30 flex items-center gap-1.5 cursor-pointer active:scale-95"
           >
             <PlusCircle className="w-4 h-4" />
             <span>Add Organization</span>
@@ -363,9 +363,9 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
           </button>
           <button
             onClick={() => onNavigate('organizations')}
-            className="p-3 bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-blue-500/40 rounded-xl text-left transition-all cursor-pointer group"
+            className="p-3 bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-brand-500/40 rounded-xl text-left transition-all cursor-pointer group"
           >
-            <Building2 className="w-4 h-4 text-blue-400 mb-1.5 group-hover:scale-110 transition-transform" />
+            <Building2 className="w-4 h-4 text-brand-400 mb-1.5 group-hover:scale-110 transition-transform" />
             <div className="text-xs font-bold text-white">Organizations</div>
             <div className="text-[10px] text-slate-400">Manage tenant accounts</div>
           </button>
@@ -389,7 +389,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             onClick={() => onNavigate('settings')}
             className="p-3 bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-slate-600 rounded-xl text-left transition-all cursor-pointer group"
           >
-            <ShieldCheck className="w-4 h-4 text-indigo-400 mb-1.5 group-hover:scale-110 transition-transform" />
+            <ShieldCheck className="w-4 h-4 text-brand-400 mb-1.5 group-hover:scale-110 transition-transform" />
             <div className="text-xs font-bold text-white">System Settings</div>
             <div className="text-[10px] text-slate-400">Branding, currency & ops</div>
           </button>
@@ -413,7 +413,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               </div>
               <button
                 onClick={() => onNavigate('organizations')}
-                className="text-xs text-blue-400 hover:text-blue-300 font-semibold flex items-center gap-1 cursor-pointer"
+                className="text-xs text-brand-400 hover:text-brand-300 font-semibold flex items-center gap-1 cursor-pointer"
               >
                 <span>View all {orgs.length} orgs</span>
                 <ChevronRight className="w-3.5 h-3.5" />
@@ -431,7 +431,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   >
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-blue-600/20 text-blue-400 font-bold flex items-center justify-center text-xs">
+                        <div className="w-8 h-8 rounded-lg bg-brand-600/20 text-brand-400 font-bold flex items-center justify-center text-xs">
                           {org.name.charAt(0)}
                         </div>
                         <div>
@@ -490,7 +490,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               {recentLogs.map((log) => (
                 <div key={log.id} className="py-2.5 space-y-1">
                   <div className="flex items-center justify-between text-[11px]">
-                    <span className="font-bold text-blue-400 truncate max-w-[140px]">
+                    <span className="font-bold text-brand-400 truncate max-w-[140px]">
                       {log.adminName}
                     </span>
                     <span className="text-[10px] text-slate-500 font-mono">

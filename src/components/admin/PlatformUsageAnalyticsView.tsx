@@ -26,8 +26,8 @@ export const PlatformUsageAnalyticsView: React.FC = () => {
   const totalStorageMB = orgs.reduce((sum, o) => sum + (o.usage.storageUsedMB || 0), 0);
 
   const usageCards = [
-    { title: 'Tax Invoices Generated', value: totalInvoices.toLocaleString(), icon: FileText, color: 'text-blue-400' },
-    { title: 'Estimates & Quotations', value: totalEstimates.toLocaleString(), icon: FileSpreadsheet, color: 'text-indigo-400' },
+    { title: 'Tax Invoices Generated', value: totalInvoices.toLocaleString(), icon: FileText, color: 'text-brand-400' },
+    { title: 'Estimates & Quotations', value: totalEstimates.toLocaleString(), icon: FileSpreadsheet, color: 'text-brand-400' },
     { title: 'Customer & Party Ledgers', value: totalCustomers.toLocaleString(), icon: Users, color: 'text-emerald-400' },
     { title: 'Catalog HSN/SAC Items', value: totalProducts.toLocaleString(), icon: Package, color: 'text-purple-400' },
     { title: 'Multi-Copy PDFs Rendered', value: totalPDFs.toLocaleString(), icon: Printer, color: 'text-cyan-400' },

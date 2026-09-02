@@ -206,7 +206,7 @@ export const OrganizationsListView: React.FC<OrganizationsListViewProps> = ({
       {/* Toast Notification */}
       {toastMessage && (
         <div className="fixed top-20 right-8 z-50 bg-slate-950 text-white px-4 py-2.5 rounded-xl shadow-2xl text-xs font-semibold border border-slate-700 animate-in fade-in slide-in-from-top-2 flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+          <div className="w-2 h-2 rounded-full bg-brand-500"></div>
           {toastMessage}
         </div>
       )}
@@ -215,7 +215,7 @@ export const OrganizationsListView: React.FC<OrganizationsListViewProps> = ({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-slate-800">
         <div>
           <h1 className="text-xl font-black text-white tracking-tight flex items-center gap-2">
-            <Building2 className="w-6 h-6 text-blue-400" />
+            <Building2 className="w-6 h-6 text-brand-400" />
             <span>Organization / Tenant Management</span>
           </h1>
           <p className="text-xs text-slate-400 mt-0.5">
@@ -250,7 +250,7 @@ export const OrganizationsListView: React.FC<OrganizationsListViewProps> = ({
           </button>
           <button
             onClick={handleOpenCreateModal}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 shadow-md shadow-blue-900/30 transition-all cursor-pointer active:scale-95"
+            className="px-4 py-2 bg-brand-600 hover:bg-brand-500 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 shadow-md shadow-brand-900/30 transition-all cursor-pointer active:scale-95"
           >
             <Plus className="w-4 h-4" />
             <span>Add Organization</span>
@@ -267,7 +267,7 @@ export const OrganizationsListView: React.FC<OrganizationsListViewProps> = ({
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Search name, email, phone, ID, GSTIN..."
-            className="w-full pl-9 pr-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
+            className="w-full pl-9 pr-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-brand-500"
           />
         </div>
 
@@ -280,7 +280,7 @@ export const OrganizationsListView: React.FC<OrganizationsListViewProps> = ({
                 onClick={() => setStatusFilter(st)}
                 className={`px-2.5 py-1 rounded-lg font-bold text-[11px] transition-all cursor-pointer whitespace-nowrap ${
                   statusFilter === st
-                    ? 'bg-blue-600 text-white'
+                    ? 'bg-brand-600 text-white'
                     : 'text-slate-400 hover:text-white'
                 }`}
               >
@@ -340,13 +340,13 @@ export const OrganizationsListView: React.FC<OrganizationsListViewProps> = ({
                       {/* Organization Name & ID */}
                       <td className="py-3.5 px-4">
                         <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-xl bg-blue-900/30 border border-blue-800/40 text-blue-400 font-bold flex items-center justify-center text-sm shrink-0">
+                          <div className="w-9 h-9 rounded-xl bg-brand-900/30 border border-brand-800/40 text-brand-400 font-bold flex items-center justify-center text-sm shrink-0">
                             {org.name.charAt(0)}
                           </div>
                           <div className="min-w-0">
                             <div
                               onClick={() => onOpenDetail(org)}
-                              className="font-bold text-white hover:text-blue-400 cursor-pointer truncate max-w-[200px]"
+                              className="font-bold text-white hover:text-brand-400 cursor-pointer truncate max-w-[200px]"
                             >
                               {org.name}
                             </div>

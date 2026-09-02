@@ -115,7 +115,7 @@ export const AnnouncementsView: React.FC = () => {
                         ? 'bg-rose-950 text-rose-400 border border-rose-800'
                         : ann.type === 'PROMOTION'
                         ? 'bg-purple-950 text-purple-400 border border-purple-800'
-                        : 'bg-blue-950 text-blue-400 border border-blue-800'
+                        : 'bg-brand-950 text-brand-400 border border-brand-800'
                     }`}
                   >
                     {ann.type}

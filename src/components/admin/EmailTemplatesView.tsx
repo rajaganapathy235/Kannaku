@@ -44,7 +44,7 @@ export const EmailTemplatesView: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-slate-800">
         <div>
           <h1 className="text-xl font-black text-white tracking-tight flex items-center gap-2">
-            <Mail className="w-6 h-6 text-indigo-400" />
+            <Mail className="w-6 h-6 text-brand-400" />
             <span>Automated Email Notification Templates</span>
           </h1>
           <p className="text-xs text-slate-400 mt-0.5">
@@ -67,14 +67,14 @@ export const EmailTemplatesView: React.FC = () => {
                 onClick={() => handleSelectTemplate(t)}
                 className={`p-3 rounded-xl cursor-pointer transition-all ${
                   isSelected
-                    ? 'bg-indigo-600 text-white font-bold shadow-md shadow-indigo-950'
+                    ? 'bg-brand-600 text-white font-bold shadow-md shadow-brand-950'
                     : 'text-slate-300 hover:bg-slate-900'
                 }`}
               >
                 <div className="text-xs">{t.name}</div>
                 <div
                   className={`text-[10px] truncate mt-0.5 ${
-                    isSelected ? 'text-indigo-200' : 'text-slate-500'
+                    isSelected ? 'text-brand-200' : 'text-slate-500'
                   }`}
                 >
                   {t.subject}
@@ -96,7 +96,7 @@ export const EmailTemplatesView: React.FC = () => {
                     {selectedTemplate.variables.map((v) => (
                       <span
                         key={v}
-                        className="inline-block font-mono bg-slate-900 text-indigo-400 px-1.5 py-0.2 rounded border border-slate-800 mr-1"
+                        className="inline-block font-mono bg-slate-900 text-brand-400 px-1.5 py-0.2 rounded border border-slate-800 mr-1"
                       >
                         {v}
                       </span>
@@ -105,7 +105,7 @@ export const EmailTemplatesView: React.FC = () => {
                 </div>
                 <button
                   onClick={handleSave}
-                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl flex items-center gap-1.5 shadow-md shadow-indigo-900/30 cursor-pointer"
+                  className="px-4 py-2 bg-brand-600 hover:bg-brand-500 text-white font-bold rounded-xl flex items-center gap-1.5 shadow-md shadow-brand-900/30 cursor-pointer"
                 >
                   <Check className="w-4 h-4" />
                   <span>Save Template</span>
@@ -135,7 +135,7 @@ export const EmailTemplatesView: React.FC = () => {
               {/* Test Sender Bar */}
               <div className="p-3 bg-slate-900 rounded-xl border border-slate-800/80 flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2 flex-1">
-                  <Mail className="w-4 h-4 text-indigo-400 shrink-0" />
+                  <Mail className="w-4 h-4 text-brand-400 shrink-0" />
                   <input
                     type="email"
                     value={testEmail}

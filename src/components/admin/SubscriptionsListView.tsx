@@ -220,7 +220,7 @@ export const SubscriptionsListView: React.FC<SubscriptionsListViewProps> = ({
       case 'PAST_DUE':
         return 'bg-rose-950/80 text-rose-400 border-rose-800/80';
       case 'PAUSED':
-        return 'bg-blue-950/80 text-blue-400 border-blue-800/80';
+        return 'bg-brand-950/80 text-brand-400 border-brand-800/80';
       case 'CANCELLED':
       case 'EXPIRED':
         return 'bg-slate-800 text-slate-400 border-slate-700';
@@ -235,11 +235,11 @@ export const SubscriptionsListView: React.FC<SubscriptionsListViewProps> = ({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-800">
         <div>
           <div className="flex items-center gap-2">
-            <CreditCard className="w-6 h-6 text-indigo-400" />
+            <CreditCard className="w-6 h-6 text-brand-400" />
             <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight">
               Customer Subscriptions Ledger
             </h1>
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-brand-500/20 text-brand-300 border border-brand-500/30">
               {organizations.length} Tenancies
             </span>
           </div>
@@ -251,7 +251,7 @@ export const SubscriptionsListView: React.FC<SubscriptionsListViewProps> = ({
         {onNavigateToPlans && (
           <button
             onClick={onNavigateToPlans}
-            className="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-indigo-900/30 flex items-center gap-1.5 self-start sm:self-auto cursor-pointer"
+            className="px-3.5 py-2 bg-brand-600 hover:bg-brand-500 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-brand-900/30 flex items-center gap-1.5 self-start sm:self-auto cursor-pointer"
           >
             <Layers className="w-4 h-4" />
             <span>Configure Pricing Plans</span>
@@ -261,8 +261,8 @@ export const SubscriptionsListView: React.FC<SubscriptionsListViewProps> = ({
 
       {/* 5 KPI Metric Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-        <div className="p-4 rounded-2xl bg-gradient-to-b from-indigo-500/10 to-indigo-950/20 border border-indigo-500/30">
-          <div className="flex items-center justify-between text-indigo-400 mb-1">
+        <div className="p-4 rounded-2xl bg-gradient-to-b from-brand-500/10 to-brand-950/20 border border-brand-500/30">
+          <div className="flex items-center justify-between text-brand-400 mb-1">
             <span className="text-[11px] font-bold uppercase tracking-wider">Active Subs</span>
             <CheckCircle2 className="w-4 h-4" />
           </div>
@@ -318,7 +318,7 @@ export const SubscriptionsListView: React.FC<SubscriptionsListViewProps> = ({
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search tenant name, email, GSTIN, plan..."
-            className="w-full pl-9 pr-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+            className="w-full pl-9 pr-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-brand-500"
           />
         </div>
 
@@ -332,7 +332,7 @@ export const SubscriptionsListView: React.FC<SubscriptionsListViewProps> = ({
                 onClick={() => setFilterStatus(st)}
                 className={`px-2.5 py-1 rounded-lg font-bold text-[11px] transition-all cursor-pointer whitespace-nowrap ${
                   filterStatus === st
-                    ? 'bg-indigo-600 text-white shadow-sm'
+                    ? 'bg-brand-600 text-white shadow-sm'
                     : 'text-slate-400 hover:text-white'
                 }`}
               >
@@ -414,14 +414,14 @@ export const SubscriptionsListView: React.FC<SubscriptionsListViewProps> = ({
                       {/* Organization info */}
                       <td className="py-3.5 px-4">
                         <div className="flex items-center gap-2.5">
-                          <div className="w-8 h-8 rounded-lg bg-indigo-900/30 text-indigo-300 font-black flex items-center justify-center border border-indigo-700/40 shrink-0">
+                          <div className="w-8 h-8 rounded-lg bg-brand-900/30 text-brand-300 font-black flex items-center justify-center border border-brand-700/40 shrink-0">
                             {org.name.charAt(0)}
                           </div>
                           <div>
                             <div className="font-bold text-white flex items-center gap-1.5">
                               <span>{org.name}</span>
                               {org.customDomain && (
-                                <span className="text-[10px] text-indigo-400 font-mono">
+                                <span className="text-[10px] text-brand-400 font-mono">
                                   ({org.customDomain})
                                 </span>
                               )}
@@ -436,7 +436,7 @@ export const SubscriptionsListView: React.FC<SubscriptionsListViewProps> = ({
                       {/* Plan Tier */}
                       <td className="py-3.5 px-3">
                         <div className="font-bold text-white flex items-center gap-1">
-                          <Layers className="w-3.5 h-3.5 text-indigo-400" />
+                          <Layers className="w-3.5 h-3.5 text-brand-400" />
                           <span>{org.planName}</span>
                         </div>
                         <div className="text-[10px] text-slate-400">
@@ -507,7 +507,7 @@ export const SubscriptionsListView: React.FC<SubscriptionsListViewProps> = ({
                               setTargetPlanId(org.planId);
                               setTargetCycle(org.billingCycle === 'MONTHLY' ? 'MONTHLY' : 'YEARLY');
                             }}
-                            className="px-2.5 py-1 bg-indigo-950/60 hover:bg-indigo-900/90 text-indigo-300 border border-indigo-700/60 rounded-lg text-xs font-bold transition-colors cursor-pointer flex items-center gap-1"
+                            className="px-2.5 py-1 bg-brand-950/60 hover:bg-brand-900/90 text-brand-300 border border-brand-700/60 rounded-lg text-xs font-bold transition-colors cursor-pointer flex items-center gap-1"
                             title="Upgrade or Switch Plan"
                           >
                             <Layers className="w-3.5 h-3.5" />
@@ -558,7 +558,7 @@ export const SubscriptionsListView: React.FC<SubscriptionsListViewProps> = ({
                           {onImpersonate && (
                             <button
                               onClick={() => onImpersonate(org)}
-                              className="px-2 py-1 bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 border border-blue-500/40 rounded-lg text-xs font-bold transition-colors cursor-pointer flex items-center gap-1"
+                              className="px-2 py-1 bg-brand-600/20 hover:bg-brand-600/30 text-brand-300 border border-brand-500/40 rounded-lg text-xs font-bold transition-colors cursor-pointer flex items-center gap-1"
                               title="Login as this tenant"
                             >
                               <ExternalLink className="w-3.5 h-3.5" />
@@ -581,7 +581,7 @@ export const SubscriptionsListView: React.FC<SubscriptionsListViewProps> = ({
           <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg p-6 shadow-2xl space-y-5 text-xs">
             <div className="flex items-center justify-between pb-3 border-b border-slate-800">
               <div className="flex items-center gap-2">
-                <Layers className="w-5 h-5 text-indigo-400" />
+                <Layers className="w-5 h-5 text-brand-400" />
                 <h3 className="text-base font-black text-white">
                   Change Plan Tier: {selectedOrgForPlan.name}
                 </h3>
@@ -612,13 +612,13 @@ export const SubscriptionsListView: React.FC<SubscriptionsListViewProps> = ({
                         onClick={() => setTargetPlanId(p.id)}
                         className={`p-3 rounded-xl border cursor-pointer transition-all ${
                           isSelected
-                            ? 'bg-indigo-950/60 border-indigo-500 text-white shadow-md'
+                            ? 'bg-brand-950/60 border-brand-500 text-white shadow-md'
                             : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700'
                         }`}
                       >
                         <div className="font-black text-xs text-white flex items-center justify-between">
                           <span>{p.name}</span>
-                          {isSelected && <Check className="w-3.5 h-3.5 text-indigo-400" />}
+                          {isSelected && <Check className="w-3.5 h-3.5 text-brand-400" />}
                         </div>
                         <div className="text-[11px] font-mono font-bold text-emerald-400 mt-1">
                           {price}
@@ -643,7 +643,7 @@ export const SubscriptionsListView: React.FC<SubscriptionsListViewProps> = ({
                     onClick={() => setTargetCycle('YEARLY')}
                     className={`py-2 px-3 rounded-xl border font-bold text-xs transition-all cursor-pointer flex items-center justify-center gap-2 ${
                       targetCycle === 'YEARLY'
-                        ? 'bg-indigo-600 text-white border-indigo-500'
+                        ? 'bg-brand-600 text-white border-brand-500'
                         : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white'
                     }`}
                   >
@@ -654,7 +654,7 @@ export const SubscriptionsListView: React.FC<SubscriptionsListViewProps> = ({
                     onClick={() => setTargetCycle('MONTHLY')}
                     className={`py-2 px-3 rounded-xl border font-bold text-xs transition-all cursor-pointer flex items-center justify-center gap-2 ${
                       targetCycle === 'MONTHLY'
-                        ? 'bg-indigo-600 text-white border-indigo-500'
+                        ? 'bg-brand-600 text-white border-brand-500'
                         : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white'
                     }`}
                   >
@@ -679,7 +679,7 @@ export const SubscriptionsListView: React.FC<SubscriptionsListViewProps> = ({
               </button>
               <button
                 onClick={handleConfirmPlanChange}
-                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold transition-all shadow-md shadow-indigo-900/30 cursor-pointer"
+                className="px-4 py-2 bg-brand-600 hover:bg-brand-500 text-white rounded-xl font-bold transition-all shadow-md shadow-brand-900/30 cursor-pointer"
               >
                 Confirm Plan Update
               </button>
@@ -856,7 +856,7 @@ export const SubscriptionsListView: React.FC<SubscriptionsListViewProps> = ({
           <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-6 shadow-2xl space-y-5 text-xs">
             <div className="flex items-center justify-between pb-3 border-b border-slate-800">
               <div className="flex items-center gap-2">
-                <ShieldAlert className="w-5 h-5 text-indigo-400" />
+                <ShieldAlert className="w-5 h-5 text-brand-400" />
                 <h3 className="text-base font-black text-white">
                   Update Subscription Status
                 </h3>
@@ -883,7 +883,7 @@ export const SubscriptionsListView: React.FC<SubscriptionsListViewProps> = ({
                         onClick={() => setTargetStatus(st)}
                         className={`p-2.5 rounded-xl border text-left font-bold transition-all cursor-pointer ${
                           targetStatus === st
-                            ? 'bg-indigo-600 text-white border-indigo-500 shadow-md'
+                            ? 'bg-brand-600 text-white border-brand-500 shadow-md'
                             : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white'
                         }`}
                       >
@@ -903,7 +903,7 @@ export const SubscriptionsListView: React.FC<SubscriptionsListViewProps> = ({
                   value={statusReason}
                   onChange={(e) => setStatusReason(e.target.value)}
                   placeholder="e.g. Account reinstated after wire transfer..."
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-indigo-500"
+                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-brand-500"
                 />
               </div>
             </div>
@@ -917,7 +917,7 @@ export const SubscriptionsListView: React.FC<SubscriptionsListViewProps> = ({
               </button>
               <button
                 onClick={handleConfirmStatusChange}
-                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold transition-all shadow-md shadow-indigo-900/30 cursor-pointer"
+                className="px-4 py-2 bg-brand-600 hover:bg-brand-500 text-white rounded-xl font-bold transition-all shadow-md shadow-brand-900/30 cursor-pointer"
               >
                 Save Status
               </button>

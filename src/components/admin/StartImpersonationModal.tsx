@@ -86,7 +86,7 @@ export const StartImpersonationModal: React.FC<StartImpersonationModalProps> = (
           {/* Target Tenant Card */}
           <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-lg bg-blue-600/20 text-blue-400 font-bold flex items-center justify-center text-xs">
+              <div className="w-9 h-9 rounded-lg bg-brand-600/20 text-brand-400 font-bold flex items-center justify-center text-xs">
                 {organization.name.charAt(0)}
               </div>
               <div>

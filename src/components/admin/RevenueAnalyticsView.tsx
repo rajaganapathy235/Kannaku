@@ -121,8 +121,8 @@ export const RevenueAnalyticsView: React.FC = () => {
               <span className="w-3 h-3 rounded-md bg-emerald-500"></span>
               <span>Gross Settled Revenue</span>
             </div>
-            <div className="flex items-center gap-1.5 text-blue-400">
-              <span className="w-3 h-3 rounded-md bg-blue-500"></span>
+            <div className="flex items-center gap-1.5 text-brand-400">
+              <span className="w-3 h-3 rounded-md bg-brand-500"></span>
               <span>Contracted MRR</span>
             </div>
           </div>
@@ -138,7 +138,7 @@ export const RevenueAnalyticsView: React.FC = () => {
                 <div className="w-full flex items-end justify-center gap-1 h-full">
                   {/* MRR Bar */}
                   <div
-                    className="w-1/2 bg-blue-600/70 group-hover:bg-blue-500 rounded-t-md transition-all relative"
+                    className="w-1/2 bg-brand-600/70 group-hover:bg-brand-500 rounded-t-md transition-all relative"
                     style={{ height: `${mrrHeight}%` }}
                   >
                     <div className="hidden group-hover:block absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[10px] font-mono px-2 py-0.5 rounded shadow whitespace-nowrap z-20">
@@ -203,7 +203,7 @@ export const RevenueAnalyticsView: React.FC = () => {
                   <span className="font-bold text-white">{m.pct}% ({m.count})</span>
                 </div>
                 <div className="h-2 w-full bg-slate-900 rounded-full overflow-hidden">
-                  <div className="h-full bg-blue-500 rounded-full" style={{ width: `${m.pct}%` }}></div>
+                  <div className="h-full bg-brand-500 rounded-full" style={{ width: `${m.pct}%` }}></div>
                 </div>
               </div>
             ))}

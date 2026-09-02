@@ -96,7 +96,7 @@ export const PlansManagementView: React.FC = () => {
       {/* Main Single Plan Hero Card */}
       {activePlan && (
         <div className="rounded-2xl bg-slate-900 border border-purple-500/40 p-6 shadow-2xl relative overflow-hidden">
-          <div className="absolute top-0 right-0 px-4 py-1.5 bg-gradient-to-l from-purple-600 to-indigo-600 text-white text-[11px] font-black uppercase tracking-wider rounded-bl-xl shadow-md">
+          <div className="absolute top-0 right-0 px-4 py-1.5 bg-gradient-to-l from-purple-600 to-brand-600 text-white text-[11px] font-black uppercase tracking-wider rounded-bl-xl shadow-md">
             Active Flagship Plan
           </div>
 

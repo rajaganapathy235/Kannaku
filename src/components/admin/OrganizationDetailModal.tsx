@@ -141,7 +141,7 @@ export const OrganizationDetailModal: React.FC<OrganizationDetailModalProps> = (
         {/* Modal Top Header */}
         <div className="p-6 border-b border-slate-800 bg-slate-950/80 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shrink-0">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="w-12 h-12 rounded-2xl bg-blue-600/20 text-blue-400 border border-blue-500/30 flex items-center justify-center text-xl font-bold shrink-0">
+            <div className="w-12 h-12 rounded-2xl bg-brand-600/20 text-brand-400 border border-brand-500/30 flex items-center justify-center text-xl font-bold shrink-0">
               {organization.name.charAt(0)}
             </div>
             <div className="min-w-0">
@@ -196,7 +196,7 @@ export const OrganizationDetailModal: React.FC<OrganizationDetailModalProps> = (
                 onClick={() => setActiveTab(tab.id as any)}
                 className={`py-3 px-4 flex items-center gap-2 border-b-2 transition-colors cursor-pointer whitespace-nowrap ${
                   isActive
-                    ? 'border-blue-500 text-blue-400'
+                    ? 'border-brand-500 text-brand-400'
                     : 'border-transparent text-slate-400 hover:text-slate-200'
                 }`}
               >
@@ -229,11 +229,11 @@ export const OrganizationDetailModal: React.FC<OrganizationDetailModalProps> = (
                 <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
                   <div className="text-[10px] font-bold uppercase text-slate-500">Location & Tax</div>
                   <div className="text-sm font-bold text-white flex items-center gap-1">
-                    <MapPin className="w-3.5 h-3.5 text-blue-400" />
+                    <MapPin className="w-3.5 h-3.5 text-brand-400" />
                     {organization.city}, {organization.state}
                   </div>
                   <div className="text-slate-400">{organization.country}</div>
-                  <div className="font-mono text-blue-400 font-bold">GSTIN: {organization.registerNumber}</div>
+                  <div className="font-mono text-brand-400 font-bold">GSTIN: {organization.registerNumber}</div>
                 </div>
 
                 <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
@@ -282,7 +282,7 @@ export const OrganizationDetailModal: React.FC<OrganizationDetailModalProps> = (
                 </h3>
                 <button
                   onClick={handleAddUser}
-                  className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+                  className="px-3 py-1.5 bg-brand-600 hover:bg-brand-500 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
                 >
                   <UserPlus className="w-3.5 h-3.5" />
                   <span>Add New User</span>
@@ -299,7 +299,7 @@ export const OrganizationDetailModal: React.FC<OrganizationDetailModalProps> = (
                       <div>
                         <div className="font-bold text-white flex items-center gap-2">
                           <span>{user.name}</span>
-                          <span className="text-[10px] px-1.5 py-0.2 rounded bg-blue-950 text-blue-400 font-bold border border-blue-800">
+                          <span className="text-[10px] px-1.5 py-0.2 rounded bg-brand-950 text-brand-400 font-bold border border-brand-800">
                             {user.role}
                           </span>
                         </div>
@@ -356,7 +356,7 @@ export const OrganizationDetailModal: React.FC<OrganizationDetailModalProps> = (
                       onClick={() => handlePlanChange(p.id)}
                       className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                         organization.planId === p.id
-                          ? 'bg-blue-600 text-white'
+                          ? 'bg-brand-600 text-white'
                           : 'bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800'
                       }`}
                     >
@@ -416,14 +416,14 @@ export const OrganizationDetailModal: React.FC<OrganizationDetailModalProps> = (
                     <div key={idx} className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
                       <div className="flex items-center justify-between text-xs font-bold">
                         <span className="text-slate-300">{item.label}</span>
-                        <span className="text-blue-400">
+                        <span className="text-brand-400">
                           {item.used} / {item.limit.toLocaleString()} {item.unit}
                         </span>
                       </div>
                       <div className="h-2 w-full bg-slate-800 rounded-full overflow-hidden">
                         <div
                           className={`h-full rounded-full transition-all ${
-                            pct > 90 ? 'bg-rose-500' : pct > 70 ? 'bg-amber-500' : 'bg-blue-600'
+                            pct > 90 ? 'bg-rose-500' : pct > 70 ? 'bg-amber-500' : 'bg-brand-600'
                           }`}
                           style={{ width: `${pct}%` }}
                         ></div>
@@ -528,7 +528,7 @@ export const OrganizationDetailModal: React.FC<OrganizationDetailModalProps> = (
                     auditLogs.map((log) => (
                       <div key={log.id} className="p-2.5 space-y-1">
                         <div className="flex items-center justify-between text-[11px]">
-                          <span className="font-bold text-blue-400">{log.adminName}</span>
+                          <span className="font-bold text-brand-400">{log.adminName}</span>
                           <span className="font-mono text-slate-500">
                             {new Date(log.timestamp).toLocaleString()}
                           </span>

@@ -80,7 +80,7 @@ export const DatabaseExplorerView: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-slate-800">
         <div>
           <h1 className="text-xl font-black text-white tracking-tight flex items-center gap-2">
-            <Database className="w-6 h-6 text-blue-400" />
+            <Database className="w-6 h-6 text-brand-400" />
             <span>Cloudflare D1 Database & Schema Explorer</span>
           </h1>
           <p className="text-xs text-slate-400 mt-0.5">
@@ -118,7 +118,7 @@ export const DatabaseExplorerView: React.FC = () => {
             }}
             className={`px-3.5 py-2 rounded-xl transition-colors cursor-pointer whitespace-nowrap ${
               selectedCollection === c.id
-                ? 'bg-blue-600 text-white shadow-md'
+                ? 'bg-brand-600 text-white shadow-md'
                 : 'bg-slate-950 hover:bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800'
             }`}
           >
@@ -150,14 +150,14 @@ export const DatabaseExplorerView: React.FC = () => {
                   onClick={() => setSelectedRecord(item)}
                   className={`p-2.5 rounded-xl cursor-pointer transition-all ${
                     isSelected
-                      ? 'bg-blue-600 text-white font-bold'
+                      ? 'bg-brand-600 text-white font-bold'
                       : 'hover:bg-slate-900 text-slate-300'
                   }`}
                 >
                   <div className="font-mono text-[11px] truncate">
                     {item.name || item.code || item.action || item.id}
                   </div>
-                  <div className={`text-[10px] font-mono truncate ${isSelected ? 'text-blue-100' : 'text-slate-500'}`}>
+                  <div className={`text-[10px] font-mono truncate ${isSelected ? 'text-brand-100' : 'text-slate-500'}`}>
                     ID: {item.id || 'N/A'}
                   </div>
                 </div>

@@ -141,7 +141,7 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
           {filteredOrgs.length > 0 && (
             <div>
               <div className="px-2 py-1 text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 flex items-center gap-1.5">
-                <Building2 className="w-3.5 h-3.5 text-blue-600" />
+                <Building2 className="w-3.5 h-3.5 text-brand-600" />
                 <span>Organizations ({filteredOrgs.length})</span>
               </div>
               <div className="mt-1 space-y-1">
@@ -152,10 +152,10 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
                       onNavigate('organizations', org.id);
                       onClose();
                     }}
-                    className="flex items-center justify-between p-2.5 rounded-xl hover:bg-blue-50 dark:hover:bg-slate-800/80 cursor-pointer group transition-colors"
+                    className="flex items-center justify-between p-2.5 rounded-xl hover:bg-brand-50 dark:hover:bg-slate-800/80 cursor-pointer group transition-colors"
                   >
                     <div className="min-w-0 flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 font-bold flex items-center justify-center shrink-0">
+                      <div className="w-8 h-8 rounded-lg bg-brand-100 dark:bg-brand-900/40 text-brand-700 dark:text-brand-300 font-bold flex items-center justify-center shrink-0">
                         {org.name.charAt(0)}
                       </div>
                       <div className="min-w-0">
@@ -170,7 +170,7 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
                         </div>
                       </div>
                     </div>
-                    <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-blue-600 transition-transform group-hover:translate-x-1 shrink-0 ml-2" />
+                    <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-brand-600 transition-transform group-hover:translate-x-1 shrink-0 ml-2" />
                   </div>
                 ))}
               </div>
@@ -221,7 +221,7 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
           {filteredTxns.length > 0 && (
             <div>
               <div className="px-2 py-1 text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 flex items-center gap-1.5">
-                <Receipt className="w-3.5 h-3.5 text-indigo-600" />
+                <Receipt className="w-3.5 h-3.5 text-brand-600" />
                 <span>Transactions & Invoices</span>
               </div>
               <div className="mt-1 space-y-1">
@@ -232,7 +232,7 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
                       onNavigate('transactions', txn.id);
                       onClose();
                     }}
-                    className="flex items-center justify-between p-2.5 rounded-xl hover:bg-indigo-50 dark:hover:bg-slate-800/80 cursor-pointer group transition-colors"
+                    className="flex items-center justify-between p-2.5 rounded-xl hover:bg-brand-50 dark:hover:bg-slate-800/80 cursor-pointer group transition-colors"
                   >
                     <div className="min-w-0">
                       <div className="font-bold text-slate-900 dark:text-white truncate flex items-center gap-2">
@@ -252,7 +252,7 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
                         {txn.organizationName} • {txn.paymentProvider} ({txn.paymentMethod})
                       </div>
                     </div>
-                    <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-indigo-600 transition-transform group-hover:translate-x-1 shrink-0 ml-2" />
+                    <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-brand-600 transition-transform group-hover:translate-x-1 shrink-0 ml-2" />
                   </div>
                 ))}
               </div>

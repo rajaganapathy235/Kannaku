@@ -767,7 +767,7 @@ export default function App() {
               Workspace: <span className="font-semibold text-slate-900">{company.name}</span>
             </span>
             <span className="hidden sm:flex items-center gap-1.5 font-medium text-slate-500">
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-600"></span>
+              <span className="w-1.5 h-1.5 rounded-full bg-brand-600"></span>
               Ledger Synchronized
             </span>
           </div>

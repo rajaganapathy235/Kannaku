@@ -181,7 +181,7 @@ export const AuditLogsView: React.FC<AuditLogsViewProps> = ({
         <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
           <div className="flex items-center justify-between text-slate-400 text-xs font-medium">
             <span>Total Support Time</span>
-            <Clock className="w-4 h-4 text-blue-400" />
+            <Clock className="w-4 h-4 text-brand-400" />
           </div>
           <div className="text-2xl font-black text-white">{totalDurationMinutes} <span className="text-xs font-normal text-slate-400">mins</span></div>
           <p className="text-[11px] text-slate-500">Cumulative troubleshooting duration</p>
@@ -367,7 +367,7 @@ export const AuditLogsView: React.FC<AuditLogsViewProps> = ({
                         {/* Target Tenant */}
                         <td className="py-3.5 px-4">
                           <div className="flex items-center gap-2.5">
-                            <div className="w-8 h-8 rounded-lg bg-blue-900/40 border border-blue-700/40 text-blue-400 font-bold flex items-center justify-center text-xs shrink-0">
+                            <div className="w-8 h-8 rounded-lg bg-brand-900/40 border border-brand-700/40 text-brand-400 font-bold flex items-center justify-center text-xs shrink-0">
                               {sess.organizationName.charAt(0)}
                             </div>
                             <div className="min-w-0">
@@ -515,7 +515,7 @@ export const AuditLogsView: React.FC<AuditLogsViewProps> = ({
                             className={`font-mono text-[10px] font-bold px-2 py-0.5 rounded border ${
                               isImpersonate
                                 ? 'bg-amber-950/80 text-amber-400 border-amber-900/40'
-                                : 'bg-blue-950/80 text-blue-400 border-blue-900/40'
+                                : 'bg-brand-950/80 text-brand-400 border-brand-900/40'
                             }`}
                           >
                             {log.action}

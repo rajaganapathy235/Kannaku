@@ -94,7 +94,7 @@ export const DataExportCenterView: React.FC = () => {
                   onClick={() => handleExport(card.id, 'JSON')}
                   className="flex-1 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-200 hover:text-white rounded-xl font-bold flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
                 >
-                  <FileJson className="w-4 h-4 text-blue-400" />
+                  <FileJson className="w-4 h-4 text-brand-400" />
                   <span>JSON</span>
                 </button>
               </div>
