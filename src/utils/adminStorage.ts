@@ -356,12 +356,26 @@ export class SaaSAdminDB {
     }
   }
 
+  static isSuperAdmin(): boolean {
+    try {
+      const raw = localStorage.getItem('kannaku_auth_session_v1');
+      if (!raw) return false;
+      const parsed = JSON.parse(raw);
+      return parsed?.user?.role === 'SUPER_ADMIN';
+    } catch {
+      return false;
+    }
+  }
+
   /**
    * Complete Database Synchronization:
    * Fetches real records from Cloudflare D1 via /api/admin/* endpoints
    * and synchronizes the local cache.
    */
   static async syncWithDatabase(): Promise<boolean> {
+    if (!this.isSuperAdmin()) {
+      return false;
+    }
     try {
       const [
         orgsRes,
@@ -446,6 +460,7 @@ export class SaaSAdminDB {
   }
 
   static async getOrganizationsAsync(): Promise<TenantOrganizationFull[]> {
+    if (!this.isSuperAdmin()) return this.getOrganizations();
     const res = await ApiService.getAdminOrganizations();
     if (res.success && res.data) {
       this.saveOrganizations(res.data);
@@ -463,14 +478,18 @@ export class SaaSAdminDB {
     const idx = list.findIndex((o) => o.id === org.id);
     if (idx >= 0) {
       list[idx] = org;
-      ApiService.updateAdminOrganization(org.id, org).catch((err) =>
-        console.error('[SaaSAdminDB] Failed to update organization in DB:', err)
-      );
+      if (this.isSuperAdmin()) {
+        ApiService.updateAdminOrganization(org.id, org).catch((err) =>
+          console.error('[SaaSAdminDB] Failed to update organization in DB:', err)
+        );
+      }
     } else {
       list.unshift(org);
-      ApiService.createAdminOrganization(org).catch((err) =>
-        console.error('[SaaSAdminDB] Failed to create organization in DB:', err)
-      );
+      if (this.isSuperAdmin()) {
+        ApiService.createAdminOrganization(org).catch((err) =>
+          console.error('[SaaSAdminDB] Failed to create organization in DB:', err)
+        );
+      }
     }
     this.saveOrganizations(list);
 
@@ -491,9 +510,11 @@ export class SaaSAdminDB {
   static deleteOrganization(id: string): void {
     const list = this.getOrganizations().filter((o) => o.id !== id);
     this.saveOrganizations(list);
-    ApiService.deleteAdminOrganization(id).catch((err) =>
-      console.error('[SaaSAdminDB] Failed to delete organization from DB:', err)
-    );
+    if (this.isSuperAdmin()) {
+      ApiService.deleteAdminOrganization(id).catch((err) =>
+        console.error('[SaaSAdminDB] Failed to delete organization from DB:', err)
+      );
+    }
   }
 
   // Plans
@@ -507,6 +528,7 @@ export class SaaSAdminDB {
   }
 
   static async getPlansAsync(): Promise<SaaSPlan[]> {
+    if (!this.isSuperAdmin()) return this.getPlans();
     const res = await ApiService.getAdminPlans();
     if (res.success && res.data) {
       this.savePlans(res.data);
@@ -524,14 +546,18 @@ export class SaaSAdminDB {
     const idx = list.findIndex((p) => p.id === plan.id);
     if (idx >= 0) {
       list[idx] = plan;
-      ApiService.updateAdminPlan(plan.id, plan).catch((err) =>
-        console.error('[SaaSAdminDB] Failed to update plan in DB:', err)
-      );
+      if (this.isSuperAdmin()) {
+        ApiService.updateAdminPlan(plan.id, plan).catch((err) =>
+          console.error('[SaaSAdminDB] Failed to update plan in DB:', err)
+        );
+      }
     } else {
       list.push(plan);
-      ApiService.createAdminPlan(plan).catch((err) =>
-        console.error('[SaaSAdminDB] Failed to create plan in DB:', err)
-      );
+      if (this.isSuperAdmin()) {
+        ApiService.createAdminPlan(plan).catch((err) =>
+          console.error('[SaaSAdminDB] Failed to create plan in DB:', err)
+        );
+      }
     }
     this.savePlans(list);
   }
@@ -552,6 +578,7 @@ export class SaaSAdminDB {
   }
 
   static async getUsersAsync(): Promise<PlatformUser[]> {
+    if (!this.isSuperAdmin()) return this.getUsers();
     const res = await ApiService.getAdminUsers();
     if (res.success && res.data) {
       this.saveUsers(res.data);
@@ -569,14 +596,18 @@ export class SaaSAdminDB {
     const idx = list.findIndex((u) => u.id === user.id);
     if (idx >= 0) {
       list[idx] = user;
-      ApiService.updateAdminUser(user.id, user).catch((err) =>
-        console.error('[SaaSAdminDB] Failed to update user in DB:', err)
-      );
+      if (this.isSuperAdmin()) {
+        ApiService.updateAdminUser(user.id, user).catch((err) =>
+          console.error('[SaaSAdminDB] Failed to update user in DB:', err)
+        );
+      }
     } else {
       list.unshift(user);
-      ApiService.createAdminUser(user).catch((err) =>
-        console.error('[SaaSAdminDB] Failed to create user in DB:', err)
-      );
+      if (this.isSuperAdmin()) {
+        ApiService.createAdminUser(user).catch((err) =>
+          console.error('[SaaSAdminDB] Failed to create user in DB:', err)
+        );
+      }
     }
     this.saveUsers(list);
   }
@@ -584,9 +615,11 @@ export class SaaSAdminDB {
   static deleteUser(id: string): void {
     const list = this.getUsers().filter((u) => u.id !== id);
     this.saveUsers(list);
-    ApiService.deleteAdminUser(id).catch((err) =>
-      console.error('[SaaSAdminDB] Failed to delete user from DB:', err)
-    );
+    if (this.isSuperAdmin()) {
+      ApiService.deleteAdminUser(id).catch((err) =>
+        console.error('[SaaSAdminDB] Failed to delete user from DB:', err)
+      );
+    }
   }
 
   // Transactions
@@ -600,6 +633,7 @@ export class SaaSAdminDB {
   }
 
   static async getTransactionsAsync(): Promise<SaaSTransaction[]> {
+    if (!this.isSuperAdmin()) return this.getTransactions();
     const res = await ApiService.getAdminTransactions();
     if (res.success && res.data) {
       this.saveTransactions(res.data);
@@ -621,9 +655,11 @@ export class SaaSAdminDB {
       list.unshift(txn);
     }
     this.saveTransactions(list);
-    ApiService.createAdminTransaction(txn).catch((err) =>
-      console.error('[SaaSAdminDB] Failed to save transaction in DB:', err)
-    );
+    if (this.isSuperAdmin()) {
+      ApiService.createAdminTransaction(txn).catch((err) =>
+        console.error('[SaaSAdminDB] Failed to save transaction in DB:', err)
+      );
+    }
   }
 
   // Coupons
@@ -637,6 +673,7 @@ export class SaaSAdminDB {
   }
 
   static async getCouponsAsync(): Promise<SaaSCoupon[]> {
+    if (!this.isSuperAdmin()) return this.getCoupons();
     const res = await ApiService.getAdminCoupons();
     if (res.success && res.data) {
       this.saveCoupons(res.data);
@@ -658,17 +695,21 @@ export class SaaSAdminDB {
       list.unshift(coupon);
     }
     this.saveCoupons(list);
-    ApiService.createAdminCoupon(coupon).catch((err) =>
-      console.error('[SaaSAdminDB] Failed to save coupon in DB:', err)
-    );
+    if (this.isSuperAdmin()) {
+      ApiService.createAdminCoupon(coupon).catch((err) =>
+        console.error('[SaaSAdminDB] Failed to save coupon in DB:', err)
+      );
+    }
   }
 
   static deleteCoupon(id: string): void {
     const list = this.getCoupons().filter((c) => c.id !== id);
     this.saveCoupons(list);
-    ApiService.deleteAdminCoupon(id).catch((err) =>
-      console.error('[SaaSAdminDB] Failed to delete coupon in DB:', err)
-    );
+    if (this.isSuperAdmin()) {
+      ApiService.deleteAdminCoupon(id).catch((err) =>
+        console.error('[SaaSAdminDB] Failed to delete coupon in DB:', err)
+      );
+    }
   }
 
   // Feature Flags
@@ -682,6 +723,7 @@ export class SaaSAdminDB {
   }
 
   static async getFeatureFlagsAsync(): Promise<FeatureFlag[]> {
+    if (!this.isSuperAdmin()) return this.getFeatureFlags();
     const res = await ApiService.getAdminFeatureFlags();
     if (res.success && res.data) {
       this.saveFeatureFlags(res.data);
@@ -699,14 +741,18 @@ export class SaaSAdminDB {
     const idx = list.findIndex((f) => f.id === flag.id);
     if (idx >= 0) {
       list[idx] = flag;
-      ApiService.updateAdminFeatureFlag(flag.id, flag).catch((err) =>
-        console.error('[SaaSAdminDB] Failed to update feature flag in DB:', err)
-      );
+      if (this.isSuperAdmin()) {
+        ApiService.updateAdminFeatureFlag(flag.id, flag).catch((err) =>
+          console.error('[SaaSAdminDB] Failed to update feature flag in DB:', err)
+        );
+      }
     } else {
       list.push(flag);
-      ApiService.createAdminFeatureFlag(flag).catch((err) =>
-        console.error('[SaaSAdminDB] Failed to create feature flag in DB:', err)
-      );
+      if (this.isSuperAdmin()) {
+        ApiService.createAdminFeatureFlag(flag).catch((err) =>
+          console.error('[SaaSAdminDB] Failed to create feature flag in DB:', err)
+        );
+      }
     }
     this.saveFeatureFlags(list);
   }
@@ -722,6 +768,7 @@ export class SaaSAdminDB {
   }
 
   static async getSupportTicketsAsync(): Promise<SupportTicket[]> {
+    if (!this.isSuperAdmin()) return this.getSupportTickets();
     const res = await ApiService.getAdminSupportTickets();
     if (res.success && res.data) {
       this.saveSupportTickets(res.data);
@@ -739,14 +786,18 @@ export class SaaSAdminDB {
     const idx = list.findIndex((t) => t.id === ticket.id);
     if (idx >= 0) {
       list[idx] = ticket;
-      ApiService.updateAdminSupportTicket(ticket.id, ticket).catch((err) =>
-        console.error('[SaaSAdminDB] Failed to update support ticket in DB:', err)
-      );
+      if (this.isSuperAdmin()) {
+        ApiService.updateAdminSupportTicket(ticket.id, ticket).catch((err) =>
+          console.error('[SaaSAdminDB] Failed to update support ticket in DB:', err)
+        );
+      }
     } else {
       list.unshift(ticket);
-      ApiService.createAdminSupportTicket(ticket).catch((err) =>
-        console.error('[SaaSAdminDB] Failed to create support ticket in DB:', err)
-      );
+      if (this.isSuperAdmin()) {
+        ApiService.createAdminSupportTicket(ticket).catch((err) =>
+          console.error('[SaaSAdminDB] Failed to create support ticket in DB:', err)
+        );
+      }
     }
     this.saveSupportTickets(list);
   }
@@ -762,6 +813,7 @@ export class SaaSAdminDB {
   }
 
   static async getAnnouncementsAsync(): Promise<PlatformAnnouncement[]> {
+    if (!this.isSuperAdmin()) return this.getAnnouncements();
     const res = await ApiService.getAdminAnnouncements();
     if (res.success && res.data) {
       this.saveAnnouncements(res.data);
@@ -783,17 +835,21 @@ export class SaaSAdminDB {
       list.unshift(announcement);
     }
     this.saveAnnouncements(list);
-    ApiService.createAdminAnnouncement(announcement).catch((err) =>
-      console.error('[SaaSAdminDB] Failed to create announcement in DB:', err)
-    );
+    if (this.isSuperAdmin()) {
+      ApiService.createAdminAnnouncement(announcement).catch((err) =>
+        console.error('[SaaSAdminDB] Failed to create announcement in DB:', err)
+      );
+    }
   }
 
   static deleteAnnouncement(id: string): void {
     const list = this.getAnnouncements().filter((a) => a.id !== id);
     this.saveAnnouncements(list);
-    ApiService.deleteAdminAnnouncement(id).catch((err) =>
-      console.error('[SaaSAdminDB] Failed to delete announcement in DB:', err)
-    );
+    if (this.isSuperAdmin()) {
+      ApiService.deleteAdminAnnouncement(id).catch((err) =>
+        console.error('[SaaSAdminDB] Failed to delete announcement in DB:', err)
+      );
+    }
   }
 
   // Email Templates
@@ -807,6 +863,7 @@ export class SaaSAdminDB {
   }
 
   static async getEmailTemplatesAsync(): Promise<EmailTemplate[]> {
+    if (!this.isSuperAdmin()) return this.getEmailTemplates();
     const res = await ApiService.getAdminEmailTemplates();
     if (res.success && res.data) {
       this.saveEmailTemplates(res.data);
@@ -824,9 +881,11 @@ export class SaaSAdminDB {
     const idx = list.findIndex((t) => t.id === template.id);
     if (idx >= 0) {
       list[idx] = template;
-      ApiService.updateAdminEmailTemplate(template.id, template).catch((err) =>
-        console.error('[SaaSAdminDB] Failed to update email template in DB:', err)
-      );
+      if (this.isSuperAdmin()) {
+        ApiService.updateAdminEmailTemplate(template.id, template).catch((err) =>
+          console.error('[SaaSAdminDB] Failed to update email template in DB:', err)
+        );
+      }
     } else {
       list.push(template);
     }
@@ -844,6 +903,7 @@ export class SaaSAdminDB {
   }
 
   static async getAuditLogsAsync(): Promise<AuditLogEntry[]> {
+    if (!this.isSuperAdmin()) return this.getAuditLogs();
     const res = await ApiService.getAdminAuditLogs();
     if (res.success && res.data) {
       this.saveAuditLogs(res.data);
@@ -893,9 +953,11 @@ export class SaaSAdminDB {
     logs.unshift(newEntry);
     this.saveAuditLogs(logs);
 
-    ApiService.createAdminAuditLog(newEntry).catch((err) =>
-      console.error('[SaaSAdminDB] Failed to log action in DB:', err)
-    );
+    if (this.isSuperAdmin()) {
+      ApiService.createAdminAuditLog(newEntry).catch((err) =>
+        console.error('[SaaSAdminDB] Failed to log action in DB:', err)
+      );
+    }
   }
 
   // Error Logs
@@ -909,6 +971,7 @@ export class SaaSAdminDB {
   }
 
   static async getErrorLogsAsync(): Promise<SystemErrorLog[]> {
+    if (!this.isSuperAdmin()) return this.getErrorLogs();
     const res = await ApiService.getAdminErrorLogs();
     if (res.success && res.data) {
       this.saveErrorLogs(res.data);
@@ -955,6 +1018,7 @@ export class SaaSAdminDB {
   }
 
   static async getImpersonationSessionsAsync(): Promise<ImpersonationSession[]> {
+    if (!this.isSuperAdmin()) return this.getImpersonationSessions();
     const res = await ApiService.getAdminImpersonationSessions();
     if (res.success && res.data) {
       this.saveImpersonationSessions(res.data);
@@ -1135,9 +1199,11 @@ export class SaaSAdminDB {
       }
     );
 
-    ApiService.startAdminImpersonation(org.id, reason).catch((err) =>
-      console.error('[SaaSAdminDB] Failed to start impersonation on server:', err)
-    );
+    if (this.isSuperAdmin()) {
+      ApiService.startAdminImpersonation(org.id, reason).catch((err) =>
+        console.error('[SaaSAdminDB] Failed to start impersonation on server:', err)
+      );
+    }
 
     this.setImpersonatedOrgId(org.id);
     KannakuDB.setActiveTenantId(org.id);
@@ -1186,9 +1252,11 @@ export class SaaSAdminDB {
       );
     }
 
-    ApiService.stopAdminImpersonation().catch((err) =>
-      console.error('[SaaSAdminDB] Failed to stop impersonation on server:', err)
-    );
+    if (this.isSuperAdmin()) {
+      ApiService.stopAdminImpersonation().catch((err) =>
+        console.error('[SaaSAdminDB] Failed to stop impersonation on server:', err)
+      );
+    }
 
     this.setImpersonatedOrgId(null);
     this.setPortalMode('ADMIN');
@@ -1248,6 +1316,7 @@ export class SaaSAdminDB {
   }
 
   static async getDashboardStatsAsync(): Promise<SuperAdminDashboardStats> {
+    if (!this.isSuperAdmin()) return this.getDashboardStats();
     const res = await ApiService.getAdminStats();
     if (res.success && res.data) {
       return res.data;

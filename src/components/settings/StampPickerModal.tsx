@@ -9,6 +9,15 @@ interface StampPickerModalProps {
   onSave: (stampUrl: string) => void;
 }
 
+function escapeSvgText(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 export const StampPickerModal: React.FC<StampPickerModalProps> = ({
   initialStampUrl = '',
   companyName,
@@ -23,8 +32,8 @@ export const StampPickerModal: React.FC<StampPickerModalProps> = ({
   const [uploadedStamp, setUploadedStamp] = useState(initialStampUrl || '');
 
   const generateStampSvg = (color: string, name: string, loc: string) => {
-    const cleanName = (name || 'COMPANY NAME').toUpperCase().slice(0, 24);
-    const cleanLoc = (loc || 'LOCATION').toUpperCase().slice(0, 16);
+    const cleanName = escapeSvgText((name || 'COMPANY NAME').toUpperCase().slice(0, 24));
+    const cleanLoc = escapeSvgText((loc || 'LOCATION').toUpperCase().slice(0, 16));
     return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160"><circle cx="80" cy="80" r="74" fill="none" stroke="${color}" stroke-width="4" stroke-dasharray="8 4"/><circle cx="80" cy="80" r="64" fill="none" stroke="${color}" stroke-width="2"/><text x="80" y="48" font-size="11" font-family="sans-serif" font-weight="900" fill="${color}" text-anchor="middle">${cleanName}</text><text x="80" y="86" font-size="10" font-family="sans-serif" font-weight="bold" fill="${color}" text-anchor="middle">★ ${cleanLoc} ★</text><text x="80" y="124" font-size="9" font-family="sans-serif" font-weight="900" fill="${color}" text-anchor="middle">AUTH SIGNATORY</text></svg>`;
   };
 

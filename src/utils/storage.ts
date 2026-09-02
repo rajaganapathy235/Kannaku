@@ -550,6 +550,17 @@ export const INITIAL_SUBSCRIPTION_STATE: SubscriptionState = {
 
 // Database Accessor & Persistence Class
 export class KannakuDB {
+  static isAuthenticated(): boolean {
+    try {
+      const raw = localStorage.getItem('kannaku_auth_session_v1');
+      if (!raw) return false;
+      const parsed = JSON.parse(raw);
+      return !!(parsed?.user?.id);
+    } catch {
+      return false;
+    }
+  }
+
   static getActiveTenantId(): string {
     const impersonated = localStorage.getItem('kannaku_impersonated_org_id');
     if (impersonated) return impersonated;
@@ -662,20 +673,22 @@ export class KannakuDB {
   static saveCompanyProfile(profile: CompanyProfile): void {
     localStorage.setItem(this.getTenantKey(STORAGE_KEYS.COMPANY), JSON.stringify(profile));
     // D1 Cloudflare Persistence
-    ApiService.updateOrganization(profile).then((res) => {
-      if (!res.success) {
-        console.error('[Kannaku D1 Error] Failed to update organization profile:', res.error);
-        if (typeof window !== 'undefined') {
-          window.dispatchEvent(
-            new CustomEvent('kannaku:d1-sync-error', {
-              detail: { action: 'Update Company Profile', error: res.error, status: res.status },
-            })
-          );
+    if (this.isAuthenticated()) {
+      ApiService.updateOrganization(profile).then((res) => {
+        if (!res.success) {
+          console.error('[Kannaku D1 Error] Failed to update organization profile:', res.error);
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(
+              new CustomEvent('kannaku:d1-sync-error', {
+                detail: { action: 'Update Company Profile', error: res.error, status: res.status },
+              })
+            );
+          }
+        } else if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('kannaku:d1-sync-success', { detail: { action: 'Update Company Profile' } }));
         }
-      } else if (typeof window !== 'undefined') {
-        window.dispatchEvent(new CustomEvent('kannaku:d1-sync-success', { detail: { action: 'Update Company Profile' } }));
-      }
-    });
+      });
+    }
   }
 
   static getClients(): Client[] {
@@ -711,20 +724,22 @@ export class KannakuDB {
     this.saveClients(list);
 
     // Cloudflare D1 Sync
-    ApiService.saveClient(client).then((res) => {
-      if (!res.success) {
-        console.error('[Kannaku D1 Error] Failed to save client to D1:', res.error);
-        if (typeof window !== 'undefined') {
-          window.dispatchEvent(
-            new CustomEvent('kannaku:d1-sync-error', {
-              detail: { action: `Save Party (${client.name})`, error: res.error, status: res.status },
-            })
-          );
+    if (this.isAuthenticated()) {
+      ApiService.saveClient(client).then((res) => {
+        if (!res.success) {
+          console.error('[Kannaku D1 Error] Failed to save client to D1:', res.error);
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(
+              new CustomEvent('kannaku:d1-sync-error', {
+                detail: { action: `Save Party (${client.name})`, error: res.error, status: res.status },
+              })
+            );
+          }
+        } else if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('kannaku:d1-sync-success', { detail: { action: `Saved Party ${client.name}` } }));
         }
-      } else if (typeof window !== 'undefined') {
-        window.dispatchEvent(new CustomEvent('kannaku:d1-sync-success', { detail: { action: `Saved Party ${client.name}` } }));
-      }
-    });
+      });
+    }
   }
 
   static deleteClient(id: string): void {
@@ -732,18 +747,20 @@ export class KannakuDB {
     this.saveClients(list);
 
     // Cloudflare D1 Delete
-    ApiService.deleteClient(id).then((res) => {
-      if (!res.success) {
-        console.error('[Kannaku D1 Error] Failed to delete client from D1:', res.error);
-        if (typeof window !== 'undefined') {
-          window.dispatchEvent(
-            new CustomEvent('kannaku:d1-sync-error', {
-              detail: { action: 'Delete Party', error: res.error, status: res.status },
-            })
-          );
+    if (this.isAuthenticated()) {
+      ApiService.deleteClient(id).then((res) => {
+        if (!res.success) {
+          console.error('[Kannaku D1 Error] Failed to delete client from D1:', res.error);
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(
+              new CustomEvent('kannaku:d1-sync-error', {
+                detail: { action: 'Delete Party', error: res.error, status: res.status },
+              })
+            );
+          }
         }
-      }
-    });
+      });
+    }
   }
 
   static getProducts(): Product[] {
@@ -778,20 +795,22 @@ export class KannakuDB {
     this.saveProducts(list);
 
     // Cloudflare D1 Sync
-    ApiService.saveProduct(product).then((res) => {
-      if (!res.success) {
-        console.error('[Kannaku D1 Error] Failed to save product to D1:', res.error);
-        if (typeof window !== 'undefined') {
-          window.dispatchEvent(
-            new CustomEvent('kannaku:d1-sync-error', {
-              detail: { action: `Save Product (${product.name})`, error: res.error, status: res.status },
-            })
-          );
+    if (this.isAuthenticated()) {
+      ApiService.saveProduct(product).then((res) => {
+        if (!res.success) {
+          console.error('[Kannaku D1 Error] Failed to save product to D1:', res.error);
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(
+              new CustomEvent('kannaku:d1-sync-error', {
+                detail: { action: `Save Product (${product.name})`, error: res.error, status: res.status },
+              })
+            );
+          }
+        } else if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('kannaku:d1-sync-success', { detail: { action: `Saved Product ${product.name}` } }));
         }
-      } else if (typeof window !== 'undefined') {
-        window.dispatchEvent(new CustomEvent('kannaku:d1-sync-success', { detail: { action: `Saved Product ${product.name}` } }));
-      }
-    });
+      });
+    }
   }
 
   static deleteProduct(id: string): void {
@@ -799,18 +818,20 @@ export class KannakuDB {
     this.saveProducts(list);
 
     // Cloudflare D1 Delete
-    ApiService.deleteProduct(id).then((res) => {
-      if (!res.success) {
-        console.error('[Kannaku D1 Error] Failed to delete product from D1:', res.error);
-        if (typeof window !== 'undefined') {
-          window.dispatchEvent(
-            new CustomEvent('kannaku:d1-sync-error', {
-              detail: { action: 'Delete Product', error: res.error, status: res.status },
-            })
-          );
+    if (this.isAuthenticated()) {
+      ApiService.deleteProduct(id).then((res) => {
+        if (!res.success) {
+          console.error('[Kannaku D1 Error] Failed to delete product from D1:', res.error);
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(
+              new CustomEvent('kannaku:d1-sync-error', {
+                detail: { action: 'Delete Product', error: res.error, status: res.status },
+              })
+            );
+          }
         }
-      }
-    });
+      });
+    }
   }
 
   static getInvoices(): Invoice[] {
@@ -860,20 +881,22 @@ export class KannakuDB {
     this.syncInvoiceToLedger(invoice, oldInvoice);
 
     // Cloudflare D1 Sync
-    ApiService.saveInvoice(invoice).then((res) => {
-      if (!res.success) {
-        console.error('[Kannaku D1 Error] Failed to save invoice to D1:', res.error);
-        if (typeof window !== 'undefined') {
-          window.dispatchEvent(
-            new CustomEvent('kannaku:d1-sync-error', {
-              detail: { action: `Save Invoice #${invoice.invoiceNumber}`, error: res.error, status: res.status },
-            })
-          );
+    if (this.isAuthenticated()) {
+      ApiService.saveInvoice(invoice).then((res) => {
+        if (!res.success) {
+          console.error('[Kannaku D1 Error] Failed to save invoice to D1:', res.error);
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(
+              new CustomEvent('kannaku:d1-sync-error', {
+                detail: { action: `Save Invoice #${invoice.invoiceNumber}`, error: res.error, status: res.status },
+              })
+            );
+          }
+        } else if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('kannaku:d1-sync-success', { detail: { action: `Saved Invoice #${invoice.invoiceNumber}` } }));
         }
-      } else if (typeof window !== 'undefined') {
-        window.dispatchEvent(new CustomEvent('kannaku:d1-sync-success', { detail: { action: `Saved Invoice #${invoice.invoiceNumber}` } }));
-      }
-    });
+      });
+    }
   }
 
   static deleteInvoice(id: string): void {
@@ -898,18 +921,20 @@ export class KannakuDB {
     }
 
     // Cloudflare D1 Delete
-    ApiService.deleteInvoice(id).then((res) => {
-      if (!res.success) {
-        console.error('[Kannaku D1 Error] Failed to delete invoice from D1:', res.error);
-        if (typeof window !== 'undefined') {
-          window.dispatchEvent(
-            new CustomEvent('kannaku:d1-sync-error', {
-              detail: { action: 'Delete Invoice', error: res.error, status: res.status },
-            })
-          );
+    if (this.isAuthenticated()) {
+      ApiService.deleteInvoice(id).then((res) => {
+        if (!res.success) {
+          console.error('[Kannaku D1 Error] Failed to delete invoice from D1:', res.error);
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(
+              new CustomEvent('kannaku:d1-sync-error', {
+                detail: { action: 'Delete Invoice', error: res.error, status: res.status },
+              })
+            );
+          }
         }
-      }
-    });
+      });
+    }
   }
 
   static syncInvoiceToLedger(invoice: Invoice, oldInvoice?: Invoice): void {
@@ -1107,20 +1132,22 @@ export class KannakuDB {
     }
 
     // Cloudflare D1 Sync
-    ApiService.savePayment(entry).then((res) => {
-      if (!res.success) {
-        console.error('[Kannaku D1 Error] Failed to record payment in D1:', res.error);
-        if (typeof window !== 'undefined') {
-          window.dispatchEvent(
-            new CustomEvent('kannaku:d1-sync-error', {
-              detail: { action: `Record Payment (₹${entry.amount})`, error: res.error, status: res.status },
-            })
-          );
+    if (this.isAuthenticated()) {
+      ApiService.savePayment(entry).then((res) => {
+        if (!res.success) {
+          console.error('[Kannaku D1 Error] Failed to record payment in D1:', res.error);
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(
+              new CustomEvent('kannaku:d1-sync-error', {
+                detail: { action: `Record Payment (₹${entry.amount})`, error: res.error, status: res.status },
+              })
+            );
+          }
+        } else if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('kannaku:d1-sync-success', { detail: { action: `Recorded Payment ₹${entry.amount}` } }));
         }
-      } else if (typeof window !== 'undefined') {
-        window.dispatchEvent(new CustomEvent('kannaku:d1-sync-success', { detail: { action: `Recorded Payment ₹${entry.amount}` } }));
-      }
-    });
+      });
+    }
   }
 
   static deletePayment(id: string): void {
@@ -1133,22 +1160,27 @@ export class KannakuDB {
     }
 
     // Cloudflare D1 Delete
-    ApiService.deletePayment(id).then((res) => {
-      if (!res.success) {
-        console.error('[Kannaku D1 Error] Failed to delete payment from D1:', res.error);
-        if (typeof window !== 'undefined') {
-          window.dispatchEvent(
-            new CustomEvent('kannaku:d1-sync-error', {
-              detail: { action: 'Delete Payment Entry', error: res.error, status: res.status },
-            })
-          );
+    if (this.isAuthenticated()) {
+      ApiService.deletePayment(id).then((res) => {
+        if (!res.success) {
+          console.error('[Kannaku D1 Error] Failed to delete payment from D1:', res.error);
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(
+              new CustomEvent('kannaku:d1-sync-error', {
+                detail: { action: 'Delete Payment Entry', error: res.error, status: res.status },
+              })
+            );
+          }
         }
-      }
-    });
+      });
+    }
   }
 
   // Synchronize workspace data directly from Cloudflare D1
   static async syncFromD1(): Promise<{ success: boolean; error?: string; counts?: any }> {
+    if (!this.isAuthenticated()) {
+      return { success: false, error: 'User is not authenticated' };
+    }
     try {
       const [orgRes, clientsRes, productsRes, invoicesRes, paymentsRes] = await Promise.all([
         ApiService.getOrganization(),
@@ -1200,6 +1232,9 @@ export class KannakuDB {
 
   // Push all existing local data into Cloudflare D1 for permanent persistence
   static async migrateAllLocalDataToD1(): Promise<{ success: boolean; migrated?: any; error?: string }> {
+    if (!this.isAuthenticated()) {
+      return { success: false, error: 'User is not authenticated' };
+    }
     try {
       const payload = {
         company: this.getCompanyProfile(),

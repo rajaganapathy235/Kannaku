@@ -50,7 +50,7 @@ export default function App() {
   });
 
   const [isSuperAdminMode, setIsSuperAdminMode] = useState<boolean>(() => {
-    return window.location.hash === '#admin' || authSession?.user.role === 'SUPER_ADMIN';
+    return authSession?.user?.role === 'SUPER_ADMIN';
   });
   const [activeImpersonation, setActiveImpersonation] = useState(
     SaaSAdminDB.getActiveImpersonation()
@@ -105,7 +105,7 @@ export default function App() {
     reloadAllState();
 
     // Auto-sync from Cloudflare D1 on app load if authenticated
-    if (authSession && authSession.token) {
+    if (authSession?.user) {
       KannakuDB.syncFromD1().then((res) => {
         if (res.success) {
           reloadAllState();
@@ -153,8 +153,15 @@ export default function App() {
 
     const handleHashChange = () => {
       if (window.location.hash === '#admin') {
-        setIsSuperAdminMode(true);
-        setAuthView(null);
+        const session = AuthService.getSession();
+        if (session?.user?.role === 'SUPER_ADMIN') {
+          setIsSuperAdminMode(true);
+          setAuthView(null);
+        } else {
+          setIsSuperAdminMode(false);
+          setAuthView('login');
+          window.location.hash = '#login';
+        }
       } else if (window.location.hash === '#home') {
         setIsSuperAdminMode(false);
         setAuthView('home');
@@ -176,7 +183,7 @@ export default function App() {
       window.removeEventListener('kannaku:d1-sync-error', handleD1SyncError);
       window.removeEventListener('kannaku:d1-sync-success', handleD1SyncSuccess);
     };
-  }, [authSession?.token]);
+  }, [authSession?.user?.id]);
   const handleLoginSuccess = (session: AuthSession) => {
     setAuthSession(session);
     setAuthView(null);

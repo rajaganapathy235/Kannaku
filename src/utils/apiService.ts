@@ -4,9 +4,6 @@
  */
 
 import { Client, CompanyProfile, Invoice, PaymentLedgerEntry, Product } from '../types';
-import { AuthSession } from '../types/auth';
-
-const TOKEN_KEY = 'kannaku_auth_session_v1';
 
 export interface ApiResult<T = any> {
   data: T | null;
@@ -38,28 +35,12 @@ export interface SystemDiagnostics {
 }
 
 export class ApiService {
-  /**
-   * Extract and strictly validate session token format.
-   * A valid JWT must consist of three Base64URL-encoded parts separated by periods.
-   */
   static getToken(): string | null {
     try {
-      const data = localStorage.getItem(TOKEN_KEY);
+      const data = localStorage.getItem('kannaku_auth_session_v1');
       if (!data) return null;
-      const session: AuthSession = JSON.parse(data);
-      const token = session?.token;
-      if (!token || typeof token !== 'string') return null;
-
-      // Verify 3-part JWT structure
-      const parts = token.split('.');
-      if (parts.length !== 3) {
-        console.warn(
-          '[ApiService] Non-JWT session token detected:',
-          token.substring(0, 15) + '... Refusing to send invalid Bearer token.'
-        );
-        return null;
-      }
-      return token;
+      const session = JSON.parse(data);
+      return session?.token || null;
     } catch {
       return null;
     }
@@ -69,6 +50,7 @@ export class ApiService {
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
     };
+
     const token = this.getToken();
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
@@ -87,6 +69,7 @@ export class ApiService {
   ): Promise<ApiResult<T>> {
     try {
       const res = await fetch(path, {
+        credentials: 'include',
         ...options,
         headers: {
           ...this.getHeaders(),
@@ -151,42 +134,23 @@ export class ApiService {
   }
 
   static async runFullDiagnostics(): Promise<SystemDiagnostics> {
-    const rawToken = (() => {
-      try {
-        const data = localStorage.getItem(TOKEN_KEY);
-        if (!data) return null;
-        const session: AuthSession = JSON.parse(data);
-        return session?.token || null;
-      } catch {
-        return null;
-      }
-    })();
-
     let isTokenValid = false;
     let tokenDetails: SystemDiagnostics['tokenDetails'] = { format: 'NONE' };
 
-    if (rawToken) {
-      const parts = rawToken.split('.');
-      if (parts.length === 3) {
-        try {
-          const payloadJson = atob(parts[1].replace(/-/g, '+').replace(/_/g, '/'));
-          const payload = JSON.parse(payloadJson);
-          const isExpired = payload.exp ? Date.now() > payload.exp : false;
-          isTokenValid = !isExpired;
-          tokenDetails = {
-            format: 'JWT_VALID',
-            role: payload.role,
-            email: payload.email,
-            organizationId: payload.organizationId,
-            isExpired,
-            expiresAt: payload.exp ? new Date(payload.exp).toLocaleString() : undefined,
-          };
-        } catch {
-          tokenDetails = { format: 'NON_JWT' };
-        }
-      } else {
-        tokenDetails = { format: 'NON_JWT' };
+    try {
+      const meRes = await this.getMe();
+      if (meRes.success && meRes.data?.user) {
+        isTokenValid = true;
+        tokenDetails = {
+          format: 'JWT_VALID',
+          role: meRes.data.user.role,
+          email: meRes.data.user.email,
+          organizationId: meRes.data.organization?.id || meRes.data.user.organizationId,
+          isExpired: false,
+        };
       }
+    } catch {
+      tokenDetails = { format: 'NONE' };
     }
 
     const dbRes = await this.checkDbHealth();

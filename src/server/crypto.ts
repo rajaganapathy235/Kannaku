@@ -137,7 +137,7 @@ export async function createSessionToken(
 
   const key = await crypto.subtle.importKey(
     'raw',
-    enc.encode(secretKey || 'kannaku-saas-production-session-key-fallback-2026'),
+    enc.encode(secretKey || 'kannaku-dev-only-insecure-fallback-key'),
     { name: 'HMAC', hash: 'SHA-256' },
     false,
     ['sign']
@@ -170,7 +170,7 @@ export async function verifySessionToken(
 
     const key = await crypto.subtle.importKey(
       'raw',
-      enc.encode(secretKey || 'kannaku-saas-production-session-key-fallback-2026'),
+      enc.encode(secretKey || 'kannaku-dev-only-insecure-fallback-key'),
       { name: 'HMAC', hash: 'SHA-256' },
       false,
       ['verify']
@@ -202,9 +202,19 @@ export async function verifySessionToken(
 }
 
 /**
- * Simple in-memory rate limiter for Workers
+ * In-memory rate limiter with automated expiration cleanup and memory bounds.
+ * Note: Cloudflare Workers run distributed edge isolates; this provides per-isolate protection.
  */
+const MAX_RATE_LIMIT_ENTRIES = 5000;
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+
+function cleanupExpiredRateLimits(now: number): void {
+  for (const [k, v] of rateLimitMap.entries()) {
+    if (now > v.resetAt) {
+      rateLimitMap.delete(k);
+    }
+  }
+}
 
 export function checkRateLimit(
   key: string,
@@ -212,6 +222,18 @@ export function checkRateLimit(
   windowSeconds: number = 60
 ): { allowed: boolean; remaining: number } {
   const now = Date.now();
+
+  // Periodic/capacity-based cleanup to prevent unbounded memory growth
+  if (rateLimitMap.size > 100) {
+    cleanupExpiredRateLimits(now);
+  }
+
+  // Hard upper limit on map size to prevent memory exhaustion DoS
+  if (rateLimitMap.size >= MAX_RATE_LIMIT_ENTRIES) {
+    const oldestKey = rateLimitMap.keys().next().value;
+    if (oldestKey) rateLimitMap.delete(oldestKey);
+  }
+
   const entry = rateLimitMap.get(key);
 
   if (!entry || now > entry.resetAt) {

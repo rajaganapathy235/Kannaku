@@ -62,7 +62,7 @@ export function amountToIndianWords(amount: number): string {
   const parts: string[] = [];
 
   if (crore > 0) {
-    parts.push(`${convertTwoDigits(crore)} Crore`);
+    parts.push(`${convertThreeDigits(crore)} Crore`);
   }
   if (lakh > 0) {
     parts.push(`${convertTwoDigits(lakh)} Lakh`);

@@ -37,9 +37,9 @@ export async function authenticateRequest(
     token = authHeader.substring(7).trim();
   } else {
     const cookieHeader = request.headers.get('Cookie') || request.headers.get('cookie') || '';
-    const match = cookieHeader.match(/kannaku_session=([^;]+)/);
+    const match = cookieHeader.match(/(?:^|;\s*)kannaku_session=([^;]+)/);
     if (match) {
-      token = match[1];
+      token = decodeURIComponent(match[1].trim());
     }
   }
 
@@ -50,14 +50,17 @@ export async function authenticateRequest(
   return await verifySessionToken(token, secretKey);
 }
 
+let currentOrigin = '*';
+
 function jsonResponse(data: any, status: number = 200, headers: Record<string, string> = {}): Response {
   return new Response(JSON.stringify(data), {
     status,
     headers: {
       'Content-Type': 'application/json',
-      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Origin': currentOrigin,
       'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Impersonate-Org',
+      'Access-Control-Allow-Credentials': 'true',
       ...headers,
     },
   });
@@ -71,19 +74,31 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
   const { request, env, url } = ctx;
   const path = url.pathname;
   const method = request.method.toUpperCase();
-  const secretKey = env.SESSION_SECRET || 'kannaku-saas-production-session-key-fallback-2026';
+
+  // Resolve origin for CORS credentials support
+  const reqOrigin = request.headers.get('Origin') || request.headers.get('origin');
+  const origin = reqOrigin || env.ALLOWED_ORIGIN || env.APP_URL || '*';
+  currentOrigin = origin;
 
   // Handle CORS preflight
   if (method === 'OPTIONS') {
     return new Response(null, {
       status: 204,
       headers: {
-        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Origin': origin,
         'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Impersonate-Org',
+        'Access-Control-Allow-Credentials': 'true',
       },
     });
   }
+
+  // Guard against missing SESSION_SECRET in production
+  if (!env.SESSION_SECRET && env.ENVIRONMENT === 'production') {
+    return errorResponse('Server misconfiguration: SESSION_SECRET is not set', 500);
+  }
+
+  const secretKey = env.SESSION_SECRET || 'kannaku-dev-only-insecure-fallback-key';
 
   const db = env.DB;
   if (!db) {
@@ -175,7 +190,7 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
         secretKey
       );
 
-      const sessionCookie = `kannaku_session=${token}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=${7 * 24 * 3600}`;
+      const sessionCookie = `kannaku_session=${token}; HttpOnly; Secure; SameSite=None; Partitioned; Path=/; Max-Age=${7 * 24 * 3600}`;
 
       return jsonResponse(
         {
@@ -261,7 +276,7 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
       // Update last login
       await execute(db, 'UPDATE platform_users SET last_login = CURRENT_TIMESTAMP WHERE id = ?', user.id);
 
-      const sessionCookie = `kannaku_session=${token}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=${7 * 24 * 3600}`;
+      const sessionCookie = `kannaku_session=${token}; HttpOnly; Secure; SameSite=None; Partitioned; Path=/; Max-Age=${7 * 24 * 3600}`;
 
       return jsonResponse(
         {
@@ -354,7 +369,7 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
         secretKey
       );
 
-      const sessionCookie = `kannaku_session=${token}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=${7 * 24 * 3600}`;
+      const sessionCookie = `kannaku_session=${token}; HttpOnly; Secure; SameSite=None; Partitioned; Path=/; Max-Age=${7 * 24 * 3600}`;
 
       return jsonResponse(
         {
@@ -372,7 +387,7 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
   }
 
   if (path === '/api/auth/logout' && method === 'POST') {
-    const clearCookie = 'kannaku_session=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0';
+    const clearCookie = 'kannaku_session=; HttpOnly; Secure; SameSite=None; Partitioned; Path=/; Max-Age=0';
     return jsonResponse({ success: true, message: 'Logged out successfully' }, 200, {
       'Set-Cookie': clearCookie,
     });

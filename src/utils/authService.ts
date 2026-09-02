@@ -9,7 +9,8 @@ const AUTH_STORAGE_KEY = 'kannaku_auth_session_v1';
 export class AuthService {
   /**
    * Get current active session.
-   * Enforces that the session contains a strictly valid 3-part JWT token format.
+   * Reads non-sensitive session metadata from localStorage.
+   * Authentication is enforced via HttpOnly cookie (kannaku_session).
    */
   static getSession(): AuthSession | null {
     try {
@@ -17,15 +18,7 @@ export class AuthService {
       if (!data) return null;
       const session: AuthSession = JSON.parse(data);
 
-      if (!session || !session.token || typeof session.token !== 'string') {
-        this.logout();
-        return null;
-      }
-
-      // Ensure token is a valid 3-part signed JWT (header.payload.signature)
-      const parts = session.token.split('.');
-      if (parts.length !== 3) {
-        console.warn('[AuthService] Invalid non-JWT session token found in localStorage. Clearing invalid session.');
+      if (!session || !session.user || !session.user.id) {
         this.logout();
         return null;
       }
@@ -66,10 +59,10 @@ export class AuthService {
         gstin: payload.gstin,
       });
 
-      if (res.success && res.data?.token) {
-        const { user, organization, token } = res.data;
+      if (res.success && res.data?.user) {
+        const { user, organization } = res.data;
         const session: AuthSession = {
-          token,
+          token: res.data.token,
           user: {
             id: user.id,
             email: user.email,
@@ -114,13 +107,13 @@ export class AuthService {
   }> {
     try {
       const res = await ApiService.login(payload.email, payload.password);
-      if (res.success && res.data?.token) {
-        const { user, organization, token } = res.data;
+      if (res.success && res.data?.user) {
+        const { user, organization } = res.data;
         const expiresDays = payload.rememberMe ? 30 : 7;
         const expiresAt = new Date(Date.now() + expiresDays * 24 * 60 * 60 * 1000).toISOString();
 
         const session: AuthSession = {
-          token,
+          token: res.data.token,
           user: {
             id: user.id,
             email: user.email,
