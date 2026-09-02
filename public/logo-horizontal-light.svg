@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 64" fill="none" width="280" height="64">
   <!-- Brand Icon Badge -->
   <g transform="translate(0, 0)">
-    <rect width="64" height="64" rx="16" fill="url(#lightBadgeGrad)" />
+    <rect width="64" height="64" rx="16" fill="url(#darkBadgeGrad)" />
     <!-- Document Sheet -->
     <path d="M18 14h18a3 3 0 013 3v24a3 3 0 01-3 3H18a3 3 0 01-3-3V17a3 3 0 013-3z" fill="#ffffff" />
     <!-- Document Lines -->
@@ -11,20 +11,20 @@
     <path d="M38.5 44.5l3.5 3.5 7.5-7.5" stroke="#ffffff" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round" fill="none" />
   </g>
 
-  <!-- Wordmark & Subtitle -->
+  <!-- Wordmark & Subtitle for Dark Backgrounds -->
   <g transform="translate(80, 0)">
     <text x="0" y="38" font-family="'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif" font-size="34" font-weight="800" letter-spacing="-0.75">
-      <tspan fill="#0f172a">Just</tspan><tspan fill="#059669">GST</tspan>
+      <tspan fill="#ffffff">Just</tspan><tspan fill="#34d399">GST</tspan>
     </text>
-    <text x="1" y="54" font-family="'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif" font-size="9" font-weight="700" letter-spacing="2.5" fill="#64748b" text-transform="uppercase">
+    <text x="1" y="54" font-family="'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif" font-size="9" font-weight="700" letter-spacing="2.5" fill="#cbd5e1" text-transform="uppercase">
       GST BILLING &amp; INVOICING
     </text>
   </g>
 
   <defs>
-    <linearGradient id="lightBadgeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#059669" />
-      <stop offset="100%" stop-color="#047857" />
+    <linearGradient id="darkBadgeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10b981" />
+      <stop offset="100%" stop-color="#059669" />
     </linearGradient>
   </defs>
 </svg>

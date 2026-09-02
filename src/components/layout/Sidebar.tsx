@@ -82,7 +82,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <img
           src="/logo-horizontal.svg"
           alt="JustGST"
-          className="h-8 w-auto object-contain"
+          className="w-auto object-contain shrink-0"
+          style={{ height: '36px', minHeight: '36px' }}
         />
       </div>
 

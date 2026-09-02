@@ -55,7 +55,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             <img
               src="/logo-horizontal.svg"
               alt="JustGST"
-              className="h-9 w-auto object-contain"
+              className="w-auto object-contain shrink-0"
+              style={{ height: '40px', minHeight: '36px' }}
             />
           </div>
 
@@ -109,6 +110,18 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       {/* Hero Section */}
       <section className="pt-12 pb-16 sm:pt-20 sm:pb-24 border-b border-slate-200/80 bg-gradient-to-b from-white to-slate-50">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6">
+          {/* Hero Brand Showcase */}
+          <div className="flex justify-center pb-1">
+            <div className="inline-flex items-center p-3 sm:p-4 rounded-3xl bg-white border border-slate-200 shadow-md shadow-slate-200/60">
+              <img
+                src="/logo-horizontal.svg"
+                alt="JustGST"
+                className="w-auto object-contain"
+                style={{ height: '64px', minHeight: '56px' }}
+              />
+            </div>
+          </div>
+
           {/* Trust Pill */}
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-50 border border-blue-200 text-xs text-blue-800 font-medium shadow-2xs">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
@@ -628,7 +641,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               <img
                 src="/logo-horizontal.svg"
                 alt="JustGST"
-                className="h-7 w-auto object-contain"
+                className="w-auto object-contain shrink-0"
+                style={{ height: '36px', minHeight: '32px' }}
               />
             </div>
 

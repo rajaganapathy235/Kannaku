@@ -65,6 +65,12 @@ export const Navbar: React.FC<NavbarProps> = ({
     <header className="h-14 sm:h-16 bg-white border-b border-slate-200 px-3 sm:px-6 md:px-8 flex items-center justify-between sticky top-0 z-30 shadow-xs">
       {/* Title & Organization Context */}
       <div className="flex items-center gap-2 sm:gap-4 min-w-0">
+        <img
+          src="/icon-mark.svg"
+          alt="JustGST"
+          className="md:hidden w-8 h-8 rounded-lg object-contain shrink-0"
+          style={{ height: '34px', width: '34px', minHeight: '34px' }}
+        />
         <div className="min-w-0">
           <h1 className="text-sm sm:text-base md:text-lg font-bold text-slate-900 tracking-tight truncate">
             {getTabTitle(activeTab)}

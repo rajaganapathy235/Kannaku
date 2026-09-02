@@ -132,11 +132,12 @@ export const SignupPage: React.FC<SignupPageProps> = ({
       <div className="relative max-w-lg w-full mx-auto space-y-6">
         {/* Brand Header */}
         <div className="text-center space-y-2">
-          <div className="inline-flex items-center justify-center p-3 rounded-2xl bg-slate-900/90 border border-slate-800 shadow-xl backdrop-blur-md">
+          <div className="inline-flex items-center justify-center p-3.5 sm:p-4 rounded-2xl bg-slate-900/90 border border-slate-800 shadow-xl backdrop-blur-md">
             <img
-              src="/logo-horizontal.svg"
+              src="/logo-horizontal-light.svg"
               alt="JustGST"
-              className="h-9 w-auto object-contain brightness-110"
+              className="w-auto object-contain shrink-0"
+              style={{ height: '52px', minHeight: '48px' }}
             />
           </div>
 
