@@ -29,8 +29,8 @@ export const PlatformUsageAnalyticsView: React.FC = () => {
     { title: 'Tax Invoices Generated', value: totalInvoices.toLocaleString(), icon: FileText, color: 'text-brand-400' },
     { title: 'Estimates & Quotations', value: totalEstimates.toLocaleString(), icon: FileSpreadsheet, color: 'text-brand-400' },
     { title: 'Customer & Party Ledgers', value: totalCustomers.toLocaleString(), icon: Users, color: 'text-emerald-400' },
-    { title: 'Catalog HSN/SAC Items', value: totalProducts.toLocaleString(), icon: Package, color: 'text-purple-400' },
-    { title: 'Multi-Copy PDFs Rendered', value: totalPDFs.toLocaleString(), icon: Printer, color: 'text-cyan-400' },
+    { title: 'Catalog HSN/SAC Items', value: totalProducts.toLocaleString(), icon: Package, color: 'text-emerald-400' },
+    { title: 'Multi-Copy PDFs Rendered', value: totalPDFs.toLocaleString(), icon: Printer, color: 'text-brand-400' },
     { title: 'Total GST Tax Processed', value: `₹${totalTaxHandled.toLocaleString()}`, icon: IndianRupee, color: 'text-emerald-400' },
     { title: 'Payment Receipts Recorded', value: totalLedgerEntries.toLocaleString(), icon: Receipt, color: 'text-amber-400' },
     { title: 'Logo & Bill Cloud Storage', value: `${totalStorageMB} MB`, icon: HardDrive, color: 'text-rose-400' },
@@ -41,7 +41,7 @@ export const PlatformUsageAnalyticsView: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-slate-800">
         <div>
           <h1 className="text-xl font-black text-white tracking-tight flex items-center gap-2">
-            <BarChart3 className="w-6 h-6 text-cyan-400" />
+            <BarChart3 className="w-6 h-6 text-brand-400" />
             <span>GST Platform Resource & Billing Analytics</span>
           </h1>
           <p className="text-xs text-slate-400 mt-0.5">

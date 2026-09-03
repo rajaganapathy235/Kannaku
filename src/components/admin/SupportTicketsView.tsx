@@ -156,7 +156,7 @@ export const SupportTicketsView: React.FC = () => {
                 <div>
                   <div className="flex items-center gap-2">
                     <h2 className="text-sm font-bold text-white">{selectedTicket.subject}</h2>
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-950 text-blue-400 border border-blue-800">
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-brand-950 text-brand-400 border border-brand-800">
                       {selectedTicket.status}
                     </span>
                   </div>
@@ -194,7 +194,7 @@ export const SupportTicketsView: React.FC = () => {
                       <div
                         className={`p-3 rounded-2xl max-w-lg text-xs leading-relaxed ${
                           isAdmin
-                            ? 'bg-blue-600 text-white rounded-tr-xs'
+                            ? 'bg-brand-600 text-white rounded-tr-xs'
                             : 'bg-slate-900 border border-slate-800 text-slate-200 rounded-tl-xs'
                         }`}
                       >

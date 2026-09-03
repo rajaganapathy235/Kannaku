@@ -175,7 +175,7 @@ export const PaymentGatewaysView: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-800">
         <div>
           <h1 className="text-xl font-black text-white tracking-tight flex items-center gap-2">
-            <CreditCard className="w-6 h-6 text-purple-400" />
+            <CreditCard className="w-6 h-6 text-brand-400" />
             <span>SaaS Payment Gateways</span>
           </h1>
           <p className="text-xs text-slate-400 mt-0.5">
@@ -184,13 +184,13 @@ export const PaymentGatewaysView: React.FC = () => {
         </div>
 
         {/* Current Active Gateway Banner */}
-        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-purple-950/60 border border-purple-500/30 text-purple-200 text-xs font-semibold">
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-brand-950/60 border border-brand-500/30 text-brand-200 text-xs font-semibold">
           <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
           <span>Active Gateway:</span>
-          <span className="text-white font-bold bg-purple-900/80 px-2 py-0.5 rounded-md border border-purple-400/30">
+          <span className="text-white font-bold bg-brand-900/80 px-2 py-0.5 rounded-md border border-brand-400/30">
             {activeGw?.name || 'Dodo Payments'}
           </span>
-          <span className="text-[10px] text-purple-300 uppercase tracking-wider">
+          <span className="text-[10px] text-brand-300 uppercase tracking-wider">
             {activeGw?.isTestMode ? 'TEST MODE' : 'LIVE MODE'}
           </span>
         </div>
@@ -198,13 +198,13 @@ export const PaymentGatewaysView: React.FC = () => {
 
       {/* Info Notice */}
       <div className="p-4 rounded-xl bg-slate-900/80 border border-slate-800 flex items-start gap-3">
-        <ShieldCheck className="w-5 h-5 text-purple-400 shrink-0 mt-0.5" />
+        <ShieldCheck className="w-5 h-5 text-brand-400 shrink-0 mt-0.5" />
         <div className="text-xs text-slate-300 space-y-1">
           <p className="font-semibold text-white">
             Single Active Gateway Architecture
           </p>
           <p className="text-slate-400 leading-relaxed">
-            When tenants visit their Subscription & Upgrade page in the SaaS application, the system automatically uses whichever payment gateway is marked as <strong className="text-purple-300">Active</strong> below. You can seamlessly switch between <strong>Dodo Payments</strong>, <strong>Cashfree</strong>, <strong>Razorpay</strong>, or <strong>Direct UPI</strong> anytime without code changes.
+            When tenants visit their Subscription & Upgrade page in the SaaS application, the system automatically uses whichever payment gateway is marked as <strong className="text-brand-300">Active</strong> below. You can seamlessly switch between <strong>Dodo Payments</strong>, <strong>Cashfree</strong>, <strong>Razorpay</strong>, or <strong>Direct UPI</strong> anytime without code changes.
           </p>
         </div>
       </div>
@@ -219,7 +219,7 @@ export const PaymentGatewaysView: React.FC = () => {
             <div
               className={`rounded-2xl bg-slate-900 border transition-all p-5 flex flex-col justify-between ${
                 isActive
-                  ? 'border-purple-500 shadow-xl shadow-purple-950/40 ring-1 ring-purple-500/50'
+                  ? 'border-brand-500 shadow-xl shadow-brand-950/40 ring-1 ring-brand-500/50'
                   : 'border-slate-800 hover:border-slate-700'
               }`}
             >
@@ -227,7 +227,7 @@ export const PaymentGatewaysView: React.FC = () => {
                 {/* Gateway Card Header */}
                 <div className="flex items-start justify-between gap-3 mb-4">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-purple-600/20 border border-purple-500/30 flex items-center justify-center font-black text-purple-400 text-sm">
+                    <div className="w-10 h-10 rounded-xl bg-brand-600/20 border border-brand-500/30 flex items-center justify-center font-black text-brand-400 text-sm">
                       DODO
                     </div>
                     <div>
@@ -250,8 +250,8 @@ export const PaymentGatewaysView: React.FC = () => {
                     disabled={isActive}
                     className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                       isActive
-                        ? 'bg-purple-600/30 text-purple-300 border border-purple-500/40 cursor-default'
-                        : 'bg-slate-800 hover:bg-purple-600 text-slate-300 hover:text-white border border-slate-700'
+                        ? 'bg-brand-600/30 text-brand-300 border border-brand-500/40 cursor-default'
+                        : 'bg-slate-800 hover:bg-brand-600 text-slate-300 hover:text-white border border-slate-700'
                     }`}
                   >
                     {isActive ? 'Active' : 'Set as Active'}
@@ -301,7 +301,7 @@ export const PaymentGatewaysView: React.FC = () => {
                         value={gw.dodoApiKey || ''}
                         onChange={(e) => handleUpdateField('dodopayments', 'dodoApiKey', e.target.value)}
                         placeholder="dodo_live_sec_..."
-                        className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white font-mono text-xs focus:border-purple-500 focus:outline-none pr-10"
+                        className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white font-mono text-xs focus:border-brand-500 focus:outline-none pr-10"
                       />
                       <button
                         type="button"
@@ -324,7 +324,7 @@ export const PaymentGatewaysView: React.FC = () => {
                         value={gw.dodoWebhookSecret || ''}
                         onChange={(e) => handleUpdateField('dodopayments', 'dodoWebhookSecret', e.target.value)}
                         placeholder="whsec_dodo_..."
-                        className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white font-mono text-xs focus:border-purple-500 focus:outline-none pr-10"
+                        className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white font-mono text-xs focus:border-brand-500 focus:outline-none pr-10"
                       />
                       <button
                         type="button"
@@ -385,7 +385,7 @@ export const PaymentGatewaysView: React.FC = () => {
 
                 <button
                   onClick={() => handleSaveGateway('dodopayments')}
-                  className="px-4 py-1.5 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-lg text-xs flex items-center gap-1.5 transition-all cursor-pointer shadow-md"
+                  className="px-4 py-1.5 bg-brand-600 hover:bg-brand-500 text-white font-bold rounded-lg text-xs flex items-center gap-1.5 transition-all cursor-pointer shadow-md"
                 >
                   <Save className="w-3.5 h-3.5" />
                   <span>Save Config</span>

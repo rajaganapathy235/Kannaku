@@ -214,7 +214,7 @@ export const PaymentLedgerView: React.FC<PaymentLedgerViewProps> = ({
 
           <button
             onClick={() => handleOpenRecord('credit')}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-xs active:scale-98 transition-colors cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-brand-600 hover:bg-brand-700 shadow-xs active:scale-98 transition-colors cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             <span>Record Collection</span>
@@ -257,7 +257,7 @@ export const PaymentLedgerView: React.FC<PaymentLedgerViewProps> = ({
         <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-xs space-y-1">
           <div className="flex items-center justify-between text-xs text-slate-500 font-semibold">
             <span>Net Liquid Cash Flow</span>
-            <span className="p-1.5 rounded-lg bg-blue-50 text-blue-600">
+            <span className="p-1.5 rounded-lg bg-brand-50 text-brand-600">
               <Wallet className="w-4 h-4" />
             </span>
           </div>
@@ -286,7 +286,7 @@ export const PaymentLedgerView: React.FC<PaymentLedgerViewProps> = ({
                 onClick={() => setFilterType(tab.id as any)}
                 className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-colors cursor-pointer ${
                   filterType === tab.id
-                    ? 'bg-blue-600 text-white shadow-xs'
+                    ? 'bg-brand-600 text-white shadow-xs'
                     : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                 }`}
               >
@@ -322,8 +322,8 @@ export const PaymentLedgerView: React.FC<PaymentLedgerViewProps> = ({
 
         {/* Custom Date Range Picker if selected */}
         {timePeriod === 'custom' && (
-          <div className="flex flex-wrap items-center gap-2 p-3 bg-blue-50/50 rounded-xl border border-blue-100 text-xs">
-            <Calendar className="w-4 h-4 text-blue-600 shrink-0" />
+          <div className="flex flex-wrap items-center gap-2 p-3 bg-brand-50/50 rounded-xl border border-brand-100 text-xs">
+            <Calendar className="w-4 h-4 text-brand-600 shrink-0" />
             <span className="font-semibold text-slate-700">Custom Date Range:</span>
             <input
               type="date"
@@ -351,7 +351,7 @@ export const PaymentLedgerView: React.FC<PaymentLedgerViewProps> = ({
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search party, UTR ref, notes..."
-              className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-blue-600 transition-colors font-medium"
+              className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-brand-600 transition-colors font-medium"
             />
           </div>
 
@@ -360,7 +360,7 @@ export const PaymentLedgerView: React.FC<PaymentLedgerViewProps> = ({
             <select
               value={filterMode}
               onChange={(e) => setFilterMode(e.target.value)}
-              className="w-full py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 font-semibold focus:bg-white focus:outline-none focus:border-blue-600 transition-colors"
+              className="w-full py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 font-semibold focus:bg-white focus:outline-none focus:border-brand-600 transition-colors"
             >
               <option value="all">All Payment Modes</option>
               <option value="UPI">UPI (GooglePay / PhonePe / Paytm)</option>
@@ -375,7 +375,7 @@ export const PaymentLedgerView: React.FC<PaymentLedgerViewProps> = ({
             <select
               value={filterParty}
               onChange={(e) => setFilterParty(e.target.value)}
-              className="w-full py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 font-semibold focus:bg-white focus:outline-none focus:border-blue-600 transition-colors truncate"
+              className="w-full py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 font-semibold focus:bg-white focus:outline-none focus:border-brand-600 transition-colors truncate"
             >
               <option value="all">All Parties & Clients</option>
               {clients.map((c) => (
@@ -391,7 +391,7 @@ export const PaymentLedgerView: React.FC<PaymentLedgerViewProps> = ({
             <select
               value={sortOrder}
               onChange={(e) => setSortOrder(e.target.value as any)}
-              className="flex-1 py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 font-semibold focus:bg-white focus:outline-none focus:border-blue-600 transition-colors"
+              className="flex-1 py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 font-semibold focus:bg-white focus:outline-none focus:border-brand-600 transition-colors"
             >
               <option value="newest">Newest First</option>
               <option value="oldest">Oldest First</option>
@@ -417,7 +417,7 @@ export const PaymentLedgerView: React.FC<PaymentLedgerViewProps> = ({
               Showing {filteredPayments.length} of {payments.length} transactions
             </span>
             {hasActiveFilters && (
-              <span className="px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 font-bold text-[10px] border border-blue-200">
+              <span className="px-2 py-0.5 rounded-full bg-brand-50 text-brand-700 font-bold text-[10px] border border-brand-200">
                 Filtered Active
               </span>
             )}
@@ -446,7 +446,7 @@ export const PaymentLedgerView: React.FC<PaymentLedgerViewProps> = ({
             {hasActiveFilters && (
               <button
                 onClick={handleResetFilters}
-                className="mt-3 px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 text-xs font-bold hover:bg-blue-100 cursor-pointer"
+                className="mt-3 px-3 py-1.5 rounded-lg bg-brand-50 text-brand-700 text-xs font-bold hover:bg-brand-100 cursor-pointer"
               >
                 Clear all filters
               </button>
@@ -515,7 +515,7 @@ export const PaymentLedgerView: React.FC<PaymentLedgerViewProps> = ({
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 border border-slate-200 animate-in zoom-in-95 duration-150 space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                <Wallet className="w-4 h-4 text-blue-600" />
+                <Wallet className="w-4 h-4 text-brand-600" />
                 <span>Record Ledger Transaction</span>
               </h3>
               <button
@@ -559,7 +559,7 @@ export const PaymentLedgerView: React.FC<PaymentLedgerViewProps> = ({
                 <select
                   value={selectedClientId}
                   onChange={(e) => handlePartySelect(e.target.value)}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium text-slate-900 focus:bg-white focus:border-blue-600 focus:outline-none mb-2"
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium text-slate-900 focus:bg-white focus:border-brand-600 focus:outline-none mb-2"
                 >
                   <option value="">-- Select Registered Client / Vendor --</option>
                   {clients.map((c) => (
@@ -575,7 +575,7 @@ export const PaymentLedgerView: React.FC<PaymentLedgerViewProps> = ({
                   placeholder="Or enter custom party name"
                   value={partyName}
                   onChange={(e) => setPartyName(e.target.value)}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:border-blue-600 focus:outline-none"
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:border-brand-600 focus:outline-none"
                 />
               </div>
 
@@ -591,7 +591,7 @@ export const PaymentLedgerView: React.FC<PaymentLedgerViewProps> = ({
                     required
                     value={amount || ''}
                     onChange={(e) => setAmount(Number(e.target.value))}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono font-bold text-slate-900 focus:bg-white focus:border-blue-600 focus:outline-none"
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono font-bold text-slate-900 focus:bg-white focus:border-brand-600 focus:outline-none"
                   />
                 </div>
 
@@ -604,7 +604,7 @@ export const PaymentLedgerView: React.FC<PaymentLedgerViewProps> = ({
                     required
                     value={date}
                     onChange={(e) => setDate(e.target.value)}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium text-slate-900 focus:bg-white focus:border-blue-600 focus:outline-none"
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium text-slate-900 focus:bg-white focus:border-brand-600 focus:outline-none"
                   />
                 </div>
               </div>
@@ -617,7 +617,7 @@ export const PaymentLedgerView: React.FC<PaymentLedgerViewProps> = ({
                   <select
                     value={mode}
                     onChange={(e) => setMode(e.target.value)}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium text-slate-900 focus:bg-white focus:border-blue-600 focus:outline-none"
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium text-slate-900 focus:bg-white focus:border-brand-600 focus:outline-none"
                   >
                     <option value="UPI">UPI</option>
                     <option value="Cash">Cash</option>
@@ -635,7 +635,7 @@ export const PaymentLedgerView: React.FC<PaymentLedgerViewProps> = ({
                     placeholder="e.g. UTR49281938"
                     value={referenceNo}
                     onChange={(e) => setReferenceNo(e.target.value)}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono text-slate-900 focus:bg-white focus:border-blue-600 focus:outline-none"
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono text-slate-900 focus:bg-white focus:border-brand-600 focus:outline-none"
                   />
                 </div>
               </div>
@@ -649,7 +649,7 @@ export const PaymentLedgerView: React.FC<PaymentLedgerViewProps> = ({
                   placeholder="e.g. Advance for Order #104 / Settlement"
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:border-blue-600 focus:outline-none"
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:border-brand-600 focus:outline-none"
                 />
               </div>
 
@@ -663,7 +663,7 @@ export const PaymentLedgerView: React.FC<PaymentLedgerViewProps> = ({
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold shadow-xs active:scale-98 transition-colors cursor-pointer"
+                  className="px-5 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-bold shadow-xs active:scale-98 transition-colors cursor-pointer"
                 >
                   Save Entry
                 </button>

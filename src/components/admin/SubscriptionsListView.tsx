@@ -272,8 +272,8 @@ export const SubscriptionsListView: React.FC<SubscriptionsListViewProps> = ({
           </div>
         </div>
 
-        <div className="p-4 rounded-2xl bg-gradient-to-b from-purple-500/10 to-purple-950/20 border border-purple-500/30">
-          <div className="flex items-center justify-between text-purple-400 mb-1">
+        <div className="p-4 rounded-2xl bg-gradient-to-b from-brand-500/10 to-brand-950/20 border border-brand-500/30">
+          <div className="flex items-center justify-between text-brand-400 mb-1">
             <span className="text-[11px] font-bold uppercase tracking-wider">Total MRR</span>
             <TrendingUp className="w-4 h-4" />
           </div>

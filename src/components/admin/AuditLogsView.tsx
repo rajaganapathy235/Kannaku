@@ -386,7 +386,7 @@ export const AuditLogsView: React.FC<AuditLogsViewProps> = ({
                           <div className="font-bold text-white truncate max-w-[140px]">
                             {sess.adminName}
                           </div>
-                          <div className="text-[10px] font-mono text-purple-400">
+                          <div className="text-[10px] font-mono text-emerald-400">
                             {sess.adminRole}
                           </div>
                           <div className="text-[10px] font-mono text-slate-500 truncate max-w-[130px]">
@@ -556,7 +556,7 @@ export const AuditLogsView: React.FC<AuditLogsViewProps> = ({
           <div className="w-full max-w-lg bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95">
             <div className="px-6 py-4 bg-slate-950 border-b border-slate-800 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-purple-600/20 text-purple-400 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-xl bg-brand-600/20 text-brand-400 flex items-center justify-center">
                   <ShieldAlert className="w-5 h-5" />
                 </div>
                 <div>
@@ -607,7 +607,7 @@ export const AuditLogsView: React.FC<AuditLogsViewProps> = ({
                 <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 space-y-0.5">
                   <span className="text-[10px] text-slate-500 font-bold uppercase">Operator</span>
                   <div className="font-bold text-white">{selectedSessionDetail.adminName}</div>
-                  <div className="text-[10px] text-purple-400">{selectedSessionDetail.adminRole}</div>
+                  <div className="text-[10px] text-brand-400">{selectedSessionDetail.adminRole}</div>
                 </div>
 
                 <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 space-y-0.5">

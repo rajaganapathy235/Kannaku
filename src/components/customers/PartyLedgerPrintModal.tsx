@@ -174,7 +174,7 @@ _Generated via JustGST Ledger_`;
         {/* Top Actions Control Bar (hidden in print) */}
         <div className="no-print p-3 sm:p-4 bg-slate-900 text-white flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 shrink-0">
           <div className="flex items-center gap-2 min-w-0">
-            <FileText className="w-5 h-5 text-blue-400 shrink-0" />
+            <FileText className="w-5 h-5 text-brand-400 shrink-0" />
             <div className="truncate">
               <h2 className="text-xs sm:text-sm font-bold text-white truncate">
                 Ledger Statement : {party.name}
@@ -235,7 +235,7 @@ _Generated via JustGST Ledger_`;
             <button
               onClick={handleDownloadPdf}
               disabled={isDownloadingPdf}
-              className="p-1.5 sm:px-3 sm:py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-xs transition cursor-pointer disabled:opacity-50"
+              className="p-1.5 sm:px-3 sm:py-1.5 bg-brand-600 hover:bg-brand-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-xs transition cursor-pointer disabled:opacity-50"
               title="Download PDF"
             >
               <Download className="w-3.5 h-3.5" />
@@ -503,7 +503,7 @@ _Generated via JustGST Ledger_`;
                   </div>
                   <div className="text-slate-600">
                     <span>IFSC: <strong className="font-mono text-slate-900">{company.bankDetail.ifscCode}</strong></span> •{' '}
-                    <span>UPI ID: <strong className="font-mono text-blue-700">{company.bankDetail.upiId}</strong></span>
+                    <span>UPI ID: <strong className="font-mono text-brand-700">{company.bankDetail.upiId}</strong></span>
                   </div>
                 </div>
 

@@ -230,7 +230,7 @@ export const OrganizationsListView: React.FC<OrganizationsListViewProps> = ({
             className="px-3 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 rounded-xl text-xs font-semibold flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
             title="Sync organizations from Cloudflare D1"
           >
-            <RefreshCw className={`w-4 h-4 text-sky-400 ${isRefreshing ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-4 h-4 text-emerald-400 ${isRefreshing ? 'animate-spin' : ''}`} />
             <span>{isRefreshing ? 'Syncing...' : 'Sync DB'}</span>
           </button>
           <button

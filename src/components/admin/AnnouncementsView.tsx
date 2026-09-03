@@ -114,7 +114,7 @@ export const AnnouncementsView: React.FC = () => {
                         : ann.type === 'WARNING'
                         ? 'bg-rose-950 text-rose-400 border border-rose-800'
                         : ann.type === 'PROMOTION'
-                        ? 'bg-purple-950 text-purple-400 border border-purple-800'
+                        ? 'bg-emerald-950 text-emerald-400 border border-emerald-800'
                         : 'bg-brand-950 text-brand-400 border border-brand-800'
                     }`}
                   >
@@ -202,10 +202,10 @@ export const AnnouncementsView: React.FC = () => {
                     onChange={(e) => setType(e.target.value as any)}
                     className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none"
                   >
-                    <option value="INFO">INFO (Blue)</option>
-                    <option value="MAINTENANCE">MAINTENANCE (Amber)</option>
-                    <option value="WARNING">WARNING (Rose)</option>
-                    <option value="PROMOTION">PROMOTION (Purple)</option>
+                    <option value="INFO">INFO (Standard Notice)</option>
+                    <option value="MAINTENANCE">MAINTENANCE (Amber Alert)</option>
+                    <option value="WARNING">WARNING (Rose Alert)</option>
+                    <option value="PROMOTION">PROMOTION (Feature Highlight)</option>
                   </select>
                 </div>
                 <div className="space-y-1">
@@ -232,7 +232,7 @@ export const AnnouncementsView: React.FC = () => {
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl font-bold cursor-pointer"
+                  className="px-5 py-2 bg-brand-600 hover:bg-brand-500 text-white rounded-xl font-bold cursor-pointer shadow-md shadow-brand-900/30"
                 >
                   Launch Broadcast
                 </button>

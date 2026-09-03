@@ -259,7 +259,7 @@ Thank you for your business!`;
         {/* Modal Top Bar (Controls) */}
         <div className="no-print p-3 sm:p-4 bg-slate-900 text-white flex flex-wrap items-center justify-between gap-2.5 border-b border-slate-800 shrink-0">
           <div className="flex items-center gap-2">
-            <FileCheck className="w-5 h-5 text-blue-400 shrink-0" />
+            <FileCheck className="w-5 h-5 text-brand-400 shrink-0" />
             <div>
               <h2 className="text-sm font-bold tracking-wide">
                 GST Tax Invoice Preview
@@ -337,7 +337,7 @@ Thank you for your business!`;
             <button
               id="btn-trigger-print"
               onClick={handlePrint}
-              className="px-3 py-1.5 rounded-lg text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white flex items-center gap-1.5 shadow-md active:scale-95 transition cursor-pointer"
+              className="px-3 py-1.5 rounded-lg text-xs font-bold bg-brand-600 hover:bg-brand-500 text-white flex items-center gap-1.5 shadow-md active:scale-95 transition cursor-pointer"
               title="Open System Print Dialog"
             >
               <Printer className="w-3.5 h-3.5" />
@@ -1191,7 +1191,7 @@ Thank you for your business!`;
                                         </div>
                                       ) : company.signatureName ? (
                                         <div
-                                          className="text-sm font-bold text-blue-950 italic z-10 pr-2"
+                                          className="text-sm font-bold text-brand-950 italic z-10 pr-2"
                                           style={{ fontFamily: 'cursive' }}
                                         >
                                           {company.signatureName}

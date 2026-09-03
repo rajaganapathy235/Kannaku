@@ -11,6 +11,7 @@
   --color-brand-700: #047857;
   --color-brand-800: #065f46;
   --color-brand-900: #064e3b;
+  --color-brand-950: #022c22;
 }
 
 @layer base {
@@ -20,6 +21,11 @@
     color: #202124;
   }
   
+  a {
+    color: inherit;
+    text-decoration: inherit;
+  }
+
   .font-mono {
     font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   }

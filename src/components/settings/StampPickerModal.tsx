@@ -153,7 +153,7 @@ export const StampPickerModal: React.FC<StampPickerModalProps> = ({
                   type="button"
                   onClick={() => setStampColor('#0d47a1')}
                   className={`w-6 h-6 rounded-full bg-[#0d47a1] border-2 ${
-                    stampColor === '#0d47a1' ? 'border-slate-900 ring-2 ring-blue-300' : 'border-white'
+                    stampColor === '#0d47a1' ? 'border-slate-900 ring-2 ring-brand-300' : 'border-white'
                   }`}
                   title="Bank Navy Blue"
                 />

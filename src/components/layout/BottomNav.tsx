@@ -92,13 +92,13 @@ export const BottomNav: React.FC<BottomNavProps> = ({
                   }}
                   className={`flex items-center gap-2.5 p-3 rounded-lg text-xs font-semibold transition-colors text-left ${
                     isActive
-                      ? 'bg-blue-50 text-blue-700 font-bold border border-blue-200'
+                      ? 'bg-brand-50 text-brand-700 font-bold border border-brand-200'
                       : 'bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-200'
                   }`}
                 >
                   <Icon
                     className={`w-4 h-4 shrink-0 ${
-                      isActive ? 'text-blue-600' : 'text-slate-500'
+                      isActive ? 'text-brand-600' : 'text-slate-500'
                     }`}
                   />
                   <span className="truncate">{item.label}</span>
@@ -123,13 +123,13 @@ export const BottomNav: React.FC<BottomNavProps> = ({
                   setIsMoreOpen(false);
                 }}
                 className={`relative flex flex-col items-center justify-center py-1 rounded-md transition-colors ${
-                  isActive ? 'text-blue-600 font-bold' : 'text-slate-500'
+                  isActive ? 'text-brand-600 font-bold' : 'text-slate-500'
                 }`}
               >
                 <div className="relative">
                   <Icon className="w-5 h-5" />
                   {tab.badge !== undefined && (
-                    <span className="absolute -top-1 -right-2 px-1 min-w-[14px] h-[14px] rounded-full bg-blue-600 text-white text-[9px] font-bold flex items-center justify-center">
+                    <span className="absolute -top-1 -right-2 px-1 min-w-[14px] h-[14px] rounded-full bg-brand-600 text-white text-[9px] font-bold flex items-center justify-center">
                       {tab.badge}
                     </span>
                   )}
@@ -147,7 +147,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
               ['suppliers', 'payments', 'reports', 'subscription', 'settings'].includes(
                 activeTab
               )
-                ? 'text-blue-600 font-bold'
+                ? 'text-brand-600 font-bold'
                 : 'text-slate-500'
             }`}
           >

@@ -140,7 +140,7 @@ wrangler pages deploy dist --project-name=kannaku-gst-billing`;
                 </div>
 
                 <div className="p-3.5 bg-slate-950/80 border border-slate-800 rounded-2xl space-y-1">
-                  <div className="flex items-center gap-2 text-blue-400 font-bold">
+                  <div className="flex items-center gap-2 text-brand-400 font-bold">
                     <Globe className="w-4 h-4" />
                     <span>Cloudflare Pages</span>
                   </div>
@@ -149,7 +149,7 @@ wrangler pages deploy dist --project-name=kannaku-gst-billing`;
                 </div>
 
                 <div className="p-3.5 bg-slate-950/80 border border-slate-800 rounded-2xl space-y-1">
-                  <div className="flex items-center gap-2 text-purple-400 font-bold">
+                  <div className="flex items-center gap-2 text-brand-400 font-bold">
                     <ShieldCheck className="w-4 h-4" />
                     <span>Auth & Edge KV</span>
                   </div>

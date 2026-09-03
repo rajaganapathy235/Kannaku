@@ -123,7 +123,7 @@ export const AddLedgerEntryModal: React.FC<AddLedgerEntryModalProps> = ({
               <h3 className="text-base font-bold text-slate-900 leading-tight">
                 {isEditing ? 'Edit Ledger Entry' : 'Add Ledger Entry'}
               </h3>
-              <p className="text-xs font-bold text-blue-600 mt-0.5 tracking-wide">
+              <p className="text-xs font-bold text-brand-600 mt-0.5 tracking-wide">
                 {party.name}
               </p>
             </div>

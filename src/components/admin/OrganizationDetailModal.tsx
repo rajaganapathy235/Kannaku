@@ -480,7 +480,7 @@ export const OrganizationDetailModal: React.FC<OrganizationDetailModalProps> = (
                           <div className="flex items-center justify-between text-xs mb-1.5">
                             <div className="flex items-center gap-2">
                               <span className="font-bold text-white">{sess.adminName}</span>
-                              <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-purple-950 text-purple-300 border border-purple-800">
+                              <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-brand-950 text-brand-300 border border-brand-800">
                                 {sess.adminRole}
                               </span>
                             </div>

@@ -469,7 +469,7 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
             onClick={() => handleInvoiceTypeChange(InvoiceType.SALES)}
             className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${
               invoiceType === InvoiceType.SALES
-                ? 'bg-blue-700 text-white shadow-xs'
+                ? 'bg-brand-600 text-white shadow-xs'
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
@@ -480,7 +480,7 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
             onClick={() => handleInvoiceTypeChange(InvoiceType.PURCHASE)}
             className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${
               invoiceType === InvoiceType.PURCHASE
-                ? 'bg-blue-700 text-white shadow-xs'
+                ? 'bg-brand-600 text-white shadow-xs'
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
@@ -491,7 +491,7 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
             onClick={() => handleInvoiceTypeChange(InvoiceType.QUOTATION)}
             className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${
               invoiceType === InvoiceType.QUOTATION
-                ? 'bg-blue-700 text-white shadow-xs'
+                ? 'bg-brand-600 text-white shadow-xs'
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
@@ -518,7 +518,7 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
           <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <span className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
-                <Users className="w-3.5 h-3.5 text-blue-600" />
+                <Users className="w-3.5 h-3.5 text-brand-600" />
                 {invoiceType === InvoiceType.PURCHASE
                   ? 'Supplier (Party)'
                   : 'Customer (Party)'}
@@ -526,7 +526,7 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
               <button
                 type="button"
                 onClick={() => setShowQuickCustomerModal(true)}
-                className="text-xs font-bold text-blue-700 hover:text-blue-800 flex items-center gap-1 hover:underline"
+                className="text-xs font-bold text-brand-700 hover:text-brand-800 flex items-center gap-1 hover:underline"
               >
                 <UserPlus className="w-3.5 h-3.5" />
                 <span>+ Add New Party</span>
@@ -542,7 +542,7 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
                 <select
                   value={selectedClientId}
                   onChange={(e) => handleClientChange(e.target.value)}
-                  className="w-full text-xs font-semibold p-2.5 bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
+                  className="w-full text-xs font-semibold p-2.5 bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-600"
                 >
                   {clients
                     .filter((c) =>
@@ -569,7 +569,7 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
                     onClick={() => setTaxType('CGST_SGST')}
                     className={`py-2 px-3 text-xs font-bold rounded-xl border transition text-center ${
                       taxType === 'CGST_SGST'
-                        ? 'bg-blue-50 text-blue-700 border-blue-300 shadow-2xs'
+                        ? 'bg-brand-50 text-brand-700 border-brand-300 shadow-2xs'
                         : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
                     }`}
                   >
@@ -580,7 +580,7 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
                     onClick={() => setTaxType('IGST')}
                     className={`py-2 px-3 text-xs font-bold rounded-xl border transition text-center ${
                       taxType === 'IGST'
-                        ? 'bg-blue-50 text-blue-700 border-blue-300 shadow-2xs'
+                        ? 'bg-brand-50 text-brand-700 border-brand-300 shadow-2xs'
                         : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
                     }`}
                   >
@@ -600,7 +600,7 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
                   type="text"
                   value={invoiceNumber}
                   onChange={(e) => setInvoiceNumber(e.target.value)}
-                  className="w-full text-xs font-mono font-bold p-2 bg-slate-50 border border-slate-300 rounded-lg focus:bg-white focus:border-blue-600"
+                  className="w-full text-xs font-mono font-bold p-2 bg-slate-50 border border-slate-300 rounded-lg focus:bg-white focus:border-brand-600"
                 />
               </div>
 
@@ -612,7 +612,7 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
                   type="date"
                   value={date}
                   onChange={(e) => setDate(e.target.value)}
-                  className="w-full text-xs font-semibold p-2 bg-slate-50 border border-slate-300 rounded-lg focus:bg-white focus:border-blue-600"
+                  className="w-full text-xs font-semibold p-2 bg-slate-50 border border-slate-300 rounded-lg focus:bg-white focus:border-brand-600"
                 />
               </div>
 
@@ -624,7 +624,7 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
                   type="date"
                   value={dueDate}
                   onChange={(e) => setDueDate(e.target.value)}
-                  className="w-full text-xs font-semibold p-2 bg-slate-50 border border-slate-300 rounded-lg focus:bg-white focus:border-blue-600"
+                  className="w-full text-xs font-semibold p-2 bg-slate-50 border border-slate-300 rounded-lg focus:bg-white focus:border-brand-600"
                 />
               </div>
 
@@ -637,7 +637,7 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
                   value={terms}
                   onChange={(e) => setTerms(e.target.value)}
                   placeholder="e.g. 15 Days Credit"
-                  className="w-full text-xs font-semibold p-2 bg-slate-50 border border-slate-300 rounded-lg focus:bg-white focus:border-blue-600"
+                  className="w-full text-xs font-semibold p-2 bg-slate-50 border border-slate-300 rounded-lg focus:bg-white focus:border-brand-600"
                 />
               </div>
             </div>
@@ -649,7 +649,7 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
                   type="checkbox"
                   checked={hasConsignee}
                   onChange={(e) => setHasConsignee(e.target.checked)}
-                  className="rounded text-blue-600 focus:ring-blue-500 w-4 h-4"
+                  className="rounded text-brand-600 focus:ring-brand-500 w-4 h-4"
                 />
                 <span className="text-xs font-bold text-slate-700">
                   Different Consignee / "Ship-To" Address
@@ -718,7 +718,7 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
                 type="button"
                 id="btn-add-item-row"
                 onClick={handleAddItem}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg transition"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-brand-700 bg-brand-50 hover:bg-brand-100 rounded-lg transition"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>+ Add Item</span>
@@ -748,7 +748,7 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
                             handleItemChange(idx, 'name', e.target.value)
                           }
                           placeholder="Item Name / Product"
-                          className="w-full text-xs font-bold p-2 bg-white border border-slate-300 rounded-lg focus:border-blue-600 focus:ring-1 focus:ring-blue-500"
+                          className="w-full text-xs font-bold p-2 bg-white border border-slate-300 rounded-lg focus:border-brand-600 focus:ring-1 focus:ring-brand-500"
                         />
                         <datalist id={`product-list-${idx}`}>
                           {products.map((p) => (
@@ -765,7 +765,7 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
                             handleItemChange(idx, 'hsnCode', e.target.value)
                           }
                           placeholder="HSN/SAC Code"
-                          className="w-full text-xs font-mono p-2 bg-white border border-slate-300 rounded-lg focus:border-blue-600"
+                          className="w-full text-xs font-mono p-2 bg-white border border-slate-300 rounded-lg focus:border-brand-600"
                         />
                       </div>
                     </div>
@@ -918,7 +918,7 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
                 <button
                   type="button"
                   onClick={handleAddFreight}
-                  className="text-xs text-blue-700 font-bold hover:underline"
+                  className="text-xs text-brand-700 font-bold hover:underline"
                 >
                   + Add Freight Charge
                 </button>
@@ -991,7 +991,7 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
                   </span>
                 </div>
                 {calcResult.calc.tcsAmount > 0 && (
-                  <span className="text-xs font-mono font-bold text-blue-700">
+                  <span className="text-xs font-mono font-bold text-brand-700">
                     +₹{formatNumberIndian(calcResult.calc.tcsAmount)}
                   </span>
                 )}
@@ -1014,7 +1014,7 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
                   onClick={() => setTcsPercentage(0.1)}
                   className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                     tcsPercentage === 0.1
-                      ? 'bg-blue-700 text-white shadow-xs'
+                      ? 'bg-brand-600 text-white shadow-xs'
                       : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                   }`}
                 >
@@ -1025,7 +1025,7 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
                   onClick={() => setTcsPercentage(1.0)}
                   className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                     tcsPercentage === 1.0
-                      ? 'bg-blue-700 text-white shadow-xs'
+                      ? 'bg-brand-600 text-white shadow-xs'
                       : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                   }`}
                 >
@@ -1052,7 +1052,7 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
           {/* Transport & Shipping Details Section */}
           <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs space-y-3">
             <span className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
-              <Truck className="w-3.5 h-3.5 text-blue-600" />
+              <Truck className="w-3.5 h-3.5 text-brand-600" />
               Transport & Dispatch Details (Optional)
             </span>
 
@@ -1247,7 +1247,7 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
               )}
 
               {calcResult.calc.tcsAmount > 0 && (
-                <div className="flex justify-between text-blue-700 bg-blue-50/70 p-1.5 rounded-lg font-semibold">
+                <div className="flex justify-between text-brand-700 bg-brand-50/70 p-1.5 rounded-lg font-semibold">
                   <span>TCS @ {calcResult.calc.tcsPercentage}% (Sec 206C)</span>
                   <span className="font-mono">
                     +₹{formatNumberIndian(calcResult.calc.tcsAmount)}
@@ -1268,7 +1268,7 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
               {/* Total Bill Figure */}
               <div className="pt-3 border-t-2 border-slate-900 flex items-center justify-between text-slate-900">
                 <span className="font-extrabold text-sm">Total Bill Figure</span>
-                <span className="font-mono font-extrabold text-xl text-blue-700">
+                <span className="font-mono font-extrabold text-xl text-brand-700">
                   ₹{formatNumberIndian(calcResult.calc.billFigure)}
                 </span>
               </div>
@@ -1337,7 +1337,7 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
                 type="button"
                 id="btn-save-invoice-print"
                 onClick={() => handleSubmit(true)}
-                className="w-full py-3 px-4 rounded-xl text-xs font-bold text-white bg-blue-700 hover:bg-blue-800 shadow-md flex items-center justify-center gap-2 active:scale-98 transition"
+                className="w-full py-3 px-4 rounded-xl text-xs font-bold text-white bg-brand-600 hover:bg-brand-700 shadow-md flex items-center justify-center gap-2 active:scale-98 transition"
               >
                 <Printer className="w-4 h-4" />
                 <span>Save & Print Tally V4 Invoice</span>
@@ -1370,7 +1370,7 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
         <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-5 animate-in zoom-in-95 duration-150">
             <h3 className="text-sm font-bold text-slate-900 mb-3 flex items-center gap-2">
-              <UserPlus className="w-4 h-4 text-blue-600" />
+              <UserPlus className="w-4 h-4 text-brand-600" />
               <span>Add New Party</span>
             </h3>
 
@@ -1392,7 +1392,7 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
                   value={newCustName}
                   onChange={(e) => setNewCustName(e.target.value)}
                   placeholder="e.g. Annai Traders"
-                  className="w-full text-xs p-2 bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:outline-none focus:border-blue-600"
+                  className="w-full text-xs p-2 bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:outline-none focus:border-brand-600"
                 />
               </div>
 
@@ -1405,7 +1405,7 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
                   value={newCustPhone}
                   onChange={(e) => setNewCustPhone(e.target.value)}
                   placeholder="10-digit mobile"
-                  className="w-full text-xs p-2 bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:outline-none focus:border-blue-600"
+                  className="w-full text-xs p-2 bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:outline-none focus:border-brand-600"
                 />
               </div>
 
@@ -1426,7 +1426,7 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
                       ? 'border-red-400 focus:border-red-500 bg-red-50/30'
                       : newCustGstin && quickGstValidation.isValid && !quickGstValidation.isUnregistered
                       ? 'border-emerald-400 focus:border-emerald-500 bg-emerald-50/20'
-                      : 'border-slate-300 focus:border-blue-600'
+                      : 'border-slate-300 focus:border-brand-600'
                   }`}
                 />
                 {newCustGstin.trim() && (
@@ -1458,7 +1458,7 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
                     value={newCustCity}
                     onChange={(e) => setNewCustCity(e.target.value)}
                     placeholder="City"
-                    className="w-full text-xs p-2 bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:outline-none focus:border-blue-600"
+                    className="w-full text-xs p-2 bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:outline-none focus:border-brand-600"
                   />
                 </div>
                 <div>
@@ -1476,7 +1476,7 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
                       setNewCustState(e.target.value);
                       setQuickCustGstError(null);
                     }}
-                    className="w-full text-xs p-2 bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:outline-none focus:border-blue-600"
+                    className="w-full text-xs p-2 bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:outline-none focus:border-brand-600"
                   >
                     {INDIAN_STATES.map((s) => (
                       <option key={s.code} value={s.name}>
@@ -1497,7 +1497,7 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 text-xs font-bold text-white bg-blue-700 hover:bg-blue-800 rounded-xl shadow-sm"
+                  className="px-4 py-2 text-xs font-bold text-white bg-brand-600 hover:bg-brand-700 rounded-xl shadow-sm"
                 >
                   Save Party
                 </button>

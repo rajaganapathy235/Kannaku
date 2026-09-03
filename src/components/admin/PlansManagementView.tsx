@@ -73,7 +73,7 @@ export const PlansManagementView: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-slate-800">
         <div>
           <h1 className="text-xl font-black text-white tracking-tight flex items-center gap-2">
-            <Layers className="w-6 h-6 text-purple-400" />
+            <Layers className="w-6 h-6 text-brand-400" />
             <span>SaaS Subscription Plan & Pricing</span>
           </h1>
           <p className="text-xs text-slate-400 mt-0.5">
@@ -86,7 +86,7 @@ export const PlansManagementView: React.FC = () => {
             setEditingPlan(activePlan || null);
             setIsEditorOpen(true);
           }}
-          className="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 shadow-md shadow-purple-900/30 transition-all cursor-pointer active:scale-95"
+          className="px-4 py-2 bg-brand-600 hover:bg-brand-500 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 shadow-md shadow-brand-900/30 transition-all cursor-pointer active:scale-95"
         >
           <Edit className="w-4 h-4" />
           <span>Customize Plan Features & Limits</span>
@@ -95,8 +95,8 @@ export const PlansManagementView: React.FC = () => {
 
       {/* Main Single Plan Hero Card */}
       {activePlan && (
-        <div className="rounded-2xl bg-slate-900 border border-purple-500/40 p-6 shadow-2xl relative overflow-hidden">
-          <div className="absolute top-0 right-0 px-4 py-1.5 bg-gradient-to-l from-purple-600 to-brand-600 text-white text-[11px] font-black uppercase tracking-wider rounded-bl-xl shadow-md">
+        <div className="rounded-2xl bg-slate-900 border border-brand-500/40 p-6 shadow-2xl relative overflow-hidden">
+          <div className="absolute top-0 right-0 px-4 py-1.5 bg-gradient-to-l from-emerald-600 to-brand-600 text-white text-[11px] font-black uppercase tracking-wider rounded-bl-xl shadow-md">
             Active Flagship Plan
           </div>
 
@@ -155,25 +155,25 @@ export const PlansManagementView: React.FC = () => {
               </div>
 
               {/* 6 Months Model */}
-              <div className="p-4 rounded-xl bg-purple-950/20 border border-purple-500/30 flex flex-col justify-between relative">
-                <div className="absolute -top-2.5 right-3 px-2 py-0.5 bg-purple-600 text-white text-[10px] font-black rounded-full uppercase tracking-wider shadow">
+              <div className="p-4 rounded-xl bg-emerald-950/20 border border-emerald-500/30 flex flex-col justify-between relative">
+                <div className="absolute -top-2.5 right-3 px-2 py-0.5 bg-emerald-600 text-white text-[10px] font-black rounded-full uppercase tracking-wider shadow">
                   Save 20%
                 </div>
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-bold text-purple-200">6 Months (Half-Yearly)</span>
+                    <span className="text-xs font-bold text-emerald-200">6 Months (Half-Yearly)</span>
                   </div>
                   <div className="flex items-baseline gap-1 my-2">
-                    <span className="text-2xl font-black text-purple-300">
+                    <span className="text-2xl font-black text-emerald-300">
                       ₹{Math.round((activePlan.sixMonthPriceInr || 474) / 6)}
                     </span>
-                    <span className="text-xs text-purple-200/80">/ month</span>
+                    <span className="text-xs text-emerald-200/80">/ month</span>
                   </div>
                   <p className="text-[11px] text-slate-300">
                     Billed semi-annually. Ideal for regular retail and GST traders.
                   </p>
                 </div>
-                <div className="mt-4 pt-3 border-t border-purple-500/20 text-[11px] text-purple-200 flex items-center justify-between">
+                <div className="mt-4 pt-3 border-t border-emerald-500/20 text-[11px] text-emerald-200 flex items-center justify-between">
                   <span>Total Billed:</span>
                   <span className="font-bold text-white">
                     ₹{activePlan.sixMonthPriceInr || 474}
@@ -213,7 +213,7 @@ export const PlansManagementView: React.FC = () => {
           {/* Quick Price Updater */}
           <div className="mt-6 p-4 rounded-xl bg-slate-950 border border-slate-800">
             <h4 className="text-xs font-bold text-white mb-3 flex items-center gap-1.5">
-              <Zap className="w-4 h-4 text-purple-400" />
+              <Zap className="w-4 h-4 text-brand-400" />
               <span>Quick Rate Editor (INR)</span>
             </h4>
 
@@ -271,7 +271,7 @@ export const PlansManagementView: React.FC = () => {
 
               <button
                 type="submit"
-                className="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-lg text-xs flex items-center justify-center gap-1.5 shadow transition-all cursor-pointer"
+                className="px-4 py-2 bg-brand-600 hover:bg-brand-500 text-white font-bold rounded-lg text-xs flex items-center justify-center gap-1.5 shadow transition-all cursor-pointer"
               >
                 <Save className="w-3.5 h-3.5" />
                 <span>Save Rates</span>
@@ -399,7 +399,7 @@ export const PlansManagementView: React.FC = () => {
                   setIsEditorOpen(false);
                   showToast('Plan updated successfully!');
                 }}
-                className="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-bold"
+                className="px-4 py-2 bg-brand-600 hover:bg-brand-500 text-white rounded-xl text-xs font-bold"
               >
                 Save Changes
               </button>

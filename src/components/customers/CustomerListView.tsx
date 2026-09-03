@@ -234,7 +234,7 @@ Please let us know once the transfer is completed. Thank you!`;
 
         <button
           onClick={handleOpenAdd}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-xs active:scale-98 transition-colors cursor-pointer"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-white bg-brand-600 hover:bg-brand-700 shadow-xs active:scale-98 transition-colors cursor-pointer"
         >
           <Plus className="w-4 h-4" />
           <span>Add New Client</span>
@@ -249,7 +249,7 @@ Please let us know once the transfer is completed. Thank you!`;
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search by client name, mobile, GSTIN, or city..."
-          className="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 shadow-xs transition-colors"
+          className="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-brand-600 focus:ring-1 focus:ring-brand-600 shadow-xs transition-colors"
         />
       </div>
 
@@ -264,13 +264,13 @@ Please let us know once the transfer is completed. Thank you!`;
           return (
             <div
               key={c.id}
-              className="bg-white rounded-2xl border border-slate-200 p-4 shadow-xs hover:border-blue-600 hover:shadow-sm transition-all space-y-3 flex flex-col justify-between"
+              className="bg-white rounded-2xl border border-slate-200 p-4 shadow-xs hover:border-brand-600 hover:shadow-sm transition-all space-y-3 flex flex-col justify-between"
             >
               <div className="space-y-2">
                 <div className="flex items-start justify-between gap-2">
                   <div>
                     <h3 className="text-sm font-bold text-slate-900">{c.name}</h3>
-                    <div className="text-xs text-blue-600 font-mono font-semibold mt-0.5">
+                    <div className="text-xs text-brand-600 font-mono font-semibold mt-0.5">
                       GST: {c.registerNumber || 'URP'}
                     </div>
                   </div>
@@ -354,7 +354,7 @@ Please let us know once the transfer is completed. Thank you!`;
         <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg p-6 border border-slate-200 animate-in zoom-in-95 duration-150">
             <h3 className="text-base font-bold text-slate-900 mb-4 flex items-center gap-2">
-              <Users className="w-5 h-5 text-blue-600" />
+              <Users className="w-5 h-5 text-brand-600" />
               <span>{editingClient ? 'Edit Client Profile' : 'Add New Client'}</span>
             </h3>
 
@@ -376,7 +376,7 @@ Please let us know once the transfer is completed. Thank you!`;
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="e.g. Sri Murugan Enterprises"
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:border-blue-600 focus:outline-none"
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:border-brand-600 focus:outline-none"
                 />
               </div>
 
@@ -398,7 +398,7 @@ Please let us know once the transfer is completed. Thank you!`;
                         ? 'border-red-400 focus:border-red-500 bg-red-50/30'
                         : registerNumber && gstValidation.isValid && !gstValidation.isUnregistered
                         ? 'border-emerald-400 focus:border-emerald-500 bg-emerald-50/20'
-                        : 'border-slate-200 focus:border-blue-600'
+                        : 'border-slate-200 focus:border-brand-600'
                     }`}
                   />
                   {/* Real-time GSTIN validation feedback */}
@@ -430,7 +430,7 @@ Please let us know once the transfer is completed. Thank you!`;
                     value={mobile}
                     onChange={(e) => setMobile(e.target.value)}
                     placeholder="9876543210"
-                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:border-blue-600 focus:outline-none"
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:border-brand-600 focus:outline-none"
                   />
                 </div>
               </div>
@@ -444,7 +444,7 @@ Please let us know once the transfer is completed. Thank you!`;
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="client@gmail.com"
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:border-blue-600 focus:outline-none"
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:border-brand-600 focus:outline-none"
                 />
               </div>
 
@@ -457,7 +457,7 @@ Please let us know once the transfer is completed. Thank you!`;
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
                   placeholder="123, Main Road"
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:border-blue-600 focus:outline-none"
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:border-brand-600 focus:outline-none"
                 />
               </div>
 
@@ -471,7 +471,7 @@ Please let us know once the transfer is completed. Thank you!`;
                     value={city}
                     onChange={(e) => setCity(e.target.value)}
                     placeholder="City"
-                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:border-blue-600 focus:outline-none"
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:border-brand-600 focus:outline-none"
                   />
                 </div>
 
@@ -487,7 +487,7 @@ Please let us know once the transfer is completed. Thank you!`;
                   <select
                     value={state}
                     onChange={(e) => handleStateChange(e.target.value)}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:border-blue-600 focus:outline-none"
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:border-brand-600 focus:outline-none"
                   >
                     {INDIAN_STATES.map((s) => (
                       <option key={s.code} value={s.name}>
@@ -506,7 +506,7 @@ Please let us know once the transfer is completed. Thank you!`;
                     value={pin}
                     onChange={(e) => setPin(e.target.value)}
                     placeholder="PIN"
-                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:border-blue-600 focus:outline-none"
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:border-brand-600 focus:outline-none"
                   />
                 </div>
               </div>
@@ -520,7 +520,7 @@ Please let us know once the transfer is completed. Thank you!`;
                   value={balance}
                   onChange={(e) => setBalance(Number(e.target.value))}
                   placeholder="0"
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono font-bold text-slate-900 focus:bg-white focus:border-blue-600 focus:outline-none"
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono font-bold text-slate-900 focus:bg-white focus:border-brand-600 focus:outline-none"
                 />
               </div>
 
@@ -534,7 +534,7 @@ Please let us know once the transfer is completed. Thank you!`;
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-xs transition-colors cursor-pointer"
+                  className="px-5 py-2 font-bold text-white bg-brand-600 hover:bg-brand-700 rounded-xl shadow-xs transition-colors cursor-pointer"
                 >
                   {editingClient ? 'Update Profile' : 'Save Client'}
                 </button>

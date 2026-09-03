@@ -36,7 +36,7 @@ export const FeatureFlagsView: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-slate-800">
         <div>
           <h1 className="text-xl font-black text-white tracking-tight flex items-center gap-2">
-            <ToggleLeft className="w-6 h-6 text-purple-400" />
+            <ToggleLeft className="w-6 h-6 text-brand-400" />
             <span>Platform Feature Flags & Toggles</span>
           </h1>
           <p className="text-xs text-slate-400 mt-0.5">
@@ -52,19 +52,19 @@ export const FeatureFlagsView: React.FC = () => {
             <div
               key={flag.id}
               className={`p-5 rounded-2xl bg-slate-950 border flex flex-col justify-between space-y-4 transition-all ${
-                flag.isEnabledGlobal ? 'border-purple-500/50' : 'border-slate-800'
+                flag.isEnabledGlobal ? 'border-brand-500/50' : 'border-slate-800'
               }`}
             >
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <span className="font-mono text-xs font-bold text-purple-400 bg-purple-950/60 px-2 py-0.5 rounded border border-purple-800/60">
+                  <span className="font-mono text-xs font-bold text-brand-400 bg-brand-950/60 px-2 py-0.5 rounded border border-brand-800/60">
                     {flag.key}
                   </span>
                   <button
                     onClick={() => handleToggleGlobal(flag)}
                     className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
                       flag.isEnabledGlobal
-                        ? 'bg-purple-600 text-white shadow-md shadow-purple-950'
+                        ? 'bg-brand-600 text-white shadow-md shadow-brand-950'
                         : 'bg-slate-800 text-slate-400 hover:text-white'
                     }`}
                   >

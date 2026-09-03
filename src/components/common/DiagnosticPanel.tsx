@@ -165,7 +165,7 @@ export const DiagnosticPanel: React.FC<DiagnosticPanelProps> = ({
             ? 'bg-emerald-950/40 border-emerald-800/60 text-emerald-300'
             : actionMessage.type === 'error'
             ? 'bg-rose-950/40 border-rose-800/60 text-rose-300'
-            : 'bg-blue-950/40 border-blue-800/60 text-blue-300'
+            : 'bg-brand-950/40 border-brand-800/60 text-brand-300'
         }`}>
           {actionMessage.type === 'success' ? (
             <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
@@ -182,7 +182,7 @@ export const DiagnosticPanel: React.FC<DiagnosticPanelProps> = ({
         <div className={`p-3.5 rounded-xl border ${dbOk ? 'bg-slate-950/80 border-slate-800' : 'bg-rose-950/20 border-rose-900/40'} space-y-2`}>
           <div className="flex items-center justify-between">
             <span className="font-semibold text-slate-300 flex items-center gap-2">
-              <Database className="w-4 h-4 text-blue-400" />
+              <Database className="w-4 h-4 text-brand-400" />
               <span>1. Cloudflare D1 Database Binding</span>
             </span>
             {dbOk ? (
@@ -210,7 +210,7 @@ export const DiagnosticPanel: React.FC<DiagnosticPanelProps> = ({
               </div>
               <div className="p-1.5 rounded bg-slate-900 border border-slate-800">
                 <div className="text-[10px] text-slate-400">Invoices</div>
-                <div className="font-bold text-blue-400 text-xs">{diagnostics.counts.invoices}</div>
+                <div className="font-bold text-brand-400 text-xs">{diagnostics.counts.invoices}</div>
               </div>
               <div className="p-1.5 rounded bg-slate-900 border border-slate-800">
                 <div className="text-[10px] text-slate-400">Parties</div>
@@ -244,7 +244,7 @@ export const DiagnosticPanel: React.FC<DiagnosticPanelProps> = ({
         <div className={`p-3.5 rounded-xl border ${tokenOk ? 'bg-slate-950/80 border-slate-800' : 'bg-slate-950/80 border-slate-800'} space-y-2`}>
           <div className="flex items-center justify-between">
             <span className="font-semibold text-slate-300 flex items-center gap-2">
-              <ShieldCheck className="w-4 h-4 text-purple-400" />
+              <ShieldCheck className="w-4 h-4 text-brand-400" />
               <span>2. Auth Session JWT Integrity</span>
             </span>
             {tokenOk ? (
@@ -272,7 +272,7 @@ export const DiagnosticPanel: React.FC<DiagnosticPanelProps> = ({
             {diagnostics?.tokenDetails.role && (
               <div className="flex items-center justify-between text-slate-400">
                 <span>Active Role:</span>
-                <span className="font-mono text-purple-400 font-bold">{diagnostics.tokenDetails.role}</span>
+                <span className="font-mono text-brand-400 font-bold">{diagnostics.tokenDetails.role}</span>
               </div>
             )}
             {diagnostics?.tokenDetails.organizationId && (
@@ -301,7 +301,7 @@ export const DiagnosticPanel: React.FC<DiagnosticPanelProps> = ({
           <button
             onClick={handleSyncFromD1}
             disabled={syncing || !dbOk}
-            className="px-3 py-1.5 bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 border border-blue-500/30 rounded-lg flex items-center gap-1.5 font-bold transition-all cursor-pointer disabled:opacity-40"
+            className="px-3 py-1.5 bg-brand-600/20 hover:bg-brand-600/30 text-brand-300 border border-brand-500/30 rounded-lg flex items-center gap-1.5 font-bold transition-all cursor-pointer disabled:opacity-40"
           >
             <DownloadCloud className={`w-3.5 h-3.5 ${syncing ? 'animate-bounce' : ''}`} />
             <span>{syncing ? 'Pulling from D1...' : 'Pull Data from D1'}</span>
@@ -344,7 +344,7 @@ export const DiagnosticPanel: React.FC<DiagnosticPanelProps> = ({
           </div>
 
           <div className="flex items-center gap-2 text-slate-400">
-            <span className="text-[11px] text-blue-400 font-medium">View Diagnostic Report</span>
+            <span className="text-[11px] text-brand-400 font-medium">View Diagnostic Report</span>
             <ChevronDown className="w-4 h-4" />
           </div>
         </div>

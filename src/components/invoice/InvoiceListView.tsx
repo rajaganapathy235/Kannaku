@@ -141,7 +141,7 @@ export const InvoiceListView: React.FC<InvoiceListViewProps> = ({
 
         <button
           onClick={onNewInvoice}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-xs active:scale-98 transition-colors cursor-pointer"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-white bg-brand-600 hover:bg-brand-700 shadow-xs active:scale-98 transition-colors cursor-pointer"
         >
           <Plus className="w-4 h-4" />
           <span>Create New Bill</span>
@@ -183,7 +183,7 @@ export const InvoiceListView: React.FC<InvoiceListViewProps> = ({
                 onClick={() => setSelectedTypeTab(tab.id)}
                 className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${
                   selectedTypeTab === tab.id
-                    ? 'bg-blue-50 text-blue-600 font-bold'
+                    ? 'bg-brand-50 text-brand-600 font-bold'
                     : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
                 }`}
               >
@@ -198,7 +198,7 @@ export const InvoiceListView: React.FC<InvoiceListViewProps> = ({
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 font-semibold text-slate-800 focus:bg-white focus:outline-none focus:border-blue-600 transition-colors"
+              className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 font-semibold text-slate-800 focus:bg-white focus:outline-none focus:border-brand-600 transition-colors"
             >
               <option value="all">All Payment Statuses</option>
               <option value="PAID">Paid Only</option>
@@ -216,7 +216,7 @@ export const InvoiceListView: React.FC<InvoiceListViewProps> = ({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search by invoice number (e.g. INV/2026/001), party name, GSTIN..."
-            className="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-blue-600 transition-colors"
+            className="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-brand-600 transition-colors"
           />
         </div>
       </div>
@@ -260,7 +260,7 @@ export const InvoiceListView: React.FC<InvoiceListViewProps> = ({
                         {inv.invoiceDate || inv.date || ''}
                       </td>
                       <td className="py-4 px-6">
-                        <div className="font-mono font-bold text-blue-600">
+                        <div className="font-mono font-bold text-brand-600">
                           {inv.invoiceNumber}
                         </div>
                         {inv.invoiceType === InvoiceType.QUOTATION ? (
@@ -338,7 +338,7 @@ export const InvoiceListView: React.FC<InvoiceListViewProps> = ({
                           <button
                             onClick={() => onViewInvoice(inv)}
                             title="Print / PDF Preview"
-                            className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+                            className="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition-colors cursor-pointer"
                           >
                             <Printer className="w-4 h-4" />
                           </button>
@@ -382,7 +382,7 @@ export const InvoiceListView: React.FC<InvoiceListViewProps> = ({
                   <div className="flex items-start justify-between">
                     <div>
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-mono font-bold text-xs text-blue-600">
+                        <span className="font-mono font-bold text-xs text-brand-600">
                           {inv.invoiceNumber}
                         </span>
                         {inv.invoiceType === InvoiceType.QUOTATION && inv.isConverted && (
@@ -441,7 +441,7 @@ export const InvoiceListView: React.FC<InvoiceListViewProps> = ({
                       </button>
                       <button
                         onClick={() => onViewInvoice(inv)}
-                        className="px-2.5 py-1 bg-blue-50 text-blue-600 font-semibold rounded-lg text-xs flex items-center gap-1"
+                        className="px-2.5 py-1 bg-brand-50 text-brand-600 font-semibold rounded-lg text-xs flex items-center gap-1"
                       >
                         <Printer className="w-3 h-3" />
                         Print

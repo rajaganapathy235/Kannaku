@@ -122,11 +122,11 @@ export const SignupPage: React.FC<SignupPageProps> = ({
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 flex flex-col justify-center py-8 px-4 sm:px-6 lg:px-8 text-slate-100 selection:bg-blue-600 selection:text-white">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950/40 flex flex-col justify-center py-8 px-4 sm:px-6 lg:px-8 text-slate-100 selection:bg-emerald-600 selection:text-white">
       {/* Ambient Glow */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/4 -right-20 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-1/4 -left-20 w-96 h-96 bg-indigo-600/10 rounded-full blur-3xl"></div>
+        <div className="absolute top-1/4 -right-20 w-96 h-96 bg-emerald-600/10 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-1/4 -left-20 w-96 h-96 bg-emerald-600/10 rounded-full blur-3xl"></div>
       </div>
 
       <div className="relative max-w-lg w-full mx-auto space-y-6">
@@ -156,7 +156,7 @@ export const SignupPage: React.FC<SignupPageProps> = ({
           <div
             className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold transition-all ${
               step === 1
-                ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
+                ? 'bg-emerald-600 text-white shadow-md shadow-emerald-950/40'
                 : 'bg-slate-900 text-slate-400 border border-slate-800'
             }`}
           >
@@ -171,7 +171,7 @@ export const SignupPage: React.FC<SignupPageProps> = ({
           <div
             className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold transition-all ${
               step === 2
-                ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
+                ? 'bg-emerald-600 text-white shadow-md shadow-emerald-950/40'
                 : 'bg-slate-900 text-slate-400 border border-slate-800'
             }`}
           >
@@ -206,7 +206,7 @@ export const SignupPage: React.FC<SignupPageProps> = ({
                     value={companyName}
                     onChange={(e) => setCompanyName(e.target.value)}
                     placeholder="e.g. Sri Lakshmi Textiles & Exports"
-                    className="w-full pl-10 pr-3.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white placeholder-slate-500 text-xs focus:outline-none focus:border-blue-500 transition-all font-medium"
+                    className="w-full pl-10 pr-3.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white placeholder-slate-500 text-xs focus:outline-none focus:border-emerald-500 transition-all font-medium"
                   />
                 </div>
               </div>
@@ -224,7 +224,7 @@ export const SignupPage: React.FC<SignupPageProps> = ({
                       value={ownerName}
                       onChange={(e) => setOwnerName(e.target.value)}
                       placeholder="e.g. K. Vasanthi"
-                      className="w-full pl-10 pr-3.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white placeholder-slate-500 text-xs focus:outline-none focus:border-blue-500"
+                      className="w-full pl-10 pr-3.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white placeholder-slate-500 text-xs focus:outline-none focus:border-emerald-500"
                     />
                   </div>
                 </div>
@@ -241,7 +241,7 @@ export const SignupPage: React.FC<SignupPageProps> = ({
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
                       placeholder="98765 43210"
-                      className="w-full pl-10 pr-3.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white placeholder-slate-500 text-xs focus:outline-none focus:border-blue-500 font-mono"
+                      className="w-full pl-10 pr-3.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white placeholder-slate-500 text-xs focus:outline-none focus:border-emerald-500 font-mono"
                     />
                   </div>
                 </div>
@@ -259,7 +259,7 @@ export const SignupPage: React.FC<SignupPageProps> = ({
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="accounts@company.com"
-                    className="w-full pl-10 pr-3.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white placeholder-slate-500 text-xs focus:outline-none focus:border-blue-500"
+                    className="w-full pl-10 pr-3.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white placeholder-slate-500 text-xs focus:outline-none focus:border-emerald-500"
                   />
                 </div>
               </div>
@@ -277,7 +277,7 @@ export const SignupPage: React.FC<SignupPageProps> = ({
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="Min 6 chars"
-                      className="w-full pl-10 pr-3.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white placeholder-slate-500 text-xs focus:outline-none focus:border-blue-500 font-mono"
+                      className="w-full pl-10 pr-3.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white placeholder-slate-500 text-xs focus:outline-none focus:border-emerald-500 font-mono"
                     />
                   </div>
                 </div>
@@ -294,7 +294,7 @@ export const SignupPage: React.FC<SignupPageProps> = ({
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       placeholder="Re-enter password"
-                      className="w-full pl-10 pr-3.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white placeholder-slate-500 text-xs focus:outline-none focus:border-blue-500 font-mono"
+                      className="w-full pl-10 pr-3.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white placeholder-slate-500 text-xs focus:outline-none focus:border-emerald-500 font-mono"
                     />
                   </div>
                 </div>
@@ -302,9 +302,9 @@ export const SignupPage: React.FC<SignupPageProps> = ({
 
               <button
                 type="submit"
-                className="w-full py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl text-xs transition-all shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2 cursor-pointer mt-2"
+                className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs transition-all shadow-lg shadow-emerald-950/40 flex items-center justify-center gap-2 cursor-pointer mt-2"
               >
-                <span>Continue to Business & Tax Setup</span>
+                <span>Continue to Business &amp; Tax Setup</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             </form>
@@ -327,7 +327,7 @@ export const SignupPage: React.FC<SignupPageProps> = ({
                     value={gstin}
                     onChange={(e) => setGstin(e.target.value.toUpperCase())}
                     placeholder="33AAACR1234K1Z0 (Leave blank if unregistered)"
-                    className="w-full pl-10 pr-3.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white placeholder-slate-500 text-xs focus:outline-none focus:border-blue-500 font-mono uppercase"
+                    className="w-full pl-10 pr-3.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white placeholder-slate-500 text-xs focus:outline-none focus:border-emerald-500 font-mono uppercase"
                   />
                 </div>
               </div>
@@ -340,7 +340,7 @@ export const SignupPage: React.FC<SignupPageProps> = ({
                   <select
                     value={state}
                     onChange={(e) => setState(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs focus:outline-none focus:border-blue-500 cursor-pointer"
+                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs focus:outline-none focus:border-emerald-500 cursor-pointer"
                   >
                     {INDIAN_STATES.map((st) => (
                       <option key={st} value={st}>
@@ -361,16 +361,16 @@ export const SignupPage: React.FC<SignupPageProps> = ({
                       value={city}
                       onChange={(e) => setCity(e.target.value)}
                       placeholder="e.g. Tiruppur, Coimbatore"
-                      className="w-full pl-10 pr-3.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white placeholder-slate-500 text-xs focus:outline-none focus:border-blue-500"
+                      className="w-full pl-10 pr-3.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white placeholder-slate-500 text-xs focus:outline-none focus:border-emerald-500"
                     />
                   </div>
                 </div>
               </div>
 
               {/* Selected Plan Notice */}
-              <div className="p-3.5 rounded-xl bg-blue-950/40 border border-blue-800/60 flex items-center justify-between text-xs">
+              <div className="p-3.5 rounded-xl bg-emerald-950/40 border border-emerald-800/60 flex items-center justify-between text-xs">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-lg bg-blue-600/30 text-blue-400 flex items-center justify-center font-bold">
+                  <div className="w-8 h-8 rounded-lg bg-emerald-600/30 text-emerald-400 flex items-center justify-center font-bold">
                     <Sparkles className="w-4 h-4" />
                   </div>
                   <div>
@@ -394,7 +394,7 @@ export const SignupPage: React.FC<SignupPageProps> = ({
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-2/3 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl text-xs transition-all shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                  className="w-2/3 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs transition-all shadow-lg shadow-emerald-950/40 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
                 >
                   {loading ? (
                     <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -417,13 +417,13 @@ export const SignupPage: React.FC<SignupPageProps> = ({
             <button
               type="button"
               onClick={onSwitchToLogin}
-              className="text-blue-400 hover:text-blue-300 font-bold underline underline-offset-4 cursor-pointer"
+              className="text-emerald-400 hover:text-emerald-300 font-bold underline underline-offset-4 cursor-pointer"
             >
               Sign In to your workspace
             </button>
           </div>
           <div className="text-[11px] text-slate-500">
-            By signing up you agree to JustGST Terms of Service & GST Audit Compliance
+            By signing up you agree to JustGST Terms of Service &amp; GST Audit Compliance
           </div>
         </div>
       </div>

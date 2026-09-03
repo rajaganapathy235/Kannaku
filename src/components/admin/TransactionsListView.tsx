@@ -95,7 +95,7 @@ Status: Official Computer Generated Tax Receipt
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-slate-800">
         <div>
           <h1 className="text-xl font-black text-white tracking-tight flex items-center gap-2">
-            <Receipt className="w-6 h-6 text-indigo-400" />
+            <Receipt className="w-6 h-6 text-brand-400" />
             <span>Platform Billing & Payment Transactions</span>
           </h1>
           <p className="text-xs text-slate-400 mt-0.5">
@@ -141,7 +141,7 @@ Status: Official Computer Generated Tax Receipt
                 onClick={() => setStatusFilter(st)}
                 className={`px-2.5 py-1 rounded-lg font-bold text-[11px] transition-all cursor-pointer ${
                   statusFilter === st
-                    ? 'bg-indigo-600 text-white'
+                    ? 'bg-brand-600 text-white'
                     : 'text-slate-400 hover:text-white'
                 }`}
               >

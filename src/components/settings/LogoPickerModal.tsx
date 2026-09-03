@@ -153,7 +153,7 @@ export const LogoPickerModal: React.FC<LogoPickerModalProps> = ({
                       onClick={() => handleSelectPreset(preset.svg)}
                       className={`p-3 rounded-xl border flex items-center gap-3 text-left transition-all cursor-pointer ${
                         isSelected
-                          ? 'border-blue-600 bg-blue-50/60 shadow-xs ring-1 ring-blue-600'
+                          ? 'border-brand-600 bg-brand-50/60 shadow-xs ring-1 ring-brand-600'
                           : 'border-slate-200 hover:bg-slate-50'
                       }`}
                     >
@@ -176,7 +176,7 @@ export const LogoPickerModal: React.FC<LogoPickerModalProps> = ({
 
           {activeTab === 'upload' && (
             <div className="space-y-3">
-              <label className="border-2 border-dashed border-slate-300 hover:border-blue-600 rounded-xl p-6 bg-slate-50 hover:bg-blue-50/30 flex flex-col items-center justify-center cursor-pointer transition-colors">
+              <label className="border-2 border-dashed border-slate-300 hover:border-brand-600 rounded-xl p-6 bg-slate-50 hover:bg-brand-50/30 flex flex-col items-center justify-center cursor-pointer transition-colors">
                 <Upload className="w-8 h-8 text-slate-400 mb-2" />
                 <span className="text-xs font-semibold text-slate-700">
                   Select Logo File from Device
@@ -214,7 +214,7 @@ export const LogoPickerModal: React.FC<LogoPickerModalProps> = ({
               <button
                 type="button"
                 onClick={handleSave}
-                className="px-5 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer"
+                className="px-5 py-2 text-xs font-bold text-white bg-brand-600 hover:bg-brand-700 rounded-xl shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer"
               >
                 <Check className="w-4 h-4" />
                 <span>Save Logo</span>

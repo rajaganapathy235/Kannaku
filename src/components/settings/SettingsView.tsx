@@ -327,7 +327,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                       className="w-full h-full object-contain p-1"
                     />
                   ) : (
-                    <div className="w-full h-full bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-700 font-black text-2xl">
+                    <div className="w-full h-full bg-brand-50 border border-brand-200 flex items-center justify-center text-brand-700 font-black text-2xl">
                       {form.name ? form.name.slice(0, 2).toUpperCase() : 'CO'}
                     </div>
                   )}
@@ -335,7 +335,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 <button
                   type="button"
                   onClick={() => setIsLogoModalOpen(true)}
-                  className="mt-1.5 w-full text-center text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center justify-center gap-1 cursor-pointer"
+                  className="mt-1.5 w-full text-center text-xs font-bold text-brand-600 hover:text-brand-700 flex items-center justify-center gap-1 cursor-pointer"
                 >
                   <ImageIcon className="w-3.5 h-3.5" />
                   <span>{form.logoUrl ? 'Change Logo' : 'Add Logo'}</span>
@@ -359,7 +359,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 onClick={() => setIsSignatureModalOpen(true)}
                 className="px-3.5 py-1.5 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 text-xs font-semibold text-slate-700 flex items-center gap-1.5 transition-colors cursor-pointer"
               >
-                <Edit3 className="w-3.5 h-3.5 text-blue-600" />
+                <Edit3 className="w-3.5 h-3.5 text-brand-600" />
                 <span>{form.signatureUrl ? 'Edit Signature' : 'Add Signature'}</span>
               </button>
               <button
@@ -387,7 +387,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 <button
                   type="button"
                   onClick={() => setIsSignatureModalOpen(true)}
-                  className="text-[11px] font-bold text-blue-600 hover:text-blue-700 cursor-pointer"
+                  className="text-[11px] font-bold text-brand-600 hover:text-brand-700 cursor-pointer"
                 >
                   Configure Signature Pad →
                 </button>
@@ -416,7 +416,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 <button
                   type="button"
                   onClick={() => setIsStampModalOpen(true)}
-                  className="text-[11px] font-bold text-blue-600 hover:text-blue-700 mt-1 block cursor-pointer"
+                  className="text-[11px] font-bold text-brand-600 hover:text-brand-700 mt-1 block cursor-pointer"
                 >
                   Configure Company Seal →
                 </button>
@@ -495,7 +495,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   <span className="text-[10px] text-slate-500 font-bold uppercase block tracking-wider">
                     GSTIN
                   </span>
-                  <span className="font-mono font-bold text-blue-600">
+                  <span className="font-mono font-bold text-brand-600">
                     {form.registerNumber || '33ASWPV8266F1ZW'}
                   </span>
                 </div>
@@ -509,7 +509,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       <form onSubmit={handleSaveProfile} className="space-y-6">
         <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
           <div className="flex items-center gap-2 border-b border-slate-200 pb-3">
-            <Building className="w-4 h-4 text-blue-600" />
+            <Building className="w-4 h-4 text-brand-600" />
             <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900">
               Edit Business Master Details
             </h3>
@@ -525,7 +525,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 required
                 value={form.name}
                 onChange={(e) => handleFormChange('name', e.target.value)}
-                className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg font-semibold text-slate-900 focus:bg-white focus:border-blue-600 focus:outline-none transition-colors"
+                className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg font-semibold text-slate-900 focus:bg-white focus:border-brand-600 focus:outline-none transition-colors"
               />
             </div>
 
@@ -540,7 +540,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 onChange={(e) =>
                   handleFormChange('registerNumber', e.target.value.toUpperCase())
                 }
-                className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg font-mono uppercase font-semibold text-slate-900 focus:bg-white focus:border-blue-600 focus:outline-none transition-colors"
+                className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg font-mono uppercase font-semibold text-slate-900 focus:bg-white focus:border-brand-600 focus:outline-none transition-colors"
               />
             </div>
 
@@ -552,7 +552,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 type="tel"
                 value={form.mobile}
                 onChange={(e) => handleFormChange('mobile', e.target.value)}
-                className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 focus:bg-white focus:border-blue-600 focus:outline-none transition-colors"
+                className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 focus:bg-white focus:border-brand-600 focus:outline-none transition-colors"
               />
             </div>
 
@@ -564,7 +564,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 type="email"
                 value={form.email}
                 onChange={(e) => handleFormChange('email', e.target.value)}
-                className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 focus:bg-white focus:border-blue-600 focus:outline-none transition-colors"
+                className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 focus:bg-white focus:border-brand-600 focus:outline-none transition-colors"
               />
             </div>
 
@@ -576,7 +576,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 type="text"
                 value={form.address}
                 onChange={(e) => handleFormChange('address', e.target.value)}
-                className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 focus:bg-white focus:border-blue-600 focus:outline-none transition-colors"
+                className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 focus:bg-white focus:border-brand-600 focus:outline-none transition-colors"
               />
             </div>
 
@@ -588,7 +588,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 type="text"
                 value={form.city}
                 onChange={(e) => handleFormChange('city', e.target.value)}
-                className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 focus:bg-white focus:border-blue-600 focus:outline-none transition-colors"
+                className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 focus:bg-white focus:border-brand-600 focus:outline-none transition-colors"
               />
             </div>
 
@@ -600,7 +600,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 type="text"
                 value={form.state}
                 onChange={(e) => handleFormChange('state', e.target.value)}
-                className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 focus:bg-white focus:border-blue-600 focus:outline-none transition-colors"
+                className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 focus:bg-white focus:border-brand-600 focus:outline-none transition-colors"
               />
             </div>
           </div>
@@ -609,7 +609,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         {/* Bank & Settlement Details */}
         <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
           <div className="flex items-center gap-2 border-b border-slate-200 pb-3">
-            <Landmark className="w-4 h-4 text-blue-600" />
+            <Landmark className="w-4 h-4 text-brand-600" />
             <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900">
               Bank Details & UPI Print (Printed on Invoices)
             </h3>
@@ -624,7 +624,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 type="text"
                 value={form.bankDetail?.bankName || ''}
                 onChange={(e) => handleBankChange('bankName', e.target.value)}
-                className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 focus:bg-white focus:border-blue-600 focus:outline-none transition-colors"
+                className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 focus:bg-white focus:border-brand-600 focus:outline-none transition-colors"
               />
             </div>
 
@@ -636,7 +636,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 type="text"
                 value={form.bankDetail?.branchName || ''}
                 onChange={(e) => handleBankChange('branchName', e.target.value)}
-                className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 focus:bg-white focus:border-blue-600 focus:outline-none transition-colors"
+                className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 focus:bg-white focus:border-brand-600 focus:outline-none transition-colors"
               />
             </div>
 
@@ -650,7 +650,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 onChange={(e) =>
                   handleBankChange('accountNumber', e.target.value)
                 }
-                className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg font-mono font-semibold text-slate-900 focus:bg-white focus:border-blue-600 focus:outline-none transition-colors"
+                className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg font-mono font-semibold text-slate-900 focus:bg-white focus:border-brand-600 focus:outline-none transition-colors"
               />
             </div>
 
@@ -664,7 +664,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 onChange={(e) =>
                   handleBankChange('ifscCode', e.target.value.toUpperCase())
                 }
-                className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg font-mono uppercase font-semibold text-slate-900 focus:bg-white focus:border-blue-600 focus:outline-none transition-colors"
+                className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg font-mono uppercase font-semibold text-slate-900 focus:bg-white focus:border-brand-600 focus:outline-none transition-colors"
               />
             </div>
 
@@ -677,7 +677,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 value={form.bankDetail?.upiId || ''}
                 onChange={(e) => handleBankChange('upiId', e.target.value)}
                 placeholder="e.g. hytexmills@hdfcbank"
-                className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg font-mono font-semibold text-blue-600 focus:bg-white focus:border-blue-600 focus:outline-none transition-colors"
+                className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg font-mono font-semibold text-brand-600 focus:bg-white focus:border-brand-600 focus:outline-none transition-colors"
               />
             </div>
           </div>
@@ -686,7 +686,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         {/* Save Button */}
         <button
           type="submit"
-          className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-sm shadow-xs flex items-center justify-center gap-2 active:scale-98 transition-colors cursor-pointer"
+          className="w-full py-3 bg-brand-600 hover:bg-brand-700 text-white rounded-xl font-bold text-sm shadow-xs flex items-center justify-center gap-2 active:scale-98 transition-colors cursor-pointer"
         >
           <Save className="w-4 h-4" />
           <span>Save Changes to Profile & Bank Information</span>
@@ -696,7 +696,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       {/* Account Security & Password Rotation */}
       <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
         <div className="flex items-center gap-2 border-b border-slate-200 pb-3">
-          <Key className="w-4 h-4 text-blue-600" />
+          <Key className="w-4 h-4 text-brand-600" />
           <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900">
             Account Security & Password Rotation
           </h3>
@@ -727,7 +727,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               placeholder="••••••••"
               value={currentPassword}
               onChange={(e) => setCurrentPassword(e.target.value)}
-              className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 focus:bg-white focus:border-blue-600 focus:outline-none transition-colors"
+              className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 focus:bg-white focus:border-brand-600 focus:outline-none transition-colors"
             />
           </div>
 
@@ -738,7 +738,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               placeholder="Min. 6 characters"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
-              className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 focus:bg-white focus:border-blue-600 focus:outline-none transition-colors"
+              className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 focus:bg-white focus:border-brand-600 focus:outline-none transition-colors"
             />
           </div>
 
@@ -749,7 +749,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               placeholder="Repeat new password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 focus:bg-white focus:border-blue-600 focus:outline-none transition-colors"
+              className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 focus:bg-white focus:border-brand-600 focus:outline-none transition-colors"
             />
           </div>
 
@@ -772,7 +772,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       {/* Database Backup & Restore */}
       <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
         <div className="flex items-center gap-2 border-b border-slate-200 pb-3">
-          <Database className="w-4 h-4 text-blue-600" />
+          <Database className="w-4 h-4 text-brand-600" />
           <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900">
             Database Backup & Data Portability
           </h3>

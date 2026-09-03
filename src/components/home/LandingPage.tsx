@@ -21,8 +21,15 @@ import {
   FileCheck2,
   Play,
   Lock,
+  Mail,
+  Phone,
+  RotateCcw,
+  ShieldCheck,
+  CreditCard,
+  ExternalLink,
 } from 'lucide-react';
 import { AuthSession } from '../../types/auth';
+import { LegalModal, LegalDocType } from './LegalModal';
 
 interface LandingPageProps {
   onStartTrial: () => void;
@@ -40,6 +47,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   session,
 }) => {
   const [activeFaq, setActiveFaq] = useState<number | null>(null);
+  const [legalModalOpen, setLegalModalOpen] = useState(false);
+  const [activeLegalDoc, setActiveLegalDoc] = useState<LegalDocType>('terms');
+
+  const openLegal = (doc: LegalDocType) => {
+    setActiveLegalDoc(doc);
+    setLegalModalOpen(true);
+  };
 
   const toggleFaq = (index: number) => {
     setActiveFaq(activeFaq === index ? null : index);
@@ -633,47 +647,259 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="border-t border-slate-200 bg-slate-50 py-10 text-xs text-slate-500">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <img
-                src="/logo-horizontal.svg"
-                alt="JustGST"
-                className="w-auto object-contain shrink-0"
-                style={{ height: '36px', minHeight: '32px' }}
-              />
+      {/* Comprehensive Gateway-Compliant Footer */}
+      <footer className="border-t border-slate-200 bg-white text-xs text-slate-600">
+        {/* Gateway & Trust Assurance Strip */}
+        <div className="border-b border-slate-200 bg-slate-50/80 py-6">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
+              {/* Trust Badge 1 */}
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-brand-50 border border-brand-200 flex items-center justify-center text-brand-600 shrink-0">
+                  <ShieldCheck className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="font-bold text-slate-900 text-xs">
+                    PCI-DSS &amp; RBI Compliant Payments
+                  </div>
+                  <div className="text-[11px] text-slate-500">
+                    Instant UPI, Cards &amp; NetBanking via RBI authorized gateways
+                  </div>
+                </div>
+              </div>
+
+              {/* Trust Badge 2 */}
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-brand-50 border border-brand-200 flex items-center justify-center text-brand-600 shrink-0">
+                  <Lock className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="font-bold text-slate-900 text-xs">
+                    256-Bit SSL Bank-Grade Encryption
+                  </div>
+                  <div className="text-[11px] text-slate-500">
+                    Your financial and GST data is encrypted at rest &amp; in transit
+                  </div>
+                </div>
+              </div>
+
+              {/* Trust Badge 3 */}
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-brand-50 border border-brand-200 flex items-center justify-center text-brand-600 shrink-0">
+                  <RotateCcw className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="font-bold text-slate-900 text-xs">
+                    14-Day Free Trial &amp; 7-Day Refund Policy
+                  </div>
+                  <div className="text-[11px] text-slate-500">
+                    Zero risk, transparent pricing with instant cloud provisioning
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Main Footer Directory Columns */}
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-12">
+            {/* Column 1: Brand & Description */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <img
+                  src="/logo-horizontal.svg"
+                  alt="JustGST"
+                  className="w-auto object-contain shrink-0"
+                  style={{ height: '36px', minHeight: '32px' }}
+                />
+              </div>
+              <p className="text-xs text-slate-500 leading-relaxed">
+                Cloud-native GST billing, inventory control, thermal POS receipts, and party reconciliation software engineered for Indian businesses and MSMEs.
+              </p>
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-50 border border-emerald-200 text-[10px] font-bold text-emerald-800">
+                <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                <span>100% CBIC GST Rules Compliant</span>
+              </div>
             </div>
 
-            <div className="flex items-center gap-5 text-slate-600 text-xs font-semibold">
+            {/* Column 2: Invoicing Features & Solutions */}
+            <div className="space-y-3">
+              <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+                Product Solutions
+              </h4>
+              <ul className="space-y-2 text-xs text-slate-500">
+                <li>
+                  <button
+                    onClick={onEnterDemoApp}
+                    className="hover:text-brand-600 transition-colors cursor-pointer text-left"
+                  >
+                    GST Tax Invoicing (B2B / B2C)
+                  </button>
+                </li>
+                <li>
+                  <button
+                    onClick={onEnterDemoApp}
+                    className="hover:text-brand-600 transition-colors cursor-pointer text-left"
+                  >
+                    Dynamic UPI QR on Invoices
+                  </button>
+                </li>
+                <li>
+                  <button
+                    onClick={onEnterDemoApp}
+                    className="hover:text-brand-600 transition-colors cursor-pointer text-left"
+                  >
+                    80mm Thermal POS &amp; A4 Printing
+                  </button>
+                </li>
+                <li>
+                  <button
+                    onClick={onEnterDemoApp}
+                    className="hover:text-brand-600 transition-colors cursor-pointer text-left"
+                  >
+                    Customer &amp; Supplier Ledgers
+                  </button>
+                </li>
+                <li>
+                  <button
+                    onClick={onEnterDemoApp}
+                    className="hover:text-brand-600 transition-colors cursor-pointer text-left"
+                  >
+                    Inventory &amp; HSN Stock Master
+                  </button>
+                </li>
+                <li>
+                  <button
+                    onClick={onEnterDemoApp}
+                    className="hover:text-brand-600 transition-colors cursor-pointer text-left"
+                  >
+                    GSTR-1 &amp; GSTR-3B Summary Reports
+                  </button>
+                </li>
+              </ul>
+            </div>
+
+            {/* Column 3: Mandatory Legal & Gateway Verification Policies */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+                  Legal &amp; Policies
+                </h4>
+                <span className="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-brand-50 text-brand-700 border border-brand-200">
+                  Gateway Mandatory
+                </span>
+              </div>
+              <ul className="space-y-2 text-xs">
+                <li>
+                  <button
+                    onClick={() => openLegal('terms')}
+                    className="text-slate-600 hover:text-brand-600 transition-colors font-medium flex items-center gap-1.5 cursor-pointer text-left"
+                  >
+                    <FileText className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                    <span>Terms &amp; Conditions (ToS)</span>
+                  </button>
+                </li>
+                <li>
+                  <button
+                    onClick={() => openLegal('privacy')}
+                    className="text-slate-600 hover:text-brand-600 transition-colors font-medium flex items-center gap-1.5 cursor-pointer text-left"
+                  >
+                    <ShieldCheck className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                    <span>Privacy Policy (DPDP Act)</span>
+                  </button>
+                </li>
+                <li>
+                  <button
+                    onClick={() => openLegal('refund')}
+                    className="text-slate-600 hover:text-brand-600 transition-colors font-medium flex items-center gap-1.5 cursor-pointer text-left"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                    <span>Cancellation &amp; Refund Policy</span>
+                  </button>
+                </li>
+                <li>
+                  <button
+                    onClick={() => openLegal('shipping')}
+                    className="text-slate-600 hover:text-brand-600 transition-colors font-medium flex items-center gap-1.5 cursor-pointer text-left"
+                  >
+                    <Truck className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                    <span>Shipping &amp; Delivery (SaaS Delivery)</span>
+                  </button>
+                </li>
+                <li>
+                  <button
+                    onClick={() => openLegal('security')}
+                    className="text-slate-600 hover:text-brand-600 transition-colors font-medium flex items-center gap-1.5 cursor-pointer text-left"
+                  >
+                    <Lock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                    <span>Payment Security &amp; Gateways</span>
+                  </button>
+                </li>
+                <li className="pt-1">
+                  <button
+                    onClick={() => openLegal('terms')}
+                    className="text-brand-600 hover:text-brand-700 font-bold flex items-center gap-1 text-[11px] cursor-pointer"
+                  >
+                    <span>Open Full Legal Center</span>
+                    <ArrowRight className="w-3 h-3" />
+                  </button>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          {/* Bottom Copyright & Fast Links */}
+          <div className="mt-8 pt-6 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] text-slate-400">
+            <p>
+              © {new Date().getFullYear()} JustGST. All Rights Reserved. Made in India.
+            </p>
+            <div className="flex items-center gap-4 text-slate-500 font-medium">
               <button
-                onClick={onEnterDemoApp}
+                onClick={() => openLegal('terms')}
                 className="hover:text-brand-600 transition-colors cursor-pointer"
               >
-                Open Workspace
+                Terms
               </button>
+              <span>•</span>
               <button
-                onClick={onSignIn}
+                onClick={() => openLegal('privacy')}
                 className="hover:text-brand-600 transition-colors cursor-pointer"
               >
-                Sign In
+                Privacy
               </button>
+              <span>•</span>
+              <button
+                onClick={() => openLegal('refund')}
+                className="hover:text-brand-600 transition-colors cursor-pointer"
+              >
+                Refunds
+              </button>
+              <span>•</span>
+              <button
+                onClick={() => openLegal('shipping')}
+                className="hover:text-brand-600 transition-colors cursor-pointer"
+              >
+                Shipping
+              </button>
+              <span>•</span>
               <button
                 onClick={onOpenSuperAdmin}
-                className="hover:text-purple-600 transition-colors cursor-pointer"
+                className="hover:text-brand-600 transition-colors cursor-pointer font-semibold"
               >
                 SuperAdmin
               </button>
             </div>
           </div>
-
-          <div className="border-t border-slate-200 pt-4 flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-slate-400">
-            <p>© {new Date().getFullYear()} JustGST. Made in India for Indian Businesses.</p>
-            <p>100% CBIC GST Compliant • Thermal & A4 Printing • Dynamic UPI QR</p>
-          </div>
         </div>
       </footer>
+
+      {/* Legal & Compliance Modal */}
+      <LegalModal
+        isOpen={legalModalOpen}
+        onClose={() => setLegalModalOpen(false)}
+        initialDoc={activeLegalDoc}
+      />
     </div>
   );
 };

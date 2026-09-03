@@ -69,11 +69,11 @@ export const LoginPage: React.FC<LoginPageProps> = ({
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-brand-950 flex flex-col justify-center py-8 px-4 sm:px-6 lg:px-8 text-slate-100 selection:bg-brand-600 selection:text-white">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950/40 flex flex-col justify-center py-8 px-4 sm:px-6 lg:px-8 text-slate-100 selection:bg-emerald-600 selection:text-white">
       {/* Background Decor */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-96 h-96 bg-brand-600/10 rounded-full blur-3xl"></div>
-        <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-purple-600/10 rounded-full blur-3xl"></div>
+        <div className="absolute -top-40 -right-40 w-96 h-96 bg-emerald-600/10 rounded-full blur-3xl"></div>
+        <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-emerald-600/10 rounded-full blur-3xl"></div>
       </div>
 
       <div className="relative max-w-md w-full mx-auto space-y-6">
@@ -92,7 +92,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
             Sign in to your Workspace
           </h2>
           <p className="text-xs text-slate-400">
-            Access your company GST invoices, inventory ledger & customer balances
+            Access your company GST invoices, inventory ledger &amp; customer balances
           </p>
         </div>
 
@@ -118,7 +118,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="name@company.com"
-                  className="w-full pl-10 pr-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white placeholder-slate-500 text-xs focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all font-medium"
+                  className="w-full pl-10 pr-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white placeholder-slate-500 text-xs focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all font-medium"
                 />
               </div>
             </div>
@@ -133,7 +133,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                     setForgotPasswordOpen(true);
                     setResetSent(false);
                   }}
-                  className="text-[11px] text-brand-400 hover:text-brand-300 font-semibold cursor-pointer"
+                  className="text-[11px] text-emerald-400 hover:text-emerald-300 font-semibold cursor-pointer"
                 >
                   Forgot password?
                 </button>
@@ -146,7 +146,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••••••"
-                  className="w-full pl-10 pr-10 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white placeholder-slate-500 text-xs focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all font-mono"
+                  className="w-full pl-10 pr-10 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white placeholder-slate-500 text-xs focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all font-mono"
                 />
                 <button
                   type="button"
@@ -164,7 +164,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                   type="checkbox"
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
-                  className="w-3.5 h-3.5 rounded border-slate-700 bg-slate-950 text-brand-600 focus:ring-0 focus:ring-offset-0 cursor-pointer"
+                  className="w-3.5 h-3.5 rounded border-slate-700 bg-slate-950 text-emerald-600 focus:ring-0 focus:ring-offset-0 cursor-pointer"
                 />
                 <span className="text-xs text-slate-400 font-medium">Keep me signed in</span>
               </label>
@@ -178,7 +178,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 bg-brand-600 hover:bg-brand-500 text-white font-bold rounded-xl text-xs transition-all shadow-lg shadow-brand-600/30 flex items-center justify-center gap-2 cursor-pointer active:scale-98 disabled:opacity-50"
+              className="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs transition-all shadow-lg shadow-emerald-950/40 flex items-center justify-center gap-2 cursor-pointer active:scale-98 disabled:opacity-50"
             >
               {loading ? (
                 <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -199,7 +199,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
               className="text-[11px] font-semibold text-slate-500 hover:text-slate-400 flex items-center justify-between w-full transition-colors cursor-pointer py-1"
             >
               <span>Testing / Demo Accounts</span>
-              <span className="text-[10px] text-brand-400 font-mono">
+              <span className="text-[10px] text-emerald-400 font-mono">
                 {showQuickFill ? 'Hide' : 'Show'}
               </span>
             </button>
@@ -214,15 +214,15 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                       setEmail('rajaganapathy235@gmail.com');
                       setPassword('');
                     }}
-                    className="p-2.5 bg-slate-950 hover:bg-slate-800 border border-slate-800 hover:border-brand-500/50 rounded-xl text-left transition-all cursor-pointer group"
+                    className="p-2.5 bg-slate-950 hover:bg-slate-800 border border-slate-800 hover:border-emerald-500/50 rounded-xl text-left transition-all cursor-pointer group"
                   >
-                    <div className="text-[11px] font-bold text-white group-hover:text-brand-400 truncate flex items-center justify-between">
+                    <div className="text-[11px] font-bold text-white group-hover:text-emerald-400 truncate flex items-center justify-between">
                       <span>SuperAdmin Portal</span>
-                      <Sparkles className="w-3 h-3 text-brand-400" />
+                      <Sparkles className="w-3 h-3 text-emerald-400" />
                     </div>
                     <div className="text-[10px] text-slate-400 flex items-center justify-between mt-0.5">
-                      <span className="text-brand-400 font-mono font-bold">rajaganapathy235@gmail.com</span>
-                      <span className="text-[9px] text-brand-400 font-mono">Fill Email</span>
+                      <span className="text-emerald-400 font-mono font-bold">rajaganapathy235@gmail.com</span>
+                      <span className="text-[9px] text-emerald-400 font-mono">Fill Email</span>
                     </div>
                   </button>
 
@@ -233,9 +233,9 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                       setEmail('hytexcottonmills@gmail.com');
                       setPassword('');
                     }}
-                    className="p-2.5 bg-slate-950 hover:bg-slate-800 border border-slate-800 rounded-xl text-left transition-all cursor-pointer group"
+                    className="p-2.5 bg-slate-950 hover:bg-slate-800 border border-slate-800 hover:border-emerald-500/50 rounded-xl text-left transition-all cursor-pointer group"
                   >
-                    <div className="text-[11px] font-bold text-white group-hover:text-brand-400 truncate flex items-center justify-between">
+                    <div className="text-[11px] font-bold text-white group-hover:text-emerald-400 truncate flex items-center justify-between">
                       <span>HYTEX COTTON MILLS</span>
                       <Zap className="w-3 h-3 text-emerald-400" />
                     </div>
@@ -257,13 +257,13 @@ export const LoginPage: React.FC<LoginPageProps> = ({
             <button
               type="button"
               onClick={onSwitchToSignup}
-              className="text-brand-400 hover:text-brand-300 font-bold underline underline-offset-4 cursor-pointer"
+              className="text-emerald-400 hover:text-emerald-300 font-bold underline underline-offset-4 cursor-pointer"
             >
               Start 14-Day Free Pro Trial
             </button>
           </div>
           <div className="text-[11px] text-slate-500">
-            Compliant with Indian GST & E-Invoicing Rules • Cloudflare Edge Certified
+            Compliant with Indian GST &amp; E-Invoicing Rules • Cloudflare Edge Certified
           </div>
         </div>
       </div>
@@ -273,7 +273,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xs animate-in fade-in">
           <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-6 space-y-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-brand-600/20 text-brand-400 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-xl bg-emerald-600/20 text-emerald-400 flex items-center justify-center">
                 <KeyRound className="w-5 h-5" />
               </div>
               <div>
@@ -311,7 +311,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                     value={forgotEmail}
                     onChange={(e) => setForgotEmail(e.target.value)}
                     placeholder="name@company.com"
-                    className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs placeholder-slate-500 focus:outline-none focus:border-brand-500"
+                    className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs placeholder-slate-500 focus:outline-none focus:border-emerald-500"
                   />
                 </div>
 
@@ -326,7 +326,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                   <button
                     type="button"
                     onClick={() => setResetSent(true)}
-                    className="px-4 py-2 bg-brand-600 hover:bg-brand-500 text-white rounded-xl text-xs font-bold transition-all shadow-md cursor-pointer"
+                    className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-all shadow-md cursor-pointer"
                   >
                     Send Reset Link
                   </button>

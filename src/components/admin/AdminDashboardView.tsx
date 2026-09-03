@@ -253,7 +253,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
             title="Sync all metrics directly from Cloudflare D1 database"
           >
-            <RefreshCw className={`w-4 h-4 text-sky-400 ${isRefreshing ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-4 h-4 text-emerald-400 ${isRefreshing ? 'animate-spin' : ''}`} />
             <span>{isRefreshing ? 'Syncing...' : 'Sync DB'}</span>
           </button>
           <button
@@ -347,9 +347,9 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
           <button
             onClick={() => onNavigate('gateways')}
-            className="p-3 bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-purple-500/40 rounded-xl text-left transition-all cursor-pointer group"
+            className="p-3 bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-emerald-500/40 rounded-xl text-left transition-all cursor-pointer group"
           >
-            <CreditCard className="w-4 h-4 text-purple-400 mb-1.5 group-hover:scale-110 transition-transform" />
+            <CreditCard className="w-4 h-4 text-emerald-400 mb-1.5 group-hover:scale-110 transition-transform" />
             <div className="text-xs font-bold text-white">Payment Gateways</div>
             <div className="text-[10px] text-slate-400">Dodo, Cashfree, Razorpay</div>
           </button>
@@ -480,7 +480,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
           <div>
             <div className="flex items-center justify-between pb-3 border-b border-slate-800">
               <div className="flex items-center gap-2">
-                <ShieldCheck className="w-4 h-4 text-purple-400" />
+                <ShieldCheck className="w-4 h-4 text-brand-400" />
                 <h3 className="text-sm font-bold text-white">Live Platform Activity</h3>
               </div>
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>

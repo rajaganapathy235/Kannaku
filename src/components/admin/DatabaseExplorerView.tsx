@@ -94,7 +94,7 @@ export const DatabaseExplorerView: React.FC = () => {
             disabled={loading}
             className="px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 rounded-xl text-xs font-semibold flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
           >
-            <RefreshCw className={`w-3.5 h-3.5 text-sky-400 ${loading ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-3.5 h-3.5 text-emerald-400 ${loading ? 'animate-spin' : ''}`} />
             <span>{loading ? 'Querying D1...' : 'Refresh SQL'}</span>
           </button>
           <button

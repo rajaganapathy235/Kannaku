@@ -169,7 +169,7 @@ export const ProductListView: React.FC<ProductListViewProps> = ({
 
         <button
           onClick={handleOpenAdd}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-xs active:scale-98 transition-colors cursor-pointer"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-white bg-brand-600 hover:bg-brand-700 shadow-xs active:scale-98 transition-colors cursor-pointer"
         >
           <Plus className="w-4 h-4" />
           <span>Add Product</span>

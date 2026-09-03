@@ -213,7 +213,7 @@ export const SignaturePadModal: React.FC<SignaturePadModalProps> = ({
                   onClick={() => setSelectedFont('font1')}
                   className={`p-3 rounded-lg border text-left transition-all ${
                     selectedFont === 'font1'
-                      ? 'border-[#1A73E8] bg-blue-50/50 shadow-xs ring-1 ring-[#1A73E8]'
+                      ? 'border-[#1A73E8] bg-brand-50/50 shadow-xs ring-1 ring-[#1A73E8]'
                       : 'border-slate-200 hover:bg-slate-50'
                   }`}
                 >
@@ -228,7 +228,7 @@ export const SignaturePadModal: React.FC<SignaturePadModalProps> = ({
                   onClick={() => setSelectedFont('font2')}
                   className={`p-3 rounded-lg border text-left transition-all ${
                     selectedFont === 'font2'
-                      ? 'border-[#1A73E8] bg-blue-50/50 shadow-xs ring-1 ring-[#1A73E8]'
+                      ? 'border-[#1A73E8] bg-brand-50/50 shadow-xs ring-1 ring-[#1A73E8]'
                       : 'border-slate-200 hover:bg-slate-50'
                   }`}
                 >
@@ -246,7 +246,7 @@ export const SignaturePadModal: React.FC<SignaturePadModalProps> = ({
                   type="button"
                   onClick={() => setInkColor('#1a237e')}
                   className={`w-6 h-6 rounded-full bg-[#1a237e] border-2 ${
-                    inkColor === '#1a237e' ? 'border-slate-900 ring-2 ring-blue-300' : 'border-white'
+                    inkColor === '#1a237e' ? 'border-slate-900 ring-2 ring-brand-300' : 'border-white'
                   }`}
                   title="Royal Blue Ink"
                 />
@@ -337,7 +337,7 @@ export const SignaturePadModal: React.FC<SignaturePadModalProps> = ({
                 Upload Scanned Signature (PNG / JPG with transparent background)
               </label>
 
-              <label className="border-2 border-dashed border-slate-300 hover:border-blue-600 rounded-xl p-6 bg-slate-50 hover:bg-blue-50/30 flex flex-col items-center justify-center cursor-pointer transition-colors">
+              <label className="border-2 border-dashed border-slate-300 hover:border-brand-600 rounded-xl p-6 bg-slate-50 hover:bg-brand-50/30 flex flex-col items-center justify-center cursor-pointer transition-colors">
                 <Upload className="w-8 h-8 text-slate-400 mb-2" />
                 <span className="text-xs font-semibold text-slate-700">
                   Click to select signature file
@@ -389,7 +389,7 @@ export const SignaturePadModal: React.FC<SignaturePadModalProps> = ({
             <button
               type="button"
               onClick={handleSave}
-              className="px-5 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer"
+              className="px-5 py-2 text-xs font-bold text-white bg-brand-600 hover:bg-brand-700 rounded-xl shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer"
             >
               <Check className="w-4 h-4" />
               <span>Apply Signature</span>

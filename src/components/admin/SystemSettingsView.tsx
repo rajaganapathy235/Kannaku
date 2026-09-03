@@ -55,7 +55,7 @@ export const SystemSettingsView: React.FC = () => {
                 onClick={() => setActiveTab(tab.id as any)}
                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors cursor-pointer text-left ${
                   isActive
-                    ? 'bg-blue-600 text-white font-bold shadow-md'
+                    ? 'bg-brand-600 text-white font-bold shadow-md'
                     : 'text-slate-400 hover:bg-slate-900 hover:text-slate-100'
                 }`}
               >
@@ -273,7 +273,7 @@ export const SystemSettingsView: React.FC = () => {
                         enforce2FAForAdmins: e.target.checked,
                       })
                     }
-                    className="rounded text-blue-600"
+                    className="rounded text-brand-600"
                   />
                   <div>
                     <div className="font-bold text-white">Enforce 2FA for all Super Admin roles</div>
@@ -289,7 +289,7 @@ export const SystemSettingsView: React.FC = () => {
           <div className="pt-4 border-t border-slate-800 flex justify-end">
             <button
               type="submit"
-              className="px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl flex items-center gap-2 shadow-md shadow-blue-900/30 cursor-pointer"
+              className="px-6 py-2.5 bg-brand-600 hover:bg-brand-500 text-white font-bold rounded-xl flex items-center gap-2 shadow-md shadow-blue-900/30 cursor-pointer"
             >
               <Save className="w-4 h-4" />
               <span>Save System Settings</span>
