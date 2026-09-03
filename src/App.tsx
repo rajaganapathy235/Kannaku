@@ -543,7 +543,14 @@ export default function App() {
     return (
       <LoginPage
         onLoginSuccess={handleLoginSuccess}
-        onSwitchToSignup={() => setAuthView('signup')}
+        onSwitchToSignup={() => {
+          setAuthView('signup');
+          window.location.hash = '#signup';
+        }}
+        onBackToHome={() => {
+          setAuthView('home');
+          window.location.hash = '#home';
+        }}
         initialEmail={authSession?.user?.email || 'hytexcottonmills@gmail.com'}
       />
     );
@@ -554,7 +561,14 @@ export default function App() {
     return (
       <SignupPage
         onSignupSuccess={handleSignupSuccess}
-        onSwitchToLogin={() => setAuthView('login')}
+        onSwitchToLogin={() => {
+          setAuthView('login');
+          window.location.hash = '#login';
+        }}
+        onBackToHome={() => {
+          setAuthView('home');
+          window.location.hash = '#home';
+        }}
       />
     );
   }

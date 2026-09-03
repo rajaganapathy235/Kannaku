@@ -363,7 +363,7 @@ export const PaymentLedgerView: React.FC<PaymentLedgerViewProps> = ({
               className="w-full py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 font-semibold focus:bg-white focus:outline-none focus:border-brand-600 transition-colors"
             >
               <option value="all">All Payment Modes</option>
-              <option value="UPI">UPI (GooglePay / PhonePe / Paytm)</option>
+              <option value="UPI">UPI (BHIM / GPay / Any UPI App)</option>
               <option value="CASH">Cash</option>
               <option value="BANK_TRANSFER">Bank Transfer / NEFT / RTGS</option>
               <option value="CHEQUE">Cheque</option>

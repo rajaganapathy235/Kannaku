@@ -211,7 +211,7 @@ export const LegalModal: React.FC<LegalModalProps> = ({
               256-Bit SSL Secured
             </span>
             <span className="text-slate-300">•</span>
-            <span>Razorpay, Cashfree &amp; PhonePe Gateway Compliant</span>
+            <span>PayU Gateway Compliant</span>
           </div>
           <button
             onClick={onClose}
@@ -349,7 +349,7 @@ const PrivacyContent: React.FC = () => (
         <p>Your data is processed strictly for the following legitimate purposes:</p>
         <ul className="list-disc pl-5 space-y-1">
           <li>Provisioning your cloud billing workspace and rendering GST-compliant invoices.</li>
-          <li>Processing subscription payments through authorized payment gateways (Razorpay, Cashfree, PhonePe, Dodo Payments).</li>
+          <li>Processing subscription payments through authorized payment gateways (PayU, Dodo Payments).</li>
           <li>Generating PDF invoices, thermal receipts, and downloadable GSTR reports.</li>
           <li>Sending critical transactional alerts, renewal reminders, and security notices.</li>
         </ul>
@@ -362,7 +362,7 @@ const PrivacyContent: React.FC = () => (
         </p>
         <p>Data is shared solely with trusted third-party service providers under strict data protection terms:</p>
         <ul className="list-disc pl-5 space-y-1">
-          <li><strong>Payment Processors:</strong> Razorpay, Cashfree, PhonePe, and Dodo Payments for processing subscription payments. (We do not store your raw CVV or card PINs).</li>
+          <li><strong>Payment Processors:</strong> PayU and Dodo Payments for processing subscription payments. (We do not store your raw CVV or card PINs).</li>
           <li><strong>Cloud Infrastructure:</strong> Cloudflare &amp; Google Cloud servers for high-availability database hosting and 256-bit encrypted data storage in compliant data centers.</li>
           <li><strong>Legal Authorities:</strong> Only when strictly mandated by valid legal court orders, tax summons, or statutory Indian regulatory bodies.</li>
         </ul>
@@ -444,7 +444,7 @@ const RefundContent: React.FC = () => (
         </p>
         <ul className="list-disc pl-5 space-y-1">
           <li>Refunds are initiated within <strong>24 to 48 hours</strong> of verification.</li>
-          <li>The refund is credited back to the <strong>original source payment method</strong> (Credit/Debit Card, NetBanking, UPI, or Wallet) through the respective payment gateway (Razorpay / Cashfree / PhonePe / Dodo Payments).</li>
+          <li>The refund is credited back to the <strong>original source payment method</strong> (Credit/Debit Card, NetBanking, UPI, or Wallet) through the respective payment gateway (PayU / Dodo Payments).</li>
           <li>The funds typically reflect in your bank account or card statement within <strong>5 to 7 business days</strong>, subject to your issuing bank&apos;s settlement schedule.</li>
         </ul>
       </section>
@@ -638,7 +638,7 @@ const SecurityContent: React.FC = () => (
       <section className="space-y-2">
         <h3 className="text-sm font-bold text-slate-900">1. Payment Aggregator Compliance</h3>
         <p>
-          All subscription and software license transactions on JustGST are routed through licensed, RBI-compliant Payment Aggregators including <strong>Razorpay, Cashfree, PhonePe Business, and Dodo Payments</strong>.
+          All subscription and software license transactions on JustGST are routed through licensed, RBI-compliant Payment Aggregators including <strong>PayU and Dodo Payments</strong>.
         </p>
         <p>
           JustGST does not collect, handle, or store raw card numbers, PINs, or CVVs on our application servers. Payment tokenization and card processing are handled directly inside bank-grade PCI-DSS Level 1 certified vaults.
@@ -649,7 +649,7 @@ const SecurityContent: React.FC = () => (
         <h3 className="text-sm font-bold text-slate-900">2. Supported Payment Methods</h3>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
           <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-center font-bold text-slate-800">
-            UPI (GPay, PhonePe, Paytm, BHIM)
+            UPI (BHIM, GPay, Paytm, Any App)
           </div>
           <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-center font-bold text-slate-800">
             Credit &amp; Debit Cards (RuPay, Visa, MC)

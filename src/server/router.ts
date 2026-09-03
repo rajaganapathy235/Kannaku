@@ -2258,7 +2258,7 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
           body.amount,
           body.currency || 'INR',
           body.paymentMethod || 'UPI',
-          body.paymentProvider || 'Cashfree',
+          body.paymentProvider || 'PayU',
           body.status || 'SUCCESSFUL',
           body.date || new Date().toISOString(),
           body.invoiceNumber || `REC-${Date.now().toString().slice(-6)}`,

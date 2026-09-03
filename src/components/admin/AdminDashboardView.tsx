@@ -351,7 +351,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
           >
             <CreditCard className="w-4 h-4 text-emerald-400 mb-1.5 group-hover:scale-110 transition-transform" />
             <div className="text-xs font-bold text-white">Payment Gateways</div>
-            <div className="text-[10px] text-slate-400">Dodo, Cashfree, Razorpay</div>
+            <div className="text-[10px] text-slate-400">PayU, Dodo, Stripe, UPI</div>
           </button>
           <button
             onClick={() => onNavigate('plans')}

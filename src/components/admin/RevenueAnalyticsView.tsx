@@ -195,7 +195,7 @@ export const RevenueAnalyticsView: React.FC = () => {
               { method: 'UPI AutoPay (e-Mandate)', pct: 54, count: '382 transactions' },
               { method: 'Credit & Corporate Cards', pct: 32, count: '226 transactions' },
               { method: 'Net Banking / IMPS', pct: 10, count: '71 transactions' },
-              { method: 'Razorpay Wallet', pct: 4, count: '28 transactions' },
+              { method: 'PayU Wallet / NetBanking', pct: 4, count: '28 transactions' },
             ].map((m, i) => (
               <div key={i} className="space-y-1.5">
                 <div className="flex items-center justify-between">

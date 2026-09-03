@@ -57,8 +57,17 @@ export const INITIAL_ADMIN_USER: AdminUser = {
 };
 
 export const DEFAULT_PAYMENT_GATEWAYS: SaaSGatewayManagerConfig = {
-  activeProvider: 'dodopayments',
+  activeProvider: 'payu',
   gateways: {
+    payu: {
+      provider: 'payu',
+      name: 'PayU India Gateway',
+      isEnabled: true,
+      isTestMode: false,
+      payuMerchantKey: 'PAYU_MKEY_9841289',
+      payuMerchantSalt: 'payu_salt_live_9a87d6f5e4c3b2a1',
+      payuHeaderAuthKey: 'payu_auth_sec_892kln49f0',
+    },
     dodopayments: {
       provider: 'dodopayments',
       name: 'Dodo Payments',
@@ -69,24 +78,6 @@ export const DEFAULT_PAYMENT_GATEWAYS: SaaSGatewayManagerConfig = {
       dodoProductIdMonthly: 'p_monthly_99',
       dodoProductIdSixMonths: 'p_six_months_474',
       dodoProductIdTwelveMonths: 'p_twelve_months_588',
-    },
-    cashfree: {
-      provider: 'cashfree',
-      name: 'Cashfree Payments',
-      isEnabled: true,
-      isTestMode: false,
-      cashfreeAppId: 'CF_APP_98234710',
-      cashfreeSecretKey: 'cf_sec_live_9a87d6f5e4c3b2a1',
-      cashfreeApiVersion: '2023-08-01',
-    },
-    razorpay: {
-      provider: 'razorpay',
-      name: 'Razorpay Payment Gateway',
-      isEnabled: true,
-      isTestMode: false,
-      razorpayKeyId: 'rzp_live_89201948271',
-      razorpayKeySecret: 'rzp_sec_891048201847192',
-      razorpayWebhookSecret: 'whsec_rzp_894172',
     },
     stripe: {
       provider: 'stripe',
@@ -261,7 +252,7 @@ export const SUBSYSTEMS_HEALTH: SubsystemStatus[] = [
     status: 'HEALTHY',
     responseTimeMs: 45,
     uptimePercentage: 99.98,
-    details: 'Dodo Payments & Cashfree ready to process checkouts.',
+    details: 'PayU India & Dodo Payments ready to process checkouts.',
   },
 ];
 
@@ -1103,7 +1094,7 @@ export class SaaSAdminDB {
   static getActivePaymentGateway(): any {
     const config = this.getPaymentGatewaysConfig();
     const provider = config.activeProvider;
-    return config.gateways[provider] || config.gateways.razorpay;
+    return config.gateways[provider] || config.gateways.payu;
   }
 
   static setActivePaymentGateway(provider: string): void {

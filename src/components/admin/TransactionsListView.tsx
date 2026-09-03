@@ -99,7 +99,7 @@ Status: Official Computer Generated Tax Receipt
             <span>Platform Billing & Payment Transactions</span>
           </h1>
           <p className="text-xs text-slate-400 mt-0.5">
-            Multi-gateway ledger across Razorpay, Stripe, Cashfree, and UPI
+            Multi-gateway ledger across PayU, Stripe, Dodo Payments, and UPI
           </p>
         </div>
 
@@ -156,9 +156,10 @@ Status: Official Computer Generated Tax Receipt
             className="px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-slate-300 focus:outline-none cursor-pointer"
           >
             <option value="ALL">All Gateways</option>
-            <option value="RAZORPAY">Razorpay</option>
-            <option value="STRIPE">Stripe</option>
-            <option value="CASHFREE">Cashfree</option>
+            <option value="PayU">PayU India</option>
+            <option value="Dodo Payments">Dodo Payments</option>
+            <option value="Stripe">Stripe</option>
+            <option value="Manual Bank">Direct UPI / Bank</option>
           </select>
         </div>
       </div>

@@ -307,7 +307,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             </div>
             <h3 className="text-sm font-bold text-slate-900">Dynamic UPI QR on Invoices</h3>
             <p className="text-xs text-slate-600 leading-relaxed">
-              Generates an instant NPCI QR code printed on every bill so customers can pay directly to your bank account via PhonePe, GPay, or Paytm.
+              Generates an instant NPCI QR code printed on every bill so customers can pay directly to your bank account via BHIM, GPay, Paytm, or any UPI app.
             </p>
           </div>
 
@@ -610,7 +610,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               },
               {
                 q: 'How does the Dynamic UPI QR Code work on printed bills?',
-                a: 'Each invoice generates an official NPCI UPI QR code stamped with your UPI VPA and the exact invoice balance. When your customer scans it via PhonePe, Google Pay, or Paytm, the payment goes directly into your bank account with zero gateway commissions.',
+                a: 'Each invoice generates an official NPCI UPI QR code stamped with your UPI VPA and the exact invoice balance. When your customer scans it via any UPI app (BHIM, Google Pay, Paytm, etc.), the payment goes directly into your bank account with zero gateway commissions.',
               },
               {
                 q: 'Can I print invoices on thermal printers?',

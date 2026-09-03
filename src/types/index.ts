@@ -283,13 +283,13 @@ export interface UserSubscription {
   isLifetime: boolean;
   isActive: boolean;
   orderId: string;
-  gateway: 'cashfree' | 'dodopayments' | 'play_billing' | 'trial';
+  gateway: 'payu' | 'dodopayments' | 'play_billing' | 'trial';
 }
 
 export interface GatewayConfig {
-  cashfreeAppId: string;
-  cashfreeSecretKey: string;
-  cashfreeEnv: 'sandbox' | 'production';
+  payuMerchantKey: string;
+  payuMerchantSalt: string;
+  payuEnv: 'sandbox' | 'production';
   dodoApiKey: string;
   dodoEnv: 'test_mode' | 'live';
   supabaseUrl: string;

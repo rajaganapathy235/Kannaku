@@ -133,13 +133,11 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
       });
 
       // Map provider name to SaaSTransaction enum type
-      const providerMapped: 'Cashfree' | 'Dodo Payments' | 'Razorpay' | 'Stripe' | 'Manual Bank' =
-        activeGateway.provider === 'cashfree'
-          ? 'Cashfree'
+      const providerMapped: 'PayU' | 'Dodo Payments' | 'Stripe' | 'Manual Bank' =
+        activeGateway.provider === 'payu'
+          ? 'PayU'
           : activeGateway.provider === 'dodopayments'
           ? 'Dodo Payments'
-          : activeGateway.provider === 'razorpay'
-          ? 'Razorpay'
           : activeGateway.provider === 'stripe'
           ? 'Stripe'
           : 'Manual Bank';

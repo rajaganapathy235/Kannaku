@@ -27,9 +27,8 @@ export type OrgSubscriptionStatus =
 export type OrgAccountStatus = 'ACTIVE' | 'SUSPENDED' | 'DISABLED' | 'PENDING_MIGRATION';
 
 export type PaymentGatewayProvider =
+  | 'payu'
   | 'dodopayments'
-  | 'cashfree'
-  | 'razorpay'
   | 'stripe'
   | 'manual_upi';
 
@@ -38,20 +37,16 @@ export interface PaymentGatewayConfig {
   name: string;
   isEnabled: boolean;
   isTestMode: boolean;
+  // PayU specific (India Merchant Gateway)
+  payuMerchantKey?: string;
+  payuMerchantSalt?: string;
+  payuHeaderAuthKey?: string;
   // Dodo Payments specific
   dodoApiKey?: string;
   dodoWebhookSecret?: string;
   dodoProductIdMonthly?: string;
   dodoProductIdSixMonths?: string;
   dodoProductIdTwelveMonths?: string;
-  // Cashfree specific
-  cashfreeAppId?: string;
-  cashfreeSecretKey?: string;
-  cashfreeApiVersion?: string;
-  // Razorpay specific
-  razorpayKeyId?: string;
-  razorpayKeySecret?: string;
-  razorpayWebhookSecret?: string;
   // Stripe specific
   stripePublishableKey?: string;
   stripeSecretKey?: string;
@@ -167,7 +162,7 @@ export interface SaaSTransaction {
   amount: number;
   currency: 'INR' | 'USD';
   paymentMethod: 'UPI' | 'Credit Card' | 'Debit Card' | 'Net Banking' | 'Bank Transfer' | 'Wallet';
-  paymentProvider: 'Cashfree' | 'Dodo Payments' | 'Razorpay' | 'Stripe' | 'Manual Bank';
+  paymentProvider: 'PayU' | 'Dodo Payments' | 'Stripe' | 'Manual Bank';
   status: 'SUCCESSFUL' | 'PENDING' | 'FAILED' | 'REFUNDED' | 'PARTIALLY_REFUNDED';
   date: string;
   invoiceNumber?: string;

@@ -339,7 +339,7 @@ export async function ensureTables(db: D1Database): Promise<void> {
         amount REAL NOT NULL,
         currency TEXT DEFAULT 'INR',
         payment_method TEXT DEFAULT 'UPI',
-        payment_provider TEXT DEFAULT 'Cashfree',
+        payment_provider TEXT DEFAULT 'PayU',
         status TEXT DEFAULT 'SUCCESSFUL',
         date TEXT DEFAULT CURRENT_TIMESTAMP,
         invoice_number TEXT,

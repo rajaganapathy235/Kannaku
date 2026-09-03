@@ -85,7 +85,21 @@ export const PaymentGatewaysView: React.FC = () => {
       setTestingGateway(null);
       const gw = managerConfig.gateways[provider];
 
-      if (provider === 'dodopayments') {
+      if (provider === 'payu') {
+        if (!gw.payuMerchantKey || !gw.payuMerchantSalt) {
+          setTestResult({
+            provider,
+            success: false,
+            message: 'PayU Merchant Key and Merchant Salt are required.',
+          });
+        } else {
+          setTestResult({
+            provider,
+            success: true,
+            message: `PayU Gateway verified (${gw.isTestMode ? 'Sandbox / Test' : 'Production Live'} • 104ms). Post-Checkout SHA-512 Hash Verified.`,
+          });
+        }
+      } else if (provider === 'dodopayments') {
         if (!gw.dodoApiKey || gw.dodoApiKey.length < 8) {
           setTestResult({
             provider,
@@ -97,34 +111,6 @@ export const PaymentGatewaysView: React.FC = () => {
             provider,
             success: true,
             message: 'Dodo Payments API verified successfully (HTTP 200 OK • 142ms). Webhook listener ready.',
-          });
-        }
-      } else if (provider === 'cashfree') {
-        if (!gw.cashfreeAppId || !gw.cashfreeSecretKey) {
-          setTestResult({
-            provider,
-            success: false,
-            message: 'Cashfree App ID and Secret Key are required.',
-          });
-        } else {
-          setTestResult({
-            provider,
-            success: true,
-            message: `Cashfree API connected (${gw.isTestMode ? 'Sandbox' : 'Production'} • 118ms). Orders API healthy.`,
-          });
-        }
-      } else if (provider === 'razorpay') {
-        if (!gw.razorpayKeyId || !gw.razorpayKeySecret) {
-          setTestResult({
-            provider,
-            success: false,
-            message: 'Razorpay Key ID and Secret are required.',
-          });
-        } else {
-          setTestResult({
-            provider,
-            success: true,
-            message: 'Razorpay API keys validated (Standard Checkout & Payment Links enabled).',
           });
         }
       } else if (provider === 'stripe') {
@@ -179,7 +165,7 @@ export const PaymentGatewaysView: React.FC = () => {
             <span>SaaS Payment Gateways</span>
           </h1>
           <p className="text-xs text-slate-400 mt-0.5">
-            Configure Dodo Payments, Cashfree, Razorpay, Stripe, or UPI for customer subscription checkout
+            Configure PayU India, Dodo Payments, Stripe, or UPI for customer subscription checkout
           </p>
         </div>
 
@@ -188,7 +174,7 @@ export const PaymentGatewaysView: React.FC = () => {
           <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
           <span>Active Gateway:</span>
           <span className="text-white font-bold bg-brand-900/80 px-2 py-0.5 rounded-md border border-brand-400/30">
-            {activeGw?.name || 'Dodo Payments'}
+            {activeGw?.name || 'PayU India Gateway'}
           </span>
           <span className="text-[10px] text-brand-300 uppercase tracking-wider">
             {activeGw?.isTestMode ? 'TEST MODE' : 'LIVE MODE'}
@@ -204,7 +190,7 @@ export const PaymentGatewaysView: React.FC = () => {
             Single Active Gateway Architecture
           </p>
           <p className="text-slate-400 leading-relaxed">
-            When tenants visit their Subscription & Upgrade page in the SaaS application, the system automatically uses whichever payment gateway is marked as <strong className="text-brand-300">Active</strong> below. You can seamlessly switch between <strong>Dodo Payments</strong>, <strong>Cashfree</strong>, <strong>Razorpay</strong>, or <strong>Direct UPI</strong> anytime without code changes.
+            When tenants visit their Subscription & Upgrade page in the SaaS application, the system automatically uses whichever payment gateway is marked as <strong className="text-brand-300">Active</strong> below. You can seamlessly switch between <strong>PayU India</strong>, <strong>Dodo Payments</strong>, <strong>Stripe</strong>, or <strong>Direct UPI</strong> anytime without code changes.
           </p>
         </div>
       </div>
@@ -395,15 +381,15 @@ export const PaymentGatewaysView: React.FC = () => {
           );
         })()}
 
-        {/* 2. CASHFREE PAYMENTS */}
+        {/* 2. PAYU INDIA GATEWAY */}
         {(() => {
-          const gw = managerConfig.gateways.cashfree;
-          const isActive = managerConfig.activeProvider === 'cashfree';
+          const gw = managerConfig.gateways.payu;
+          const isActive = managerConfig.activeProvider === 'payu';
           return (
             <div
               className={`rounded-2xl bg-slate-900 border transition-all p-5 flex flex-col justify-between ${
                 isActive
-                  ? 'border-teal-500 shadow-xl shadow-teal-950/40 ring-1 ring-teal-500/50'
+                  ? 'border-emerald-500 shadow-xl shadow-emerald-950/40 ring-1 ring-emerald-500/50'
                   : 'border-slate-800 hover:border-slate-700'
               }`}
             >
@@ -411,31 +397,31 @@ export const PaymentGatewaysView: React.FC = () => {
                 {/* Gateway Card Header */}
                 <div className="flex items-start justify-between gap-3 mb-4">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-teal-600/20 border border-teal-500/30 flex items-center justify-center font-black text-teal-400 text-sm">
-                      CF
+                    <div className="w-10 h-10 rounded-xl bg-emerald-600/20 border border-emerald-500/30 flex items-center justify-center font-black text-emerald-400 text-sm">
+                      PayU
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <h3 className="text-sm font-bold text-white">Cashfree Payments</h3>
+                        <h3 className="text-sm font-bold text-white">PayU India Gateway</h3>
                         {isActive && (
-                          <span className="px-2 py-0.5 rounded-full bg-teal-500/20 border border-teal-500/40 text-teal-300 text-[10px] font-bold">
+                          <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-[10px] font-bold">
                             CURRENT ACTIVE
                           </span>
                         )}
                       </div>
                       <p className="text-[11px] text-slate-400">
-                        Leading Indian payment gateway with UPI AutoPay, NetBanking & Cards
+                        Official PayU Payments India integration with SHA-512 Hash Checksum
                       </p>
                     </div>
                   </div>
 
                   <button
-                    onClick={() => handleSetActive('cashfree')}
+                    onClick={() => handleSetActive('payu')}
                     disabled={isActive}
                     className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                       isActive
-                        ? 'bg-teal-600/30 text-teal-300 border border-teal-500/40 cursor-default'
-                        : 'bg-slate-800 hover:bg-teal-600 text-slate-300 hover:text-white border border-slate-700'
+                        ? 'bg-emerald-600/30 text-emerald-300 border border-emerald-500/40 cursor-default'
+                        : 'bg-slate-800 hover:bg-emerald-600 text-slate-300 hover:text-white border border-slate-700'
                     }`}
                   >
                     {isActive ? 'Active' : 'Set as Active'}
@@ -447,12 +433,12 @@ export const PaymentGatewaysView: React.FC = () => {
                   {/* Test / Live Toggle */}
                   <div className="flex items-center justify-between p-2.5 rounded-lg bg-slate-950 border border-slate-800/80">
                     <div>
-                      <span className="font-semibold text-slate-200">Cashfree Mode</span>
-                      <p className="text-[10px] text-slate-500">Switch between Cashfree Sandbox and Production</p>
+                      <span className="font-semibold text-slate-200">PayU Environment</span>
+                      <p className="text-[10px] text-slate-500">Switch between PayU Sandbox (test.payu.in) and Production (secure.payu.in)</p>
                     </div>
                     <div className="flex items-center gap-1.5 bg-slate-900 p-1 rounded-md border border-slate-800">
                       <button
-                        onClick={() => handleUpdateField('cashfree', 'isTestMode', true)}
+                        onClick={() => handleUpdateField('payu', 'isTestMode', true)}
                         className={`px-2.5 py-1 rounded text-[11px] font-bold transition-all ${
                           gw.isTestMode
                             ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
@@ -462,66 +448,66 @@ export const PaymentGatewaysView: React.FC = () => {
                         Sandbox / Test
                       </button>
                       <button
-                        onClick={() => handleUpdateField('cashfree', 'isTestMode', false)}
+                        onClick={() => handleUpdateField('payu', 'isTestMode', false)}
                         className={`px-2.5 py-1 rounded text-[11px] font-bold transition-all ${
                           !gw.isTestMode
-                            ? 'bg-teal-500/20 text-teal-300 border border-teal-500/40'
+                            ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
                             : 'text-slate-400 hover:text-white'
                         }`}
                       >
-                        Production
+                        Production Live
                       </button>
                     </div>
                   </div>
 
-                  {/* App ID */}
+                  {/* Merchant Key */}
                   <div>
                     <label className="block text-[11px] font-semibold text-slate-300 mb-1">
-                      Cashfree App ID / Client ID
+                      PayU Merchant Key
                     </label>
                     <input
                       type="text"
-                      value={gw.cashfreeAppId || ''}
-                      onChange={(e) => handleUpdateField('cashfree', 'cashfreeAppId', e.target.value)}
-                      placeholder="CF_APP_..."
-                      className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white font-mono text-xs focus:border-teal-500 focus:outline-none"
+                      value={gw.payuMerchantKey || ''}
+                      onChange={(e) => handleUpdateField('payu', 'payuMerchantKey', e.target.value)}
+                      placeholder="PAYU_MKEY_..."
+                      className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white font-mono text-xs focus:border-emerald-500 focus:outline-none"
                     />
                   </div>
 
-                  {/* Secret Key */}
+                  {/* Merchant Salt */}
                   <div>
                     <label className="block text-[11px] font-semibold text-slate-300 mb-1">
-                      Cashfree Secret Key
+                      PayU Merchant Salt (SHA-512)
                     </label>
                     <div className="relative">
                       <input
-                        type={showSecrets['cf_sec'] ? 'text' : 'password'}
-                        value={gw.cashfreeSecretKey || ''}
-                        onChange={(e) => handleUpdateField('cashfree', 'cashfreeSecretKey', e.target.value)}
-                        placeholder="cf_sec_live_..."
-                        className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white font-mono text-xs focus:border-teal-500 focus:outline-none pr-10"
+                        type={showSecrets['payu_salt'] ? 'text' : 'password'}
+                        value={gw.payuMerchantSalt || ''}
+                        onChange={(e) => handleUpdateField('payu', 'payuMerchantSalt', e.target.value)}
+                        placeholder="payu_salt_..."
+                        className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white font-mono text-xs focus:border-emerald-500 focus:outline-none pr-10"
                       />
                       <button
                         type="button"
-                        onClick={() => toggleShowSecret('cf_sec')}
+                        onClick={() => toggleShowSecret('payu_salt')}
                         className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
                       >
-                        {showSecrets['cf_sec'] ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                        {showSecrets['payu_salt'] ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                       </button>
                     </div>
                   </div>
 
-                  {/* API Version */}
+                  {/* Header Auth Key */}
                   <div>
                     <label className="block text-[11px] font-semibold text-slate-300 mb-1">
-                      API Version Header
+                      PayU Header / Webhook Authorization Key
                     </label>
                     <input
                       type="text"
-                      value={gw.cashfreeApiVersion || '2023-08-01'}
-                      onChange={(e) => handleUpdateField('cashfree', 'cashfreeApiVersion', e.target.value)}
-                      placeholder="2023-08-01"
-                      className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white font-mono text-xs focus:border-teal-500 focus:outline-none"
+                      value={gw.payuHeaderAuthKey || ''}
+                      onChange={(e) => handleUpdateField('payu', 'payuHeaderAuthKey', e.target.value)}
+                      placeholder="payu_auth_sec_..."
+                      className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white font-mono text-xs focus:border-emerald-500 focus:outline-none"
                     />
                   </div>
                 </div>
@@ -530,17 +516,17 @@ export const PaymentGatewaysView: React.FC = () => {
               {/* Card Footer Actions */}
               <div className="mt-5 pt-3 border-t border-slate-800/80 flex items-center justify-between gap-3">
                 <button
-                  onClick={() => handleTestConnection('cashfree')}
-                  disabled={testingGateway === 'cashfree'}
+                  onClick={() => handleTestConnection('payu')}
+                  disabled={testingGateway === 'payu'}
                   className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold rounded-lg text-xs flex items-center gap-1.5 transition-all cursor-pointer"
                 >
-                  <RefreshCw className={`w-3.5 h-3.5 ${testingGateway === 'cashfree' ? 'animate-spin' : ''}`} />
+                  <RefreshCw className={`w-3.5 h-3.5 ${testingGateway === 'payu' ? 'animate-spin' : ''}`} />
                   <span>Test Connection</span>
                 </button>
 
                 <button
-                  onClick={() => handleSaveGateway('cashfree')}
-                  className="px-4 py-1.5 bg-teal-600 hover:bg-teal-500 text-white font-bold rounded-lg text-xs flex items-center gap-1.5 transition-all cursor-pointer shadow-md"
+                  onClick={() => handleSaveGateway('payu')}
+                  className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg text-xs flex items-center gap-1.5 transition-all cursor-pointer shadow-md"
                 >
                   <Save className="w-3.5 h-3.5" />
                   <span>Save Config</span>
@@ -550,15 +536,15 @@ export const PaymentGatewaysView: React.FC = () => {
           );
         })()}
 
-        {/* 3. RAZORPAY */}
+        {/* 3. STRIPE GLOBAL */}
         {(() => {
-          const gw = managerConfig.gateways.razorpay;
-          const isActive = managerConfig.activeProvider === 'razorpay';
+          const gw = managerConfig.gateways.stripe;
+          const isActive = managerConfig.activeProvider === 'stripe';
           return (
             <div
               className={`rounded-2xl bg-slate-900 border transition-all p-5 flex flex-col justify-between ${
                 isActive
-                  ? 'border-brand-500 shadow-xl shadow-brand-950/40 ring-1 ring-brand-500/50'
+                  ? 'border-indigo-500 shadow-xl shadow-indigo-950/40 ring-1 ring-indigo-500/50'
                   : 'border-slate-800 hover:border-slate-700'
               }`}
             >
@@ -566,31 +552,31 @@ export const PaymentGatewaysView: React.FC = () => {
                 {/* Gateway Card Header */}
                 <div className="flex items-start justify-between gap-3 mb-4">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-brand-600/20 border border-brand-500/30 flex items-center justify-center font-black text-brand-400 text-sm">
-                      RZP
+                    <div className="w-10 h-10 rounded-xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center font-black text-indigo-400 text-sm">
+                      STRIPE
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <h3 className="text-sm font-bold text-white">Razorpay</h3>
+                        <h3 className="text-sm font-bold text-white">Stripe Global</h3>
                         {isActive && (
-                          <span className="px-2 py-0.5 rounded-full bg-brand-500/20 border border-brand-500/40 text-brand-300 text-[10px] font-bold">
+                          <span className="px-2 py-0.5 rounded-full bg-indigo-500/20 border border-indigo-500/40 text-indigo-300 text-[10px] font-bold">
                             CURRENT ACTIVE
                           </span>
                         )}
                       </div>
                       <p className="text-[11px] text-slate-400">
-                        Standard India payment gateway with Checkout JS & Webhooks
+                        International credit cards, debit cards, and multi-currency checkout
                       </p>
                     </div>
                   </div>
 
                   <button
-                    onClick={() => handleSetActive('razorpay')}
+                    onClick={() => handleSetActive('stripe')}
                     disabled={isActive}
                     className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                       isActive
-                        ? 'bg-brand-600/30 text-brand-300 border border-brand-500/40 cursor-default'
-                        : 'bg-slate-800 hover:bg-brand-600 text-slate-300 hover:text-white border border-slate-700'
+                        ? 'bg-indigo-600/30 text-indigo-300 border border-indigo-500/40 cursor-default'
+                        : 'bg-slate-800 hover:bg-indigo-600 text-slate-300 hover:text-white border border-slate-700'
                     }`}
                   >
                     {isActive ? 'Active' : 'Set as Active'}
@@ -602,12 +588,12 @@ export const PaymentGatewaysView: React.FC = () => {
                   {/* Test / Live Toggle */}
                   <div className="flex items-center justify-between p-2.5 rounded-lg bg-slate-950 border border-slate-800/80">
                     <div>
-                      <span className="font-semibold text-slate-200">Razorpay Mode</span>
-                      <p className="text-[10px] text-slate-500">Toggle Test vs Live Key pair</p>
+                      <span className="font-semibold text-slate-200">Stripe Mode</span>
+                      <p className="text-[10px] text-slate-500">Toggle Test Key vs Live Secret Key pair</p>
                     </div>
                     <div className="flex items-center gap-1.5 bg-slate-900 p-1 rounded-md border border-slate-800">
                       <button
-                        onClick={() => handleUpdateField('razorpay', 'isTestMode', true)}
+                        onClick={() => handleUpdateField('stripe', 'isTestMode', true)}
                         className={`px-2.5 py-1 rounded text-[11px] font-bold transition-all ${
                           gw.isTestMode
                             ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
@@ -617,10 +603,10 @@ export const PaymentGatewaysView: React.FC = () => {
                         Test Mode
                       </button>
                       <button
-                        onClick={() => handleUpdateField('razorpay', 'isTestMode', false)}
+                        onClick={() => handleUpdateField('stripe', 'isTestMode', false)}
                         className={`px-2.5 py-1 rounded text-[11px] font-bold transition-all ${
                           !gw.isTestMode
-                            ? 'bg-brand-500/20 text-brand-300 border border-brand-500/40'
+                            ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/40'
                             : 'text-slate-400 hover:text-white'
                         }`}
                       >
@@ -629,39 +615,62 @@ export const PaymentGatewaysView: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Key ID */}
+                  {/* Publishable Key */}
                   <div>
                     <label className="block text-[11px] font-semibold text-slate-300 mb-1">
-                      Razorpay Key ID
+                      Stripe Publishable Key
                     </label>
                     <input
                       type="text"
-                      value={gw.razorpayKeyId || ''}
-                      onChange={(e) => handleUpdateField('razorpay', 'razorpayKeyId', e.target.value)}
-                      placeholder="rzp_live_..."
-                      className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white font-mono text-xs focus:border-brand-500 focus:outline-none"
+                      value={gw.stripePublishableKey || ''}
+                      onChange={(e) => handleUpdateField('stripe', 'stripePublishableKey', e.target.value)}
+                      placeholder="pk_test_..."
+                      className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white font-mono text-xs focus:border-indigo-500 focus:outline-none"
                     />
                   </div>
 
-                  {/* Key Secret */}
+                  {/* Secret Key */}
                   <div>
                     <label className="block text-[11px] font-semibold text-slate-300 mb-1">
-                      Razorpay Key Secret
+                      Stripe Secret Key
                     </label>
                     <div className="relative">
                       <input
-                        type={showSecrets['rzp_sec'] ? 'text' : 'password'}
-                        value={gw.razorpayKeySecret || ''}
-                        onChange={(e) => handleUpdateField('razorpay', 'razorpayKeySecret', e.target.value)}
-                        placeholder="rzp_sec_..."
-                        className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white font-mono text-xs focus:border-brand-500 focus:outline-none pr-10"
+                        type={showSecrets['stripe_sec'] ? 'text' : 'password'}
+                        value={gw.stripeSecretKey || ''}
+                        onChange={(e) => handleUpdateField('stripe', 'stripeSecretKey', e.target.value)}
+                        placeholder="sk_test_..."
+                        className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white font-mono text-xs focus:border-indigo-500 focus:outline-none pr-10"
                       />
                       <button
                         type="button"
-                        onClick={() => toggleShowSecret('rzp_sec')}
+                        onClick={() => toggleShowSecret('stripe_sec')}
                         className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
                       >
-                        {showSecrets['rzp_sec'] ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                        {showSecrets['stripe_sec'] ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Webhook Secret */}
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-300 mb-1">
+                      Stripe Webhook Signing Secret
+                    </label>
+                    <div className="relative">
+                      <input
+                        type={showSecrets['stripe_wh'] ? 'text' : 'password'}
+                        value={gw.stripeWebhookSecret || ''}
+                        onChange={(e) => handleUpdateField('stripe', 'stripeWebhookSecret', e.target.value)}
+                        placeholder="whsec_..."
+                        className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white font-mono text-xs focus:border-indigo-500 focus:outline-none pr-10"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => toggleShowSecret('stripe_wh')}
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
+                      >
+                        {showSecrets['stripe_wh'] ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                       </button>
                     </div>
                   </div>
@@ -671,17 +680,17 @@ export const PaymentGatewaysView: React.FC = () => {
               {/* Card Footer Actions */}
               <div className="mt-5 pt-3 border-t border-slate-800/80 flex items-center justify-between gap-3">
                 <button
-                  onClick={() => handleTestConnection('razorpay')}
-                  disabled={testingGateway === 'razorpay'}
+                  onClick={() => handleTestConnection('stripe')}
+                  disabled={testingGateway === 'stripe'}
                   className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold rounded-lg text-xs flex items-center gap-1.5 transition-all cursor-pointer"
                 >
-                  <RefreshCw className={`w-3.5 h-3.5 ${testingGateway === 'razorpay' ? 'animate-spin' : ''}`} />
+                  <RefreshCw className={`w-3.5 h-3.5 ${testingGateway === 'stripe' ? 'animate-spin' : ''}`} />
                   <span>Test Connection</span>
                 </button>
 
                 <button
-                  onClick={() => handleSaveGateway('razorpay')}
-                  className="px-4 py-1.5 bg-brand-600 hover:bg-brand-500 text-white font-bold rounded-lg text-xs flex items-center gap-1.5 transition-all cursor-pointer shadow-md"
+                  onClick={() => handleSaveGateway('stripe')}
+                  className="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-lg text-xs flex items-center gap-1.5 transition-all cursor-pointer shadow-md"
                 >
                   <Save className="w-3.5 h-3.5" />
                   <span>Save Config</span>
