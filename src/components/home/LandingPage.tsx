@@ -201,7 +201,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   </span>
                 </div>
                 <span className="text-xs font-bold text-slate-700">
-                  Hytex Cotton Mills & Trading
+                  JustGST Cloud Billing Workspace
                 </span>
               </div>
 
@@ -704,42 +704,56 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         {/* Footer Bar */}
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Bottom Copyright & Fast Links */}
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] text-slate-400">
-            <p>
-              © {new Date().getFullYear()} JustGST. All Rights Reserved. Made in India.
+          <div className="flex flex-col lg:flex-row items-center justify-between gap-4 text-[11px] text-slate-400">
+            <p className="text-center lg:text-left">
+              © {new Date().getFullYear()} JustGST. Operated by Rajaganapathy Kamalakannan. All Rights Reserved.
             </p>
-            <div className="flex items-center gap-4 text-slate-500 font-medium">
+            <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-slate-500 font-medium">
               <button
                 onClick={() => openLegal('terms')}
                 className="hover:text-brand-600 transition-colors cursor-pointer"
               >
-                Terms
+                Terms of Service
               </button>
               <span>•</span>
               <button
                 onClick={() => openLegal('privacy')}
                 className="hover:text-brand-600 transition-colors cursor-pointer"
               >
-                Privacy
+                Privacy Policy
               </button>
               <span>•</span>
               <button
                 onClick={() => openLegal('refund')}
                 className="hover:text-brand-600 transition-colors cursor-pointer"
               >
-                Refunds
+                Refunds &amp; Returns
               </button>
               <span>•</span>
               <button
                 onClick={() => openLegal('shipping')}
                 className="hover:text-brand-600 transition-colors cursor-pointer"
               >
-                Shipping
+                SaaS Delivery
+              </button>
+              <span>•</span>
+              <button
+                onClick={() => openLegal('contact')}
+                className="hover:text-brand-600 transition-colors cursor-pointer"
+              >
+                Contact &amp; Support
+              </button>
+              <span>•</span>
+              <button
+                onClick={() => openLegal('security')}
+                className="hover:text-brand-600 transition-colors cursor-pointer"
+              >
+                Payment Security
               </button>
               <span>•</span>
               <button
                 onClick={onOpenSuperAdmin}
-                className="hover:text-brand-600 transition-colors cursor-pointer font-semibold"
+                className="hover:text-brand-600 transition-colors cursor-pointer font-semibold text-slate-600"
               >
                 SuperAdmin
               </button>

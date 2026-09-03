@@ -176,18 +176,17 @@ export const LegalModal: React.FC<LegalModalProps> = ({
             <div className="hidden md:block mt-6 p-3 rounded-xl bg-white border border-slate-200 shadow-2xs space-y-1.5 text-[11px]">
               <div className="font-bold text-slate-800 flex items-center gap-1.5">
                 <Building2 className="w-3.5 h-3.5 text-brand-600" />
-                <span>Operating Entity</span>
+                <span>Merchant Identity</span>
               </div>
-              <div className="text-slate-600 leading-tight">
-                <strong>JustGST Technologies</strong>
-                <br />
-                (Hytex Cotton Mills)
-                <br />
-                Tamil Nadu, India
+              <div className="text-slate-600 leading-tight space-y-0.5">
+                <strong className="text-slate-900 block">Rajaganapathy Kamalakannan</strong>
+                <div className="text-[10px] text-slate-500 font-medium">Individual Operator (Brand: JustGST)</div>
+                <div className="text-[10px] text-brand-700 font-semibold">100% Digital Cloud Service</div>
+                <div className="text-[10px] text-slate-400">Tamil Nadu, India</div>
               </div>
-              <div className="pt-1 text-[10px] text-brand-700 font-semibold flex items-center gap-1">
-                <CheckCircle2 className="w-3 h-3 text-brand-600" />
-                <span>Active Merchant Verification</span>
+              <div className="pt-1 text-[10px] text-emerald-700 font-semibold flex items-center gap-1">
+                <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                <span>PayU Verified Individual Merchant</span>
               </div>
             </div>
           </div>
@@ -246,10 +245,10 @@ const TermsContent: React.FC = () => (
       <section className="space-y-2">
         <h3 className="text-sm font-bold text-slate-900">1. Introduction &amp; Acceptance</h3>
         <p>
-          Welcome to <strong>JustGST</strong> (&quot;Platform&quot;, &quot;Service&quot;, &quot;we&quot;, &quot;us&quot;, or &quot;our&quot;), operated by <strong>Hytex Cotton Mills / JustGST Technologies India</strong>. By accessing, signing up for, or using our cloud-based GST billing, invoicing, and inventory software, you (&quot;User&quot;, &quot;Customer&quot;, or &quot;Subscriber&quot;) agree to be legally bound by these Terms and Conditions.
+          Welcome to <strong>JustGST</strong> (&quot;Platform&quot;, &quot;Service&quot;, &quot;we&quot;, &quot;us&quot;, or &quot;our&quot;), a cloud-hosted software application created, owned, and operated by <strong>Rajaganapathy Kamalakannan</strong> as an individual, trading under the brand name <strong>JustGST</strong>. By accessing, registering for, or using our cloud-based GST billing, invoicing, and inventory management software, you (&quot;User&quot;, &quot;Customer&quot;, or &quot;Subscriber&quot;) agree to be legally bound by these Terms and Conditions.
         </p>
         <p>
-          If you do not agree with any part of these terms, you must not access or use the platform.
+          JustGST operates as a 100% digital cloud service delivering software functionality over the internet. If you do not agree with any part of these terms, you must not access or use the platform.
         </p>
       </section>
 
@@ -257,8 +256,8 @@ const TermsContent: React.FC = () => (
         <h3 className="text-sm font-bold text-slate-900">2. Eligibility &amp; Account Responsibility</h3>
         <ul className="list-disc pl-5 space-y-1">
           <li>You must be at least 18 years of age and legally competent to enter into binding commercial contracts under the Indian Contract Act, 1872.</li>
-          <li>You represent that all business details, Goods and Services Tax Identification Numbers (GSTIN), PAN, and banking information provided are authentic and accurate.</li>
-          <li>You are responsible for maintaining the confidentiality of your credentials and all activities occurring under your account.</li>
+          <li>You represent that all business details, Goods and Services Tax Identification Numbers (GSTIN), PAN, and banking information provided are authentic, accurate, and lawfully owned by your business.</li>
+          <li>You are solely responsible for maintaining the confidentiality of your credentials and all activities occurring under your account.</li>
         </ul>
       </section>
 
@@ -268,17 +267,18 @@ const TermsContent: React.FC = () => (
           Subject to compliance with these Terms and active subscription payments, JustGST grants you a non-exclusive, non-transferable, revocable license to access the web application to generate GST invoices, manage client/supplier ledgers, track inventory, and download GSTR-compatible reports.
         </p>
         <p>
-          You agree not to reverse engineer, decompile, resell, white-label without authorization, or inject malicious code into the platform.
+          As an intangible cloud software service, all access is provided electronically. You agree not to reverse engineer, decompile, resell, white-label without authorization, or inject malicious code into the platform.
         </p>
       </section>
 
       <section className="space-y-2">
-        <h3 className="text-sm font-bold text-slate-900">4. Subscription Plans, Billing &amp; Taxes</h3>
+        <h3 className="text-sm font-bold text-slate-900">4. Subscription Plans, Billing &amp; Payment Processing</h3>
         <ul className="list-disc pl-5 space-y-1">
           <li><strong>Free Trial:</strong> We offer a 14-day fully featured trial with no upfront credit card required.</li>
           <li><strong>Pricing &amp; Currency:</strong> All prices are displayed in Indian Rupees (INR ₹). Subscriptions are available in 1-Month, 6-Month, and 12-Month tiers.</li>
+          <li><strong>Payment Processing:</strong> Payments are processed through RBI-authorized payment aggregator PayU Payments Private Limited (https://payu.in/). We do not store raw card numbers, PINs, or CVVs.</li>
           <li><strong>Applicable Taxes:</strong> In accordance with Indian tax laws, applicable GST (18% on SaaS services) is levied during checkout. Valid GST tax invoices are provided for input tax credit (ITC) claims.</li>
-          <li><strong>Renewal:</strong> Subscriptions do not auto-debit without explicit user confirmation. Users must manually renew or authorize recurring mandate instructions through RBI-compliant e-Mandate gateways.</li>
+          <li><strong>Renewal:</strong> Subscriptions do not auto-debit without explicit user authorization through RBI-compliant e-Mandate or UPI AutoPay instructions.</li>
         </ul>
       </section>
 
@@ -329,7 +329,7 @@ const PrivacyContent: React.FC = () => (
         Privacy Policy
       </h1>
       <p className="text-xs text-slate-500 mt-1">
-        Compliant with the Digital Personal Data Protection (DPDP) Act 2023 &amp; IT Rules 2011
+        Operated by Rajaganapathy Kamalakannan (JustGST) • Compliant with DPDP Act 2023 &amp; IT Rules 2011
       </p>
     </div>
 
@@ -337,48 +337,48 @@ const PrivacyContent: React.FC = () => (
       <section className="space-y-2">
         <h3 className="text-sm font-bold text-slate-900">1. Information We Collect</h3>
         <ul className="list-disc pl-5 space-y-1">
-          <li><strong>Account Information:</strong> Name, business name, business address, email address, phone number, and password hashes.</li>
-          <li><strong>Business &amp; Tax Data:</strong> GSTIN, PAN, state code, bank account details, UPI VPA, and company signature/logos uploaded by you.</li>
-          <li><strong>Transactional Content:</strong> Customer and supplier contact information, product catalogs, HSN/SAC codes, invoice line items, tax breakdowns, and payment logs.</li>
+          <li><strong>Account Information:</strong> Name, business name, work email address, phone number, and encrypted password credentials.</li>
+          <li><strong>Business &amp; Invoicing Data:</strong> Goods and Services Tax Identification Numbers (GSTIN), PAN, state jurisdiction code, bank account details, UPI VPA, and company signature/logos uploaded by you.</li>
+          <li><strong>Transactional Content:</strong> Customer and supplier records, product/service catalogs, HSN/SAC codes, invoice line items, tax breakdowns, and payment reconciliation logs.</li>
           <li><strong>Technical Metadata:</strong> IP addresses, browser user-agent, session timestamps, and diagnostic error logs for system uptime and fraud prevention.</li>
         </ul>
       </section>
 
       <section className="space-y-2">
         <h3 className="text-sm font-bold text-slate-900">2. How We Use Your Data</h3>
-        <p>Your data is processed strictly for the following legitimate purposes:</p>
+        <p>Your data is processed strictly for legitimate operational purposes:</p>
         <ul className="list-disc pl-5 space-y-1">
-          <li>Provisioning your cloud billing workspace and rendering GST-compliant invoices.</li>
-          <li>Processing subscription payments through authorized payment gateways (PayU, Dodo Payments).</li>
-          <li>Generating PDF invoices, thermal receipts, and downloadable GSTR reports.</li>
-          <li>Sending critical transactional alerts, renewal reminders, and security notices.</li>
+          <li>Provisioning your cloud billing workspace and rendering GST-compliant invoices and tax calculations.</li>
+          <li>Processing software subscription payments securely through RBI-authorized payment aggregator PayU Payments Private Limited (https://payu.in/).</li>
+          <li>Generating PDF invoices, thermal receipts, and downloadable GSTR-compatible reports.</li>
+          <li>Sending critical transactional alerts, renewal notices, and security advisories.</li>
         </ul>
       </section>
 
       <section className="space-y-2">
-        <h3 className="text-sm font-bold text-slate-900">3. Data Sharing &amp; Non-Disclosure</h3>
+        <h3 className="text-sm font-bold text-slate-900">3. Payment Information &amp; Third-Party Processors</h3>
         <p>
-          <strong>We never sell, rent, or monetize your business or customer records.</strong>
+          <strong>We never sell, rent, monetize, or trade your business or customer records.</strong>
         </p>
-        <p>Data is shared solely with trusted third-party service providers under strict data protection terms:</p>
+        <p>Data is shared solely with trusted service providers under strict non-disclosure terms:</p>
         <ul className="list-disc pl-5 space-y-1">
-          <li><strong>Payment Processors:</strong> PayU and Dodo Payments for processing subscription payments. (We do not store your raw CVV or card PINs).</li>
+          <li><strong>Payment Aggregator:</strong> All online payments are handled directly by PayU Payments Private Limited (https://payu.in/). We do not store, process, or transmit raw credit/debit card numbers, CVVs, expiry dates, netbanking passwords, or UPI MPINs.</li>
           <li><strong>Cloud Infrastructure:</strong> Cloudflare &amp; Google Cloud servers for high-availability database hosting and 256-bit encrypted data storage in compliant data centers.</li>
-          <li><strong>Legal Authorities:</strong> Only when strictly mandated by valid legal court orders, tax summons, or statutory Indian regulatory bodies.</li>
+          <li><strong>Statutory Authorities:</strong> Disclosed only when strictly required by enforceable legal warrants, court orders, or statutory regulatory bodies under Indian law.</li>
         </ul>
       </section>
 
       <section className="space-y-2">
         <h3 className="text-sm font-bold text-slate-900">4. Security Safeguards</h3>
         <p>
-          We employ industry-standard administrative, physical, and technical safeguards including HTTPS/TLS 1.3 encryption in transit, AES-256 encryption at rest, tokenized authentication sessions, and automated database backups.
+          We employ industry-standard administrative, physical, and technical safeguards including HTTPS/TLS 1.3 encryption in transit, AES-256 encryption at rest, tokenized authentication sessions, and automated daily database backups.
         </p>
       </section>
 
       <section className="space-y-2">
         <h3 className="text-sm font-bold text-slate-900">5. User Data Rights &amp; Deletion</h3>
         <p>
-          Under the DPDP Act 2023, you have the right to review, update, export, or request the deletion of your account and associated billing records. You may export your records anytime via the Reports module or submit a data purge request to <strong>support@justgst.in</strong>.
+          Under the DPDP Act 2023, you have the right to review, update, export, or request the complete deletion of your account and associated billing records. You may export your records anytime via the Reports module or submit a data purge request to <strong>support@justgst.in</strong> or <strong>grievance@justgst.in</strong>.
         </p>
       </section>
     </div>
@@ -452,7 +452,7 @@ const RefundContent: React.FC = () => (
       <section className="space-y-2">
         <h3 className="text-sm font-bold text-slate-900">5. How to Request a Refund</h3>
         <p>
-          To initiate a cancellation or refund, email <strong>support@justgst.in</strong> with your registered email ID, Order/Payment ID, and reason for the request. You can also reach our WhatsApp support desk at <strong>+91 98765 43210</strong>.
+          To initiate a cancellation or refund, email <strong>support@justgst.in</strong> with your registered email ID, Order/Payment ID, and reason for the request. You can also reach our WhatsApp support desk at <strong>+91-9597992677</strong>.
         </p>
       </section>
     </div>
@@ -472,38 +472,38 @@ const ShippingContent: React.FC = () => (
         Shipping &amp; Delivery Policy
       </h1>
       <p className="text-xs text-slate-500 mt-1">
-        Clarification on Cloud Service Activation &amp; Electronic Delivery
+        Digital Software Fulfillment • Operated by Rajaganapathy Kamalakannan (Brand: JustGST)
       </p>
     </div>
 
     <div className="space-y-4">
       <div className="p-3.5 rounded-xl bg-slate-100 border border-slate-200 text-slate-800 text-xs">
-        <strong>Digital Goods &amp; Services:</strong> JustGST is a 100% cloud-hosted Software-as-a-Service (SaaS) application. We do not manufacture, package, or ship any physical tangible goods. Hence, physical courier delivery times, transit tracking, and freight shipping charges are <strong>not applicable</strong>.
+        <strong>100% Digital Goods &amp; Cloud Services:</strong> JustGST is a cloud-hosted Software-as-a-Service (SaaS) application operated by <strong>Rajaganapathy Kamalakannan</strong> as an individual, trading under the brand <strong>JustGST</strong>. We provide purely digital software access and do not manufacture, package, or dispatch any physical tangible goods. Physical courier shipping addresses, transit tracking numbers, and freight charges are <strong>completely not applicable</strong>.
       </div>
 
       <section className="space-y-2">
-        <h3 className="text-sm font-bold text-slate-900">1. Instant Service Provisioning</h3>
+        <h3 className="text-sm font-bold text-slate-900">1. Instant Electronic Service Provisioning</h3>
         <ul className="list-disc pl-5 space-y-1">
-          <li><strong>Instant Access:</strong> Access to the JustGST platform and your workspace is provisioned immediately upon completing signup or successful subscription payment confirmation.</li>
-          <li><strong>Zero Wait Time:</strong> You can create and download GST invoices, print thermal receipts, and manage accounts immediately after payment without any manual activation delay.</li>
+          <li><strong>Instant Cloud Access:</strong> Access to the JustGST software platform and your tenant workspace is provisioned electronically and immediately upon completing online registration or successful subscription confirmation via PayU.</li>
+          <li><strong>Zero Wait Time:</strong> You can create and download GST invoices, generate dynamic UPI payment QRs, print receipts, and manage accounts immediately after payment without any physical dispatch or manual delay.</li>
         </ul>
       </section>
 
       <section className="space-y-2">
-        <h3 className="text-sm font-bold text-slate-900">2. Confirmation &amp; Tax Invoice Receipt Delivery</h3>
+        <h3 className="text-sm font-bold text-slate-900">2. Tax Invoice &amp; Payment Receipt Delivery</h3>
         <p>
-          Upon successful payment processing by our payment gateway partners:
+          Upon successful payment processing by our payment gateway partner PayU Payments Private Limited:
         </p>
         <ul className="list-disc pl-5 space-y-1">
-          <li>An automated electronic confirmation and GST Tax Invoice containing your subscription validity and payment transaction reference is dispatched to your registered email address within <strong>5 minutes</strong>.</li>
-          <li>A downloadable PDF copy of your tax invoice is permanently accessible in your account under <strong>Settings &gt; Billing &amp; Invoices</strong>.</li>
+          <li>An automated electronic confirmation and GST Tax Invoice containing your subscription plan details and payment transaction reference is delivered to your registered email address within <strong>5 minutes</strong>.</li>
+          <li>A downloadable PDF copy of your tax invoice is permanently accessible inside your workspace under <strong>Settings &gt; Billing &amp; Invoices</strong>.</li>
         </ul>
       </section>
 
       <section className="space-y-2">
-        <h3 className="text-sm font-bold text-slate-900">3. Access Issues &amp; Fulfillment Support</h3>
+        <h3 className="text-sm font-bold text-slate-900">3. Electronic Fulfillment Support</h3>
         <p>
-          If you have completed payment but do not see your account upgraded or haven&apos;t received your confirmation email within 15 minutes, please check your spam folder or contact our 24/7 technical desk at <strong>support@justgst.in</strong> with your payment reference ID. Our engineers will verify the payment log and activate your tenant workspace instantly.
+          If you have completed payment but do not see your account upgraded or haven&apos;t received your confirmation email within 15 minutes, please check your spam folder or contact our support desk directly at <strong>support@justgst.in</strong> or <strong>contact@justgst.in</strong> with your PayU payment reference ID. Your cloud workspace will be synchronized immediately.
         </p>
       </section>
     </div>
@@ -533,14 +533,25 @@ const ContactContent: React.FC = () => (
         <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
           <div className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
             <Building2 className="w-4 h-4 text-brand-600" />
-            <span>Registered Legal Entity</span>
+            <span>Merchant / Operating Identity</span>
           </div>
-          <div className="text-xs text-slate-600 space-y-1">
-            <p className="font-bold text-slate-800">JustGST Technologies India</p>
-            <p>(Operated by Hytex Cotton Mills)</p>
-            <p>124/B Mill Road, Textile Complex,</p>
-            <p>Coimbatore / Tirupur District,</p>
-            <p>Tamil Nadu - 641602, India</p>
+          <div className="text-xs text-slate-600 space-y-1.5">
+            <div>
+              <span className="text-[10px] text-slate-400 block uppercase font-semibold">Operator / Founder Name</span>
+              <p className="font-bold text-slate-900 text-sm">Rajaganapathy Kamalakannan</p>
+            </div>
+            <div>
+              <span className="text-[10px] text-slate-400 block uppercase font-semibold">Brand / Platform</span>
+              <p className="font-semibold text-brand-700">JustGST (Cloud Billing &amp; Invoicing Platform)</p>
+            </div>
+            <div>
+              <span className="text-[10px] text-slate-400 block uppercase font-semibold">Category &amp; Jurisdiction</span>
+              <p className="text-slate-700">Individual (Operating under brand JustGST)</p>
+              <p className="text-slate-500 text-[11px]">Tamil Nadu, India (100% Online Cloud Operations)</p>
+            </div>
+            <div className="pt-1 text-[11px] text-slate-500 bg-white p-2 rounded border border-slate-100">
+              <em>Note: Operates as an Individual under personal PAN in accordance with PayU&apos;s Individual Merchant onboarding guidelines. As an intangible, 100% digital cloud SaaS platform, all software functionality, user onboarding, customer care, and billing receipts are delivered over the internet with zero physical storefront requirements.</em>
+            </div>
           </div>
         </div>
 
@@ -548,11 +559,11 @@ const ContactContent: React.FC = () => (
         <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
           <div className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
             <Phone className="w-4 h-4 text-brand-600" />
-            <span>Customer Support Desk</span>
+            <span>Customer Support &amp; Inquiries</span>
           </div>
           <div className="text-xs text-slate-600 space-y-1.5">
             <p>
-              <strong>Email:</strong>{' '}
+              <strong>Customer Support Email:</strong>{' '}
               <a
                 href="mailto:support@justgst.in"
                 className="text-brand-600 hover:underline font-medium"
@@ -561,7 +572,16 @@ const ContactContent: React.FC = () => (
               </a>
             </p>
             <p>
-              <strong>Billing Inquiries:</strong>{' '}
+              <strong>Direct Merchant Email:</strong>{' '}
+              <a
+                href="mailto:contact@justgst.in"
+                className="text-brand-600 hover:underline font-medium"
+              >
+                contact@justgst.in
+              </a>
+            </p>
+            <p>
+              <strong>Billing &amp; Invoicing:</strong>{' '}
               <a
                 href="mailto:billing@justgst.in"
                 className="text-brand-600 hover:underline font-medium"
@@ -570,10 +590,16 @@ const ContactContent: React.FC = () => (
               </a>
             </p>
             <p>
-              <strong>Support Phone / WhatsApp:</strong> +91 98765 43210
+              <strong>Support Phone / WhatsApp:</strong>{' '}
+              <a
+                href="tel:+919597992677"
+                className="text-slate-900 font-semibold hover:text-brand-600 transition-colors"
+              >
+                +91-9597992677
+              </a>
             </p>
             <p className="text-[11px] text-slate-500">
-              <strong>Support Hours:</strong> Monday – Saturday: 9:00 AM – 7:00 PM IST (Excluding Public Holidays)
+              <strong>Support Hours:</strong> Monday – Saturday: 9:00 AM – 7:00 PM IST (Online Desk Active)
             </p>
           </div>
         </div>
@@ -591,25 +617,28 @@ const ContactContent: React.FC = () => (
           </span>
         </div>
         <p className="text-xs text-brand-800">
-          In accordance with the Information Technology Act 2000 and Consumer Protection (E-Commerce) Rules 2020, the details of the Grievance Officer are published below:
+          In accordance with Rule 3(2) of the Information Technology (Intermediary Guidelines and Digital Media Ethics Code) Rules, 2021 and Consumer Protection (E-Commerce) Rules, 2020:
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1 text-xs text-brand-950 font-medium">
           <div>
-            <span className="text-[10px] text-brand-700 block uppercase">Name</span>
-            <strong>R. Ganapathy (Grievance Officer)</strong>
+            <span className="text-[10px] text-brand-700 block uppercase">Name &amp; Designation</span>
+            <strong>Rajaganapathy Kamalakannan</strong>
+            <span className="block text-[10px] text-slate-600 font-normal">Individual Operator &amp; Grievance Officer</span>
           </div>
           <div>
-            <span className="text-[10px] text-brand-700 block uppercase">Email</span>
+            <span className="text-[10px] text-brand-700 block uppercase">Grievance Contact Email</span>
             <a
               href="mailto:grievance@justgst.in"
               className="text-brand-800 underline font-bold"
             >
               grievance@justgst.in
             </a>
+            <span className="block text-[10px] text-slate-600 font-normal">Alternate: support@justgst.in</span>
           </div>
           <div>
-            <span className="text-[10px] text-brand-700 block uppercase">Response Time</span>
-            <strong>Within 36 Hours (Resolution within 15 days)</strong>
+            <span className="text-[10px] text-brand-700 block uppercase">Phone &amp; Resolution SLA</span>
+            <strong className="block text-slate-900 font-bold">+91-9597992677</strong>
+            <span className="block text-[10px] text-slate-600 font-normal">Ack within 36 hrs • Resolution in 15 days</span>
           </div>
         </div>
       </div>
@@ -630,18 +659,21 @@ const SecurityContent: React.FC = () => (
         Payment &amp; Gateway Security Policy
       </h1>
       <p className="text-xs text-slate-500 mt-1">
-        PCI-DSS Level 1 Compliant Architecture &amp; RBI Guidelines
+        PayU Payment Gateway Integration • PCI-DSS Level 1 Compliant Architecture
       </p>
     </div>
 
     <div className="space-y-4">
       <section className="space-y-2">
-        <h3 className="text-sm font-bold text-slate-900">1. Payment Aggregator Compliance</h3>
+        <h3 className="text-sm font-bold text-slate-900">1. Payment Aggregator Compliance (PayU)</h3>
         <p>
-          All subscription and software license transactions on JustGST are routed through licensed, RBI-compliant Payment Aggregators including <strong>PayU and Dodo Payments</strong>.
+          All subscription payments, plan upgrades, and SaaS billing transactions on JustGST are routed exclusively through RBI-authorized payment aggregators, primarily <strong>PayU Payments Private Limited</strong> (https://payu.in/).
         </p>
         <p>
-          JustGST does not collect, handle, or store raw card numbers, PINs, or CVVs on our application servers. Payment tokenization and card processing are handled directly inside bank-grade PCI-DSS Level 1 certified vaults.
+          JustGST strictly adheres to RBI directives on card tokenization and digital payment safety. <strong>We do not collect, process, or store raw credit/debit card numbers, CVVs, expiration dates, net banking passwords, or UPI MPINs on our application servers.</strong>
+        </p>
+        <p>
+          Payment tokenization and transaction processing are handled within bank-grade, PCI-DSS Level 1 certified infrastructure managed by PayU.
         </p>
       </section>
 
@@ -649,26 +681,26 @@ const SecurityContent: React.FC = () => (
         <h3 className="text-sm font-bold text-slate-900">2. Supported Payment Methods</h3>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
           <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-center font-bold text-slate-800">
-            UPI (BHIM, GPay, Paytm, Any App)
+            UPI (BHIM, Google Pay, PhonePe, Paytm, Any App)
           </div>
           <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-center font-bold text-slate-800">
-            Credit &amp; Debit Cards (RuPay, Visa, MC)
+            Credit &amp; Debit Cards (RuPay, Visa, MasterCard)
           </div>
           <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-center font-bold text-slate-800">
-            NetBanking (50+ Indian Banks)
+            NetBanking (50+ Indian Commercial Banks)
           </div>
           <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-center font-bold text-slate-800">
-            International Cards &amp; Dodo
+            e-Mandate / UPI AutoPay (RBI Authorized)
           </div>
         </div>
       </section>
 
       <section className="space-y-2">
-        <h3 className="text-sm font-bold text-slate-900">3. Encryption &amp; Fraud Monitoring</h3>
+        <h3 className="text-sm font-bold text-slate-900">3. Encryption &amp; Anti-Fraud Safeguards</h3>
         <ul className="list-disc pl-5 space-y-1">
-          <li><strong>256-Bit SSL/TLS Encryption:</strong> All data transmissions between your browser and our servers are encrypted using modern Transport Layer Security.</li>
-          <li><strong>Two-Factor Authentication:</strong> Card transactions require OTP/3D-Secure verification from your issuing bank.</li>
-          <li><strong>Automated Anomaly Detection:</strong> Real-time anti-fraud filters prevent unauthorized chargebacks and velocity attacks.</li>
+          <li><strong>256-Bit SSL/TLS Encryption:</strong> All data transmissions between your browser and our servers are encrypted using modern Transport Layer Security (TLS 1.3 / 256-bit AES).</li>
+          <li><strong>Mandatory Two-Factor Authentication:</strong> Card transactions require mandatory OTP/3D-Secure verification from your issuing bank.</li>
+          <li><strong>Real-Time Fraud Prevention:</strong> Automated anomaly detection filters prevent unauthorized transactions and velocity abuse.</li>
         </ul>
       </section>
     </div>

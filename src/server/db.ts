@@ -498,17 +498,17 @@ export async function seedInitialTenants(db: D1Database, env: any = {}): Promise
       let superAdminInitialPassword = env?.SUPER_ADMIN_INITIAL_PASSWORD;
       if (!superAdminInitialPassword) {
         superAdminInitialPassword = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
-        console.log(`[AUTH BOOTSTRAP] SUPER_ADMIN_INITIAL_PASSWORD not set in environment. Generated initial password for rajaganapathy235@gmail.com: ${superAdminInitialPassword}`);
+        console.log(`[AUTH BOOTSTRAP] SUPER_ADMIN_INITIAL_PASSWORD not set in environment. Generated initial password for contact@justgst.in: ${superAdminInitialPassword}`);
       }
 
       let demoOwnerInitialPassword = env?.DEMO_OWNER_INITIAL_PASSWORD;
       if (!demoOwnerInitialPassword) {
         demoOwnerInitialPassword = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
-        console.log(`[AUTH BOOTSTRAP] DEMO_OWNER_INITIAL_PASSWORD not set in environment. Generated initial password for hytexcottonmills@gmail.com: ${demoOwnerInitialPassword}`);
+        console.log(`[AUTH BOOTSTRAP] DEMO_OWNER_INITIAL_PASSWORD not set in environment. Generated initial password: ${demoOwnerInitialPassword}`);
       }
 
       const superAdminPassHash = await hashPassword(superAdminInitialPassword);
-      const vasanthiPassHash = await hashPassword(demoOwnerInitialPassword);
+      const ownerPassHash = await hashPassword(demoOwnerInitialPassword);
 
       // 1. Platform Master Org & Super Admin
       await execute(
@@ -517,11 +517,11 @@ export async function seedInitialTenants(db: D1Database, env: any = {}): Promise
           id, name, slug, owner_name, admin_email, mobile, country, state, register_number, plan_id, plan_name, subscription_status
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         'org_platform_master',
-        'Kannaku Master Operations',
+        'JustGST Cloud Platform',
         'platform-master',
-        'Rajaganapathy S.',
-        'rajaganapathy235@gmail.com',
-        '9842755680',
+        'Rajaganapathy Kamalakannan',
+        'contact@justgst.in',
+        '9597992677',
         'India',
         'Tamil Nadu',
         '33AABCK1234F1Z9',
@@ -537,21 +537,21 @@ export async function seedInitialTenants(db: D1Database, env: any = {}): Promise
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
         'usr_superadmin_01',
         'org_platform_master',
-        'Rajaganapathy S.',
-        'rajaganapathy235@gmail.com',
-        '9842755680',
+        'Rajaganapathy Kamalakannan',
+        'contact@justgst.in',
+        '9597992677',
         superAdminPassHash,
         'SUPER_ADMIN',
         'ACTIVE'
       );
 
-      // 2. Hytex Cotton Mills Tenant & Owner
+      // 2. JustGST Primary Tenant & Owner
       const bankDetailsJson = JSON.stringify({
         bankName: 'HDFC Bank Ltd',
         accountNo: '50200088991122',
         ifsc: 'HDFC0001892',
-        branch: 'Tiruppur Main Branch',
-        upiId: '8870796169@hdfcbank',
+        branch: 'Tiruppur Branch',
+        upiId: 'rajaganapathy@hdfcbank',
       });
 
       await execute(
@@ -560,13 +560,13 @@ export async function seedInitialTenants(db: D1Database, env: any = {}): Promise
           id, name, slug, owner_name, admin_email, mobile, country, address, city, state, pin, state_code, register_number, pan_number, bill_prefix, bank_details_json, terms_conditions, plan_id, plan_name, subscription_status
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         'org_hytex_cotton',
-        'HYTEX COTTON MILLS',
-        'hytex-cotton',
-        'K. Vasanthi',
-        'hytexcottonmills@gmail.com',
-        '8870796169',
+        'JustGST',
+        'justgst-app',
+        'Rajaganapathy Kamalakannan',
+        'contact@justgst.in',
+        '9597992677',
         'India',
-        'SFNO. 71/1, ST-2, PARAPPU THOTTAM, Muniyandi Vilas Hotel, UTHUKULI TOWN PANCHAYAT, UTHUKULI',
+        'Tamil Nadu, India (100% Online Digital Cloud Service)',
         'Tiruppur',
         'Tamil Nadu',
         '638751',
@@ -575,7 +575,7 @@ export async function seedInitialTenants(db: D1Database, env: any = {}): Promise
         'ASWPV8266F',
         'INV/2026/',
         bankDetailsJson,
-        '1. Goods once sold will not be taken back.\n2. Interest @ 18% p.a. will be charged on overdue payments.\n3. Subject to Tiruppur jurisdiction only.',
+        '1. Digital cloud software service and tax invoicing.\n2. Subject to Tamil Nadu jurisdiction.',
         'plan_pro',
         'Pro Trader',
         'ACTIVE'
@@ -588,10 +588,10 @@ export async function seedInitialTenants(db: D1Database, env: any = {}): Promise
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
         'usr_hytex_owner_01',
         'org_hytex_cotton',
-        'K. Vasanthi',
-        'hytexcottonmills@gmail.com',
-        '8870796169',
-        vasanthiPassHash,
+        'Rajaganapathy Kamalakannan',
+        'contact@justgst.in',
+        '9597992677',
+        ownerPassHash,
         'OWNER',
         'ACTIVE'
       );

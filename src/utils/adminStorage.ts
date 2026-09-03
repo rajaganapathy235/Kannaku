@@ -47,8 +47,8 @@ const STORAGE_KEYS = {
 
 export const INITIAL_ADMIN_USER: AdminUser = {
   id: 'admin_owner_01',
-  name: 'Rajaganapathy S.',
-  email: 'rajaganapathy235@gmail.com',
+  name: 'Rajaganapathy Kamalakannan',
+  email: 'contact@justgst.in',
   role: 'SUPER_ADMIN',
   avatarUrl: 'https://ui-avatars.com/api/?name=Raja+Ganapathy&background=1e293b&color=38bdf8',
   lastLogin: new Date().toISOString(),
@@ -258,10 +258,10 @@ export const SUBSYSTEMS_HEALTH: SubsystemStatus[] = [
 
 export const DEFAULT_PLATFORM_SETTINGS: PlatformSettings = {
   general: {
-    saasName: 'Kannaku Cloud Billing SaaS',
-    tagline: 'Enterprise GST Invoicing, Customer Ledgers & Accounting Platform',
-    supportEmail: 'support@kannaku.in',
-    supportPhone: '+91 88707 96169',
+    saasName: 'JustGST Cloud Billing Platform',
+    tagline: 'Fast GST Invoicing, Customer Ledgers & Digital Accounting Platform',
+    supportEmail: 'support@justgst.in',
+    supportPhone: '+91-9597992677',
     defaultCurrency: 'INR (₹)',
     defaultCountry: 'India',
     timezone: 'Asia/Kolkata (IST +5:30)',
@@ -280,8 +280,8 @@ export const DEFAULT_PLATFORM_SETTINGS: PlatformSettings = {
     smtpPort: 587,
     smtpUser: 'AKIAIOSFODNN7EXAMPLE',
     smtpSecure: true,
-    senderName: 'Kannaku Billing Platform',
-    senderEmail: 'notifications@kannaku.in',
+    senderName: 'JustGST Billing Platform',
+    senderEmail: 'notifications@justgst.in',
     enableEmailDelivery: true,
   },
   notifications: {
@@ -289,7 +289,7 @@ export const DEFAULT_PLATFORM_SETTINGS: PlatformSettings = {
     notifyOnPaymentFailed: true,
     notifyOnTrialExpiring: true,
     notifyOnNewSignup: true,
-    adminNotificationEmail: 'rajaganapathy235@gmail.com',
+    adminNotificationEmail: 'contact@justgst.in',
     slackWebhookUrl: '',
   },
   security: {

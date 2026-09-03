@@ -551,7 +551,7 @@ export default function App() {
           setAuthView('home');
           window.location.hash = '#home';
         }}
-        initialEmail={authSession?.user?.email || 'hytexcottonmills@gmail.com'}
+        initialEmail={authSession?.user?.email || ''}
       />
     );
   }

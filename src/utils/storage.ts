@@ -136,14 +136,14 @@ export const DEFAULT_TENANTS: TenantOrganization[] = [
 ];
 
 export const DEFAULT_COMPANY: CompanyProfile = {
-  name: 'HYTEX COTTON MILLS',
-  address: 'SFNO. 71/1, ST-2, PARAPPU THOTTAM, Muniyandi Vilas Hotel, UTHUKULI TOWN PANCHAYAT, UTHUKULI',
+  name: 'JustGST',
+  address: 'Tamil Nadu, India (100% Online Digital Cloud Service)',
   city: 'Tiruppur',
   state: 'Tamil Nadu',
   pin: '638751',
   code: '33',
-  email: 'hytexcottonmills@gmail.com',
-  mobile: '8870796169',
+  email: 'contact@justgst.in',
+  mobile: '9597992677',
   registerNumber: '33ASWPV8266F1ZW',
   panNumber: 'ASWPV8266F',
   billPrefix: 'INV/2026/',
@@ -151,21 +151,21 @@ export const DEFAULT_COMPANY: CompanyProfile = {
     bankName: 'HDFC Bank Ltd',
     accountNumber: '50200087654321',
     ifscCode: 'HDFC0001234',
-    branchName: 'Uthukuli Branch, Tiruppur',
-    upiId: 'hytexmills@hdfcbank',
+    branchName: 'Tiruppur Branch',
+    upiId: 'rajaganapathy@hdfcbank',
     panNumber: 'ASWPV8266F',
   },
-  logoUrl: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="%23E65100"><circle cx="50" cy="50" r="48" fill="%23FFF3E0"/><circle cx="50" cy="36" r="14" fill="%23E65100"/><path d="M26 78 C26 58, 74 58, 74 78 Z" fill="%23E65100"/><circle cx="28" cy="40" r="10" fill="%23FB8C00"/><path d="M12 76 C12 62, 44 62, 44 76 Z" fill="%23FB8C00"/><circle cx="72" cy="40" r="10" fill="%23FB8C00"/><path d="M56 76 C56 62, 88 62, 88 76 Z" fill="%23FB8C00"/></svg>',
-  signatureName: 'K. Vasanthi',
-  signatureUrl: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 80"><text x="10" y="55" font-family="Caveat, cursive, sans-serif" font-size="44" font-weight="bold" fill="%231a237e" transform="rotate(-3, 150, 40)">K. வசந்தி</text></svg>',
-  stampUrl: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160"><circle cx="80" cy="80" r="74" fill="none" stroke="%231b5e20" stroke-width="4" stroke-dasharray="8 4"/><circle cx="80" cy="80" r="64" fill="none" stroke="%231b5e20" stroke-width="2"/><text x="80" y="48" font-size="12" font-family="sans-serif" font-weight="900" fill="%231b5e20" text-anchor="middle">HYTEX COTTON MILLS</text><text x="80" y="86" font-size="11" font-family="sans-serif" font-weight="bold" fill="%231b5e20" text-anchor="middle">★ TIRUPPUR ★</text><text x="80" y="124" font-size="10" font-family="sans-serif" font-weight="900" fill="%231b5e20" text-anchor="middle">AUTH SIGNATORY</text></svg>',
+  logoUrl: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="%232563EB"><rect width="100" height="100" rx="20" fill="%23EFF6FF"/><path d="M25 50 L45 70 L75 30" stroke="%232563EB" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>',
+  signatureName: 'Rajaganapathy K.',
+  signatureUrl: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 80"><text x="10" y="55" font-family="Caveat, cursive, sans-serif" font-size="38" font-weight="bold" fill="%231e3a8a" transform="rotate(-2, 150, 40)">Rajaganapathy K.</text></svg>',
+  stampUrl: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160"><circle cx="80" cy="80" r="74" fill="none" stroke="%232563eb" stroke-width="4" stroke-dasharray="8 4"/><circle cx="80" cy="80" r="64" fill="none" stroke="%232563eb" stroke-width="2"/><text x="80" y="48" font-size="13" font-family="sans-serif" font-weight="900" fill="%232563eb" text-anchor="middle">JUSTGST</text><text x="80" y="86" font-size="11" font-family="sans-serif" font-weight="bold" fill="%232563eb" text-anchor="middle">★ RAJAGANAPATHY K. ★</text><text x="80" y="124" font-size="10" font-family="sans-serif" font-weight="900" fill="%232563eb" text-anchor="middle">AUTHORIZED SIGNATORY</text></svg>',
   invoicePrefixSales: 'INV/2026/',
   invoicePrefixPurchase: 'PUR/2026/',
   invoicePrefixQuotation: 'QUO/2026/',
   colorScheme: 'blue',
   termsAndConditions:
-    '1. Goods once sold will not be taken back or exchanged.\n2. Interest @ 18% p.a. will be charged if the bill is not paid within the due date.\n3. Subject to Tiruppur Jurisdiction.',
-  jurisdictionCity: 'Tiruppur',
+    '1. Digital cloud software service and tax invoicing.\n2. Subject to Tamil Nadu Jurisdiction.',
+  jurisdictionCity: 'Tamil Nadu',
 };
 
 export const INITIAL_CLIENTS: Client[] = [

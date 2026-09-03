@@ -9,15 +9,12 @@ import {
   ShieldCheck,
   CheckCircle2,
   Phone,
-  MapPin,
-  Sparkles,
   Eye,
   EyeOff,
   AlertCircle,
   HelpCircle,
   KeyRound,
   FileCheck2,
-  Zap,
 } from 'lucide-react';
 import { AuthService } from '../../utils/authService';
 import { AuthSession } from '../../types/auth';
@@ -41,7 +38,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({
   const [rememberMe, setRememberMe] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [showQuickFill, setShowQuickFill] = useState(false);
   const [forgotPasswordOpen, setForgotPasswordOpen] = useState(false);
   const [forgotEmail, setForgotEmail] = useState('');
   const [resetSent, setResetSent] = useState(false);
@@ -209,64 +205,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({
               )}
             </button>
           </form>
-
-          {/* Quick-Fill / Demo Accounts */}
-          <div className="pt-2 border-t border-slate-200">
-            <button
-              type="button"
-              onClick={() => setShowQuickFill(!showQuickFill)}
-              className="text-xs font-semibold text-slate-500 hover:text-slate-700 flex items-center justify-between w-full transition-colors cursor-pointer py-1"
-            >
-              <span>Testing / Demo Accounts</span>
-              <span className="text-xs text-brand-600 font-bold font-mono">
-                {showQuickFill ? 'Hide' : 'Show'}
-              </span>
-            </button>
-
-            {showQuickFill && (
-              <div className="pt-2 space-y-2 animate-in fade-in">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setError(null);
-                      setEmail('rajaganapathy235@gmail.com');
-                      setPassword('');
-                    }}
-                    className="p-3 bg-slate-50 hover:bg-brand-50/60 border border-slate-200 hover:border-brand-300 rounded-xl text-left transition-all cursor-pointer group"
-                  >
-                    <div className="text-xs font-bold text-slate-800 group-hover:text-brand-700 truncate flex items-center justify-between">
-                      <span>SuperAdmin Portal</span>
-                      <Sparkles className="w-3.5 h-3.5 text-brand-600" />
-                    </div>
-                    <div className="text-[11px] text-slate-500 flex items-center justify-between mt-1">
-                      <span className="text-brand-600 font-mono font-medium truncate mr-1">rajaganapathy235@gmail.com</span>
-                      <span className="text-[10px] text-brand-700 font-semibold shrink-0">Fill</span>
-                    </div>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setError(null);
-                      setEmail('hytexcottonmills@gmail.com');
-                      setPassword('');
-                    }}
-                    className="p-3 bg-slate-50 hover:bg-brand-50/60 border border-slate-200 hover:border-brand-300 rounded-xl text-left transition-all cursor-pointer group"
-                  >
-                    <div className="text-xs font-bold text-slate-800 group-hover:text-brand-700 truncate flex items-center justify-between">
-                      <span>HYTEX COTTON MILLS</span>
-                      <Zap className="w-3.5 h-3.5 text-brand-600" />
-                    </div>
-                    <div className="text-[11px] text-slate-500 flex items-center justify-between mt-1">
-                      <span className="text-brand-600 font-mono font-medium truncate mr-1">hytexcottonmills@gmail.com</span>
-                      <span className="text-[10px] text-brand-700 font-semibold shrink-0">Fill</span>
-                    </div>
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
         </div>
 
         {/* Signup Redirect Footer */}

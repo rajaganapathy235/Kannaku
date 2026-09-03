@@ -447,7 +447,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   Phone Number
                 </span>
                 <span className="font-semibold text-slate-900">
-                  {form.mobile || '8870796169'}
+                  {form.mobile || '+91-9597992677'}
                 </span>
               </div>
             </div>
@@ -459,7 +459,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   Email Address
                 </span>
                 <span className="font-semibold text-slate-900">
-                  {form.email || 'hytexcottonmills@gmail.com'}
+                  {form.email || 'contact@justgst.in'}
                 </span>
               </div>
             </div>
@@ -468,10 +468,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               <MapPin className="w-4 h-4 text-slate-400 mt-0.5 shrink-0" />
               <div>
                 <span className="text-[10px] text-slate-500 font-bold uppercase block tracking-wider">
-                  Registered Address
+                  Registered Address / Operating Region
                 </span>
                 <span className="font-semibold text-slate-900">
-                  {form.address || 'SFNO. 71/1, ST-2, PARAPPU THOTTAM, Muniyandi Vilas Hotel, UTHUKULI TOWN PANCHAYAT, UTHUKULI'}
+                  {form.address || 'Tamil Nadu, India (100% Online Digital Cloud Service)'}
                 </span>
               </div>
             </div>
@@ -676,7 +676,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 type="text"
                 value={form.bankDetail?.upiId || ''}
                 onChange={(e) => handleBankChange('upiId', e.target.value)}
-                placeholder="e.g. hytexmills@hdfcbank"
+                placeholder="e.g. rajaganapathy@hdfcbank or 9876543210@paytm"
                 className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg font-mono font-semibold text-brand-600 focus:bg-white focus:border-brand-600 focus:outline-none transition-colors"
               />
             </div>
