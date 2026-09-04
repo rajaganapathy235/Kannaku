@@ -36,7 +36,6 @@ import { AuthSession } from './types/auth';
 import { TenantOrganizationFull } from './types/admin';
 import { ConfirmationModal } from './components/common/ConfirmationModal';
 import { AlertModal } from './components/common/AlertModal';
-import { DiagnosticPanel } from './components/common/DiagnosticPanel';
 import { Lock } from 'lucide-react';
 import { TrialExpiredModal } from './components/subscription/TrialExpiredModal';
 import { isSubscriptionTrialExpired, simulateSubscriptionState } from './utils/subscriptionUtils';
@@ -743,27 +742,24 @@ export default function App() {
           <div className="max-w-7xl mx-auto">
             {/* Active View Router */}
             {activeTab === 'dashboard' && (
-              <div className="space-y-6">
-                <DiagnosticPanel />
-                <DashboardView
-                  company={company}
-                  invoices={invoices}
-                  clients={clients}
-                  products={products}
-                  payments={payments}
-                  onNewInvoice={handleTriggerNewInvoice}
-                  onViewInvoice={(inv) => setActivePrintInvoice(inv)}
-                  onNavigateTab={(tab) => {
-                    if (tab === 'create_invoice' && isTrialExpired) {
-                      setTrialExpiredModalOpen(true);
-                      showToast('🔒 14-Day Free Trial Expired. Invoicing is locked in read-only mode.');
-                      return;
-                    }
-                    setActiveTab(tab);
-                  }}
-                  onOpenQuickPayment={() => setActiveTab('payments')}
-                />
-              </div>
+              <DashboardView
+                company={company}
+                invoices={invoices}
+                clients={clients}
+                products={products}
+                payments={payments}
+                onNewInvoice={handleTriggerNewInvoice}
+                onViewInvoice={(inv) => setActivePrintInvoice(inv)}
+                onNavigateTab={(tab) => {
+                  if (tab === 'create_invoice' && isTrialExpired) {
+                    setTrialExpiredModalOpen(true);
+                    showToast('🔒 14-Day Free Trial Expired. Invoicing is locked in read-only mode.');
+                    return;
+                  }
+                  setActiveTab(tab);
+                }}
+                onOpenQuickPayment={() => setActiveTab('payments')}
+              />
             )}
 
             {activeTab === 'invoices' && (

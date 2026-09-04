@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { SaaSAdminDB } from '../../utils/adminStorage';
 import { SubsystemStatus } from '../../types/admin';
+import { DiagnosticPanel } from '../common/DiagnosticPanel';
 
 export const SystemHealthView: React.FC = () => {
   const [subsystems, setSubsystems] = useState<SubsystemStatus[]>(
@@ -50,6 +51,9 @@ export const SystemHealthView: React.FC = () => {
           <span>Ping All Services</span>
         </button>
       </div>
+
+      {/* Cloudflare D1 & Auth Diagnostic Report */}
+      <DiagnosticPanel inline />
 
       {/* Grid of Subsystems */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">

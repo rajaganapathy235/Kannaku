@@ -22,7 +22,6 @@ import {
 import { CompanyProfile } from '../../types';
 import { ApiService } from '../../utils/apiService';
 import { KannakuDB } from '../../utils/storage';
-import { DiagnosticPanel } from '../common/DiagnosticPanel';
 import { LogoPickerModal } from './LogoPickerModal';
 import { SignaturePadModal } from './SignaturePadModal';
 import { StampPickerModal } from './StampPickerModal';
@@ -729,9 +728,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           </div>
         </form>
       </div>
-
-      {/* Cloudflare D1 Cloud Database Sync & Diagnostics */}
-      <DiagnosticPanel inline />
 
       {/* Branding Modals */}
       {isLogoModalOpen && (

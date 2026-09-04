@@ -25,6 +25,7 @@ import {
 import { SaaSAdminDB } from '../../utils/adminStorage';
 import { SuperAdminDashboardStats, TenantOrganizationFull, AuditLogEntry } from '../../types/admin';
 import { AdminNavTab } from './SuperAdminLayout';
+import { DiagnosticPanel } from '../common/DiagnosticPanel';
 
 interface AdminDashboardViewProps {
   onNavigate: (tab: AdminNavTab) => void;
@@ -279,6 +280,12 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
           </button>
         </div>
       </div>
+
+      {/* Cloudflare D1 & Auth Diagnostic Report with Dual Sync Verification */}
+      <DiagnosticPanel
+        inline
+        onSyncComplete={refreshData}
+      />
 
       {/* 14 Interactive KPI Cards Grid */}
       <div>
