@@ -9,6 +9,7 @@ import {
   FileCheck,
   FilePlus,
   HelpCircle,
+  Lock,
   Percent,
   Plus,
   Printer,
@@ -17,6 +18,7 @@ import {
   Truck,
   UserPlus,
   Users,
+  Zap,
 } from 'lucide-react';
 import {
   BillModifier,
@@ -50,6 +52,8 @@ interface CreateInvoiceViewProps {
   onAddNewClient: (client: Client) => void;
   onAddNewProduct: (product: Product) => void;
   nextInvoiceNumber: (type: InvoiceType) => string;
+  isTrialExpired?: boolean;
+  onOpenUpgradeModal?: () => void;
 }
 
 export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
@@ -62,6 +66,8 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
   onAddNewClient,
   onAddNewProduct,
   nextInvoiceNumber,
+  isTrialExpired,
+  onOpenUpgradeModal,
 }) => {
   const [invoiceType, setInvoiceType] = useState<InvoiceType>(
     editingInvoice ? editingInvoice.invoiceType : InvoiceType.SALES
@@ -375,6 +381,11 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
 
   // Save invoice
   const handleSubmit = (andPrint: boolean = false) => {
+    if (isTrialExpired) {
+      onOpenUpgradeModal?.();
+      return;
+    }
+
     const client = clients.find((c) => c.id === selectedClientId) || {
       id: 'c_default',
       name: 'Cash Party / Walk-in Customer',
@@ -443,6 +454,36 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
 
   return (
     <div className="max-w-6xl mx-auto space-y-6 pb-20">
+      {/* Trial Expired Alert Banner */}
+      {isTrialExpired && (
+        <div
+          id="trial-expired-invoice-banner"
+          className="p-4 rounded-2xl bg-amber-50 border border-amber-200/90 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs shadow-xs animate-in fade-in duration-200"
+        >
+          <div className="flex items-center gap-3 text-amber-950">
+            <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center text-amber-700 shrink-0">
+              <Lock className="w-5 h-5" />
+            </div>
+            <div>
+              <span className="font-bold text-sm block text-amber-950">
+                14-Day Free Trial Expired — Invoice Creation Locked
+              </span>
+              <span className="text-xs text-amber-800">
+                Your workspace is in read-only mode. Upgrade to a JustGST subscription plan to generate, save, and print new tax invoices.
+              </span>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onOpenUpgradeModal}
+            className="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-xl shrink-0 flex items-center gap-1.5 cursor-pointer shadow-xs transition-colors active:scale-98"
+          >
+            <Zap className="w-3.5 h-3.5 text-amber-300" />
+            <span>Upgrade Plan</span>
+          </button>
+        </div>
+      )}
+
       {/* Top Header */}
       <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs">
         <div className="flex items-center gap-3">
@@ -1333,25 +1374,39 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
 
             {/* Action Buttons */}
             <div className="pt-3 border-t border-slate-100 space-y-2">
-              <button
-                type="button"
-                id="btn-save-invoice-print"
-                onClick={() => handleSubmit(true)}
-                className="w-full py-3 px-4 rounded-xl text-xs font-bold text-white bg-brand-600 hover:bg-brand-700 shadow-md flex items-center justify-center gap-2 active:scale-98 transition"
-              >
-                <Printer className="w-4 h-4" />
-                <span>Save & Print Tally V4 Invoice</span>
-              </button>
+              {isTrialExpired ? (
+                <button
+                  type="button"
+                  id="btn-trial-locked-upgrade"
+                  onClick={onOpenUpgradeModal}
+                  className="w-full py-3 px-4 rounded-xl text-xs font-bold text-white bg-amber-600 hover:bg-amber-700 shadow-md flex items-center justify-center gap-2 active:scale-98 transition cursor-pointer"
+                >
+                  <Lock className="w-4 h-4" />
+                  <span>Trial Expired — Upgrade Plan to Save Bill</span>
+                </button>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    id="btn-save-invoice-print"
+                    onClick={() => handleSubmit(true)}
+                    className="w-full py-3 px-4 rounded-xl text-xs font-bold text-white bg-brand-600 hover:bg-brand-700 shadow-md flex items-center justify-center gap-2 active:scale-98 transition"
+                  >
+                    <Printer className="w-4 h-4" />
+                    <span>Save & Print Tally V4 Invoice</span>
+                  </button>
 
-              <button
-                type="button"
-                id="btn-save-invoice-only"
-                onClick={() => handleSubmit(false)}
-                className="w-full py-2.5 px-4 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 flex items-center justify-center gap-2 transition"
-              >
-                <Save className="w-4 h-4" />
-                <span>Save Bill Only</span>
-              </button>
+                  <button
+                    type="button"
+                    id="btn-save-invoice-only"
+                    onClick={() => handleSubmit(false)}
+                    className="w-full py-2.5 px-4 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 flex items-center justify-center gap-2 transition"
+                  >
+                    <Save className="w-4 h-4" />
+                    <span>Save Bill Only</span>
+                  </button>
+                </>
+              )}
 
               <button
                 type="button"

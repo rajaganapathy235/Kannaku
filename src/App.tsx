@@ -37,6 +37,9 @@ import { TenantOrganizationFull } from './types/admin';
 import { ConfirmationModal } from './components/common/ConfirmationModal';
 import { AlertModal } from './components/common/AlertModal';
 import { DiagnosticPanel } from './components/common/DiagnosticPanel';
+import { Lock } from 'lucide-react';
+import { TrialExpiredModal } from './components/subscription/TrialExpiredModal';
+import { isSubscriptionTrialExpired, simulateSubscriptionState } from './utils/subscriptionUtils';
 
 export default function App() {
   const [authSession, setAuthSession] = useState<AuthSession | null>(() => {
@@ -66,6 +69,18 @@ export default function App() {
   const [subscription, setSubscription] = useState<SubscriptionState>(
     KannakuDB.getSubscription()
   );
+
+  // 14-Day Free Trial Expiration State
+  const [trialExpiredModalOpen, setTrialExpiredModalOpen] = useState<boolean>(false);
+  const [hasAutoPromptedTrialModal, setHasAutoPromptedTrialModal] = useState<boolean>(false);
+
+  // Active tenant and 14-day trial status calculation
+  const activeTenantId = KannakuDB.getActiveTenantId();
+  const allOrgs = SaaSAdminDB.getOrganizations();
+  const activeOrg: TenantOrganizationFull | undefined =
+    allOrgs.find((o) => o.id === activeTenantId || o.adminEmail === company.email) || allOrgs[0];
+
+  const isTrialExpired = isSubscriptionTrialExpired(subscription, activeOrg);
 
   // Active viewing/printing invoice modal
   const [activePrintInvoice, setActivePrintInvoice] = useState<Invoice | null>(null);
@@ -235,6 +250,14 @@ export default function App() {
     showToast('Impersonation ended. Returned to Super Admin Console.');
   };
 
+  // Auto-prompt 14-day trial expired modal once per session
+  useEffect(() => {
+    if (isTrialExpired && !hasAutoPromptedTrialModal && authSession && !isSuperAdminMode) {
+      setTrialExpiredModalOpen(true);
+      setHasAutoPromptedTrialModal(true);
+    }
+  }, [isTrialExpired, hasAutoPromptedTrialModal, authSession, isSuperAdminMode]);
+
   // Compute Next Invoice Number
   const getNextInvoiceNumber = (type: InvoiceType): string => {
     const prefix = company.billPrefix || 'INV/2026/';
@@ -249,8 +272,25 @@ export default function App() {
     return `${prefix}${nextNum}`;
   };
 
+  // Trigger New Invoice with 14-Day Free Trial Guard
+  const handleTriggerNewInvoice = () => {
+    if (isTrialExpired) {
+      setTrialExpiredModalOpen(true);
+      showToast('🔒 14-Day Free Trial Expired. Invoicing is locked in read-only mode.');
+      return;
+    }
+    setEditingInvoice(null);
+    setActiveTab('create_invoice');
+  };
+
   // Invoice Handlers
   const handleSaveInvoice = (invoice: Invoice, andPrint: boolean = false) => {
+    if (isTrialExpired) {
+      setTrialExpiredModalOpen(true);
+      showToast('🔒 Cannot save invoice: 14-day free trial has expired. Upgrade your plan to continue.');
+      return;
+    }
+
     // KannakuDB.saveInvoice automatically synchronizes ledger entries and party balances
     KannakuDB.saveInvoice(invoice);
 
@@ -280,11 +320,22 @@ export default function App() {
   };
 
   const handleEditInvoice = (inv: Invoice) => {
+    if (isTrialExpired) {
+      setTrialExpiredModalOpen(true);
+      showToast('🔒 14-Day Free Trial Expired. Invoicing is locked in read-only mode.');
+      return;
+    }
     setEditingInvoice(inv);
     setActiveTab('create_invoice');
   };
 
   const handleConvertQuotationToInvoice = (quotation: Invoice) => {
+    if (isTrialExpired) {
+      setTrialExpiredModalOpen(true);
+      showToast('🔒 14-Day Free Trial Expired. Upgrade plan to convert estimates to tax invoices.');
+      return;
+    }
+
     if (quotation.isConverted) {
       showToast(`This estimate has already been converted to Tax Invoice ${quotation.convertedInvoiceNumber || ''}.`);
       return;
@@ -339,6 +390,12 @@ export default function App() {
   };
 
   const handleDuplicateInvoice = (inv: Invoice) => {
+    if (isTrialExpired) {
+      setTrialExpiredModalOpen(true);
+      showToast('🔒 14-Day Free Trial Expired. Invoicing is locked in read-only mode.');
+      return;
+    }
+
     const dup: Invoice = {
       ...inv,
       id: `inv_${Date.now()}`,
@@ -607,6 +664,11 @@ export default function App() {
           <Sidebar
             activeTab={activeTab}
             onTabChange={(tab) => {
+              if (tab === 'create_invoice' && isTrialExpired) {
+                setTrialExpiredModalOpen(true);
+                showToast('🔒 14-Day Free Trial Expired. Invoicing is locked in read-only mode.');
+                return;
+              }
               setEditingInvoice(null);
               setActiveTab(tab);
             }}
@@ -635,10 +697,7 @@ export default function App() {
             company={company}
             activeTab={activeTab}
             setActiveTab={setActiveTab}
-            onNewInvoice={() => {
-              setEditingInvoice(null);
-              setActiveTab('create_invoice');
-            }}
+            onNewInvoice={handleTriggerNewInvoice}
             onOpenSuperAdmin={
               authSession?.user?.role === 'SUPER_ADMIN'
                 ? () => {
@@ -653,7 +712,31 @@ export default function App() {
             }}
             session={authSession}
             onLogout={handleLogout}
+            isTrialExpired={isTrialExpired}
+            onOpenTrialModal={() => setTrialExpiredModalOpen(true)}
           />
+
+          {/* Trial Expired Alert Banner */}
+          {isTrialExpired && (
+            <div
+              id="trial-expired-global-banner"
+              className="bg-amber-500 text-slate-950 px-4 py-2 text-xs font-semibold flex flex-wrap items-center justify-between gap-2 shadow-xs border-b border-amber-600/30 shrink-0"
+            >
+              <div className="flex items-center gap-2">
+                <Lock className="w-4 h-4 text-slate-950 shrink-0" />
+                <span>
+                  <strong>14-Day Free Trial Expired:</strong> Read-only mode active. Your historical records are safe. Invoice creation is paused.
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setTrialExpiredModalOpen(true)}
+                className="px-3 py-1 bg-slate-950 hover:bg-slate-900 text-amber-300 rounded-lg text-[11px] font-bold transition-colors cursor-pointer shadow-xs active:scale-98"
+              >
+                Upgrade Plan
+              </button>
+            </div>
+          )}
 
         {/* Scrollable Viewport Content Area */}
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
@@ -668,12 +751,16 @@ export default function App() {
                   clients={clients}
                   products={products}
                   payments={payments}
-                  onNewInvoice={() => {
-                    setEditingInvoice(null);
-                    setActiveTab('create_invoice');
-                  }}
+                  onNewInvoice={handleTriggerNewInvoice}
                   onViewInvoice={(inv) => setActivePrintInvoice(inv)}
-                  onNavigateTab={(tab) => setActiveTab(tab)}
+                  onNavigateTab={(tab) => {
+                    if (tab === 'create_invoice' && isTrialExpired) {
+                      setTrialExpiredModalOpen(true);
+                      showToast('🔒 14-Day Free Trial Expired. Invoicing is locked in read-only mode.');
+                      return;
+                    }
+                    setActiveTab(tab);
+                  }}
                   onOpenQuickPayment={() => setActiveTab('payments')}
                 />
               </div>
@@ -682,10 +769,7 @@ export default function App() {
             {activeTab === 'invoices' && (
               <InvoiceListView
                 invoices={invoices}
-                onNewInvoice={() => {
-                  setEditingInvoice(null);
-                  setActiveTab('create_invoice');
-                }}
+                onNewInvoice={handleTriggerNewInvoice}
                 onViewInvoice={(inv) => setActivePrintInvoice(inv)}
                 onEditInvoice={handleEditInvoice}
                 onDuplicateInvoice={handleDuplicateInvoice}
@@ -705,6 +789,8 @@ export default function App() {
                 onAddNewClient={handleAddClient}
                 onAddNewProduct={handleAddProduct}
                 nextInvoiceNumber={getNextInvoiceNumber}
+                isTrialExpired={isTrialExpired}
+                onOpenUpgradeModal={() => setTrialExpiredModalOpen(true)}
               />
             )}
 
@@ -888,6 +974,45 @@ export default function App() {
           <span>{toastMessage}</span>
         </div>
       )}
+
+      {/* 14-Day Free Trial Expired Dedicated Modal */}
+      <TrialExpiredModal
+        isOpen={trialExpiredModalOpen}
+        onClose={() => setTrialExpiredModalOpen(false)}
+        onUpgrade={() => {
+          setTrialExpiredModalOpen(false);
+          setActiveTab('subscription');
+        }}
+        expiryDate={subscription.expiryDate}
+        organizationName={company.name || 'Your Business'}
+        onSimulateState={(state) => {
+          const updated = simulateSubscriptionState(state, subscription);
+          KannakuDB.saveSubscription(updated);
+          if (activeOrg) {
+            if (state === 'TRIAL_EXPIRED') {
+              activeOrg.subscriptionStatus = 'EXPIRED';
+              activeOrg.trialEndDate = new Date(Date.now() - 86400000).toISOString();
+            } else if (state === 'TRIAL_ACTIVE') {
+              activeOrg.subscriptionStatus = 'TRIAL';
+              activeOrg.trialEndDate = new Date(Date.now() + 14 * 86400000).toISOString();
+            } else {
+              activeOrg.subscriptionStatus = 'ACTIVE';
+              activeOrg.renewalDate = new Date(Date.now() + 365 * 86400000).toISOString();
+            }
+            SaaSAdminDB.saveOrganization(activeOrg);
+          }
+          reloadAllState();
+          if (state === 'TRIAL_ACTIVE') {
+            setTrialExpiredModalOpen(false);
+            showToast('Reset to 14-day active free trial!');
+          } else if (state === 'ACTIVE_PAID') {
+            setTrialExpiredModalOpen(false);
+            showToast('Activated 1-year business subscription!');
+          } else {
+            showToast('Simulated expired 14-day trial (read-only mode active)!');
+          }
+        }}
+      />
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import React from 'react';
 import {
   Building2,
+  Lock,
   PlusCircle,
   Search,
   Shield,
@@ -20,6 +21,8 @@ interface NavbarProps {
   onOpenHomepage?: () => void;
   session: AuthSession | null;
   onLogout: () => void;
+  isTrialExpired?: boolean;
+  onOpenTrialModal?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -33,6 +36,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenHomepage,
   session,
   onLogout,
+  isTrialExpired,
+  onOpenTrialModal,
 }) => {
   const getTabTitle = (tab: string) => {
     switch (tab) {
@@ -84,6 +89,20 @@ export const Navbar: React.FC<NavbarProps> = ({
           <span className="truncate max-w-[200px] font-semibold">{company.name}</span>
           <span className="font-mono text-[11px] text-brand-600">({company.registerNumber})</span>
         </div>
+
+        {isTrialExpired && (
+          <button
+            id="navbar-trial-expired-chip"
+            type="button"
+            onClick={onOpenTrialModal}
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold bg-amber-100 text-amber-900 border border-amber-300 hover:bg-amber-200 transition-colors cursor-pointer shrink-0 shadow-xs"
+            title="14-Day Free Trial Expired — Read-Only Mode Active. Click to upgrade."
+          >
+            <Lock className="w-3.5 h-3.5 text-amber-700 shrink-0" />
+            <span className="hidden sm:inline">Trial Expired (Read-Only)</span>
+            <span className="sm:hidden">Read-Only</span>
+          </button>
+        )}
       </div>
 
       {/* Right Action Tools & Profile */}
@@ -102,11 +121,16 @@ export const Navbar: React.FC<NavbarProps> = ({
         )}
 
         <button
+          id="btn-navbar-new-invoice"
           onClick={onNewInvoice}
-          className="bg-brand-600 hover:bg-brand-700 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg font-semibold text-xs shadow-xs transition-colors flex items-center gap-1.5 active:scale-98"
-          title="Create New GST Tax Invoice"
+          className={`${
+            isTrialExpired
+              ? 'bg-amber-600 hover:bg-amber-700 text-white'
+              : 'bg-brand-600 hover:bg-brand-700 text-white'
+          } px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg font-semibold text-xs shadow-xs transition-colors flex items-center gap-1.5 active:scale-98 cursor-pointer`}
+          title={isTrialExpired ? 'Trial Expired — Click to view upgrade options' : 'Create New GST Tax Invoice'}
         >
-          <PlusCircle className="w-4 h-4" />
+          {isTrialExpired ? <Lock className="w-4 h-4" /> : <PlusCircle className="w-4 h-4" />}
           <span className="hidden sm:inline">New Invoice</span>
           <span className="sm:hidden">New</span>
         </button>

@@ -5,8 +5,6 @@ import {
   Check,
   ChevronRight,
   Cloud,
-  Database,
-  Download,
   Edit2,
   Edit3,
   Image as ImageIcon,
@@ -20,7 +18,6 @@ import {
   Smartphone,
   Sparkles,
   Stamp,
-  Upload,
 } from 'lucide-react';
 import { CompanyProfile } from '../../types';
 import { ApiService } from '../../utils/apiService';
@@ -259,39 +256,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     } finally {
       setIsSyncing(false);
     }
-  };
-
-  const handleExportBackup = () => {
-    const jsonStr = KannakuDB.exportAllData();
-    const blob = new Blob([jsonStr], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `justgst_billing_backup_${new Date().toISOString().split('T')[0]}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
-  const handleImportBackup = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      try {
-        const content = event.target?.result as string;
-        const ok = KannakuDB.importAllData(content);
-        if (ok) {
-          alert('Database restored successfully from backup!');
-          onRestoreDatabase();
-        } else {
-          alert('Failed to parse backup JSON file.');
-        }
-      } catch (err) {
-        alert('Invalid JSON file format.');
-      }
-    };
-    reader.readAsText(file);
   };
 
   return (
@@ -768,42 +732,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
       {/* Cloudflare D1 Cloud Database Sync & Diagnostics */}
       <DiagnosticPanel inline />
-
-      {/* Database Backup & Restore */}
-      <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
-        <div className="flex items-center gap-2 border-b border-slate-200 pb-3">
-          <Database className="w-4 h-4 text-brand-600" />
-          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900">
-            Database Backup & Data Portability
-          </h3>
-        </div>
-
-        <p className="text-xs text-slate-500 leading-relaxed">
-          Download a complete encrypted JSON archive of all your invoices, products, party ledgers, and transactions. You can restore it anytime on any PC or mobile device.
-        </p>
-
-        <div className="flex flex-wrap items-center gap-3 pt-1">
-          <button
-            type="button"
-            onClick={handleExportBackup}
-            className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold text-xs rounded-lg flex items-center gap-2 transition-colors cursor-pointer"
-          >
-            <Download className="w-4 h-4 text-slate-500" />
-            <span>Download Full Backup (JSON)</span>
-          </button>
-
-          <label className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold text-xs rounded-lg flex items-center gap-2 transition-colors cursor-pointer">
-            <Upload className="w-4 h-4 text-slate-500" />
-            <span>Restore from Backup (.json)</span>
-            <input
-              type="file"
-              accept=".json"
-              onChange={handleImportBackup}
-              className="hidden"
-            />
-          </label>
-        </div>
-      </div>
 
       {/* Branding Modals */}
       {isLogoModalOpen && (
