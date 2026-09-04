@@ -45,9 +45,19 @@ export const UserProfileMenu: React.FC<UserProfileMenuProps> = ({
   const user = session?.user;
   const isSuperAdmin = user?.role === 'SUPER_ADMIN';
 
+  const rawAvatarUrl = user?.avatarUrl || '';
+  // Ensure the avatar always uses brand emerald (#059669) background and crisp white bold initials
   const avatarUrl =
-    user?.avatarUrl ||
-    `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'User')}&background=1A73E8&color=fff`;
+    !rawAvatarUrl || rawAvatarUrl.includes('ui-avatars.com')
+      ? `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'JustGST')}&background=059669&color=ffffff&bold=true`
+      : rawAvatarUrl;
+
+  const initials = (user?.name || 'JustGST')
+    .split(' ')
+    .map((n) => n[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
 
   return (
     <div className="relative" ref={menuRef}>
@@ -55,12 +65,22 @@ export const UserProfileMenu: React.FC<UserProfileMenuProps> = ({
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-2 p-1 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer border border-transparent hover:border-slate-200"
       >
-        <div className="w-8 h-8 rounded-full overflow-hidden border border-slate-300 shadow-xs shrink-0">
-          <img src={avatarUrl} alt={user?.name || 'User'} className="w-full h-full object-cover" />
+        <div className="w-8 h-8 rounded-full overflow-hidden border border-brand-200/80 shadow-xs shrink-0 bg-brand-600 flex items-center justify-center text-white font-bold text-xs ring-2 ring-brand-500/20 relative">
+          <span className="absolute inset-0 flex items-center justify-center text-white font-bold text-[11px] select-none">
+            {initials}
+          </span>
+          <img
+            src={avatarUrl}
+            alt={user?.name || 'User'}
+            className="w-full h-full object-cover relative z-10"
+            onError={(e) => {
+              (e.target as HTMLElement).style.display = 'none';
+            }}
+          />
         </div>
         <div className="hidden xl:block text-left">
           <div className="text-xs font-bold text-slate-900 leading-tight truncate max-w-[120px]">
-            {user?.name || 'K. Vasanthi'}
+            {user?.name || 'Rajaganapathy K.'}
           </div>
           <div className="text-[10px] text-slate-500 font-medium truncate max-w-[120px]">
             {user?.role || 'OWNER'}
@@ -72,17 +92,34 @@ export const UserProfileMenu: React.FC<UserProfileMenuProps> = ({
       {isOpen && (
         <div className="absolute right-0 mt-2 w-64 bg-white border border-slate-200 rounded-2xl shadow-xl py-2 z-50 animate-in fade-in slide-in-from-top-2 text-xs">
           {/* User Profile Header */}
-          <div className="px-4 py-3 border-b border-slate-100 space-y-1">
-            <div className="font-bold text-slate-900 text-sm flex items-center justify-between">
-              <span className="truncate">{user?.name || 'K. Vasanthi'}</span>
-              <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-brand-50 text-brand-700 border border-brand-200">
-                {user?.role || 'OWNER'}
-              </span>
+          <div className="px-4 py-3 border-b border-slate-100 space-y-2">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full overflow-hidden border border-brand-200 shadow-xs shrink-0 bg-brand-600 flex items-center justify-center text-white font-bold text-xs ring-2 ring-brand-500/20 relative">
+                <span className="absolute inset-0 flex items-center justify-center text-white font-bold text-xs select-none">
+                  {initials}
+                </span>
+                <img
+                  src={avatarUrl}
+                  alt={user?.name || 'User'}
+                  className="w-full h-full object-cover relative z-10"
+                  onError={(e) => {
+                    (e.target as HTMLElement).style.display = 'none';
+                  }}
+                />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="font-bold text-slate-900 text-sm flex items-center justify-between">
+                  <span className="truncate">{user?.name || 'Rajaganapathy K.'}</span>
+                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-brand-50 text-brand-700 border border-brand-200 shrink-0 ml-1">
+                    {user?.role || 'OWNER'}
+                  </span>
+                </div>
+                <div className="text-[11px] text-slate-500 truncate font-mono">{user?.email || 'contact@justgst.in'}</div>
+              </div>
             </div>
-            <div className="text-[11px] text-slate-500 truncate font-mono">{user?.email}</div>
-            <div className="text-[11px] text-slate-700 font-medium truncate flex items-center gap-1 pt-1">
-              <Building2 className="w-3 h-3 text-slate-400 shrink-0" />
-              <span className="truncate">{user?.organizationName || 'HYTEX COTTON MILLS'}</span>
+            <div className="text-[11px] text-slate-700 font-medium truncate flex items-center gap-1.5 pt-1">
+              <Building2 className="w-3.5 h-3.5 text-brand-600 shrink-0" />
+              <span className="truncate font-semibold">{user?.organizationName || 'JustGST Workspace'}</span>
             </div>
           </div>
 

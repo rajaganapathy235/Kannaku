@@ -73,7 +73,7 @@ export class AuthService {
             organizationName: organization.name,
             gstin: payload.gstin || '33AABCT9981F1Z1',
             planName: organization.planName || 'Pro Trader',
-            avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=1A73E8&color=fff`,
+            avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=059669&color=fff&bold=true`,
           },
           expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
           loginTimestamp: new Date().toISOString(),
@@ -112,6 +112,10 @@ export class AuthService {
         const expiresDays = payload.rememberMe ? 30 : 7;
         const expiresAt = new Date(Date.now() + expiresDays * 24 * 60 * 60 * 1000).toISOString();
 
+        const userAvatar = user.avatarUrl
+          ? user.avatarUrl.replace(/background=1[Aa]73[Ee]8/g, 'background=059669')
+          : `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=059669&color=fff&bold=true`;
+
         const session: AuthSession = {
           token: res.data.token,
           user: {
@@ -122,10 +126,10 @@ export class AuthService {
             role: user.role,
             adminRole: user.role === 'SUPER_ADMIN' ? 'SUPER_ADMIN' : undefined,
             organizationId: organization?.id || user.organizationId,
-            organizationName: organization?.name || 'Kannaku Workspace',
+            organizationName: organization?.name || 'JustGST Workspace',
             gstin: organization?.register_number || organization?.registerNumber || '33ASWPV8266F1ZW',
             planName: organization?.plan_name || organization?.planName || 'Pro Trader',
-            avatarUrl: user.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=1A73E8&color=fff`,
+            avatarUrl: userAvatar,
           },
           expiresAt,
           loginTimestamp: new Date().toISOString(),

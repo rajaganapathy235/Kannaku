@@ -289,7 +289,7 @@ export const SystemSettingsView: React.FC = () => {
           <div className="pt-4 border-t border-slate-800 flex justify-end">
             <button
               type="submit"
-              className="px-6 py-2.5 bg-brand-600 hover:bg-brand-500 text-white font-bold rounded-xl flex items-center gap-2 shadow-md shadow-blue-900/30 cursor-pointer"
+              className="px-6 py-2.5 bg-brand-600 hover:bg-brand-500 text-white font-bold rounded-xl flex items-center gap-2 shadow-md shadow-brand-900/30 cursor-pointer"
             >
               <Save className="w-4 h-4" />
               <span>Save System Settings</span>

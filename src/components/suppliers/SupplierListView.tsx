@@ -187,21 +187,21 @@ export const SupplierListView: React.FC<SupplierListViewProps> = ({
       </div>
 
       {/* Search */}
-      <div className="bg-white p-4 rounded-lg border border-[#DADCE0] shadow-sm">
+      <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#5F6368]" />
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search suppliers by name, GSTIN, city..."
-            className="w-full pl-9 pr-3 py-2 text-xs bg-[#F8F9FA] border border-[#DADCE0] rounded-md text-[#202124] placeholder-[#5F6368] focus:bg-white focus:outline-none focus:border-[#1A73E8]"
+            className="w-full pl-10 pr-4 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-brand-600 focus:ring-2 focus:ring-brand-500/20 transition-all"
           />
         </div>
       </div>
 
       {/* Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
         {filteredSuppliers.map((s) => {
           const purchaseInvoices = invoices.filter(
             (i) => i.clientId === s.id && i.invoiceType === InvoiceType.PURCHASE
@@ -210,28 +210,28 @@ export const SupplierListView: React.FC<SupplierListViewProps> = ({
           return (
             <div
               key={s.id}
-              className="bg-white rounded-lg border border-[#DADCE0] shadow-sm p-5 flex flex-col justify-between space-y-4 hover:border-[#1A73E8]/50 transition-colors"
+              className="bg-white rounded-2xl border border-slate-200 shadow-xs p-5 flex flex-col justify-between space-y-4 hover:border-brand-500/40 hover:shadow-md transition-all"
             >
               <div className="space-y-3">
                 <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <h3 className="text-sm font-semibold text-[#202124]">{s.name}</h3>
-                    <div className="text-xs text-[#1A73E8] font-mono font-semibold mt-0.5">
+                  <div className="min-w-0">
+                    <h3 className="text-sm font-bold text-slate-900 truncate">{s.name}</h3>
+                    <div className="text-xs text-brand-700 font-mono font-bold mt-1 inline-flex items-center px-2 py-0.5 rounded bg-brand-50 border border-brand-200/60 text-[10px]">
                       GST: {s.registerNumber || 'URP'}
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1 shrink-0">
                     <button
                       onClick={() => handleOpenEdit(s)}
-                      className="p-1.5 text-[#5F6368] hover:text-[#202124] hover:bg-[#F1F3F4] rounded-md transition-colors"
+                      className="p-1.5 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
                       title="Edit Supplier"
                     >
                       <Edit2 className="w-3.5 h-3.5" />
                     </button>
                     <button
                       onClick={() => onDeleteSupplier(s.id)}
-                      className="p-1.5 text-[#5F6368] hover:text-[#D93025] hover:bg-[#FCE8E6] rounded-md transition-colors"
+                      className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
                       title="Delete Supplier"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -239,13 +239,13 @@ export const SupplierListView: React.FC<SupplierListViewProps> = ({
                   </div>
                 </div>
 
-                <div className="text-xs text-[#5F6368] space-y-1.5 pt-1">
+                <div className="text-xs text-slate-500 space-y-1.5 pt-1">
                   <div className="flex items-center gap-2">
-                    <Phone className="w-3.5 h-3.5 text-[#5F6368]" />
-                    <span className="text-[#202124]">{s.mobile || 'No contact'}</span>
+                    <Phone className="w-3.5 h-3.5 text-slate-400" />
+                    <span className="text-slate-700 font-medium">{s.mobile || 'No contact'}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <MapPin className="w-3.5 h-3.5 text-[#5F6368]" />
+                    <MapPin className="w-3.5 h-3.5 text-slate-400" />
                     <span className="truncate">
                       {s.city}, {s.state} - {s.pin}
                     </span>
@@ -253,17 +253,17 @@ export const SupplierListView: React.FC<SupplierListViewProps> = ({
                 </div>
               </div>
 
-              <div className="pt-3 border-t border-[#DADCE0] flex items-center justify-between text-xs">
+              <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
                 <div>
-                  <span className="text-[10px] text-[#5F6368] block font-medium">
+                  <span className="text-[10px] text-slate-500 block font-semibold uppercase tracking-wider">
                     Payable Balance
                   </span>
-                  <span className="font-mono font-bold text-sm text-[#202124]">
+                  <span className="font-mono font-bold text-sm text-slate-900">
                     ₹{formatNumberIndian(Math.abs(s.balance))}
                   </span>
                 </div>
 
-                <span className="px-2 py-0.5 rounded-full bg-[#F1F3F4] text-[#5F6368] font-medium text-xs">
+                <span className="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 font-semibold text-xs border border-slate-200">
                   {purchaseInvoices.length} Purchases
                 </span>
               </div>
@@ -274,23 +274,23 @@ export const SupplierListView: React.FC<SupplierListViewProps> = ({
 
       {/* Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-lg p-6 border border-[#DADCE0] animate-in zoom-in-95 duration-150">
-            <h3 className="text-base font-semibold text-[#202124] mb-4 flex items-center gap-2">
-              <Truck className="w-5 h-5 text-[#1A73E8]" />
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6 border border-slate-200 animate-in zoom-in-95 duration-150 my-8">
+            <h3 className="text-base font-bold text-slate-900 mb-4 flex items-center gap-2 pb-3 border-b border-slate-100">
+              <Truck className="w-5 h-5 text-brand-600" />
               <span>{editingSupplier ? 'Edit Supplier Details' : 'Add New Supplier'}</span>
             </h3>
 
             <form onSubmit={handleSubmit} className="space-y-4 text-xs">
               {gstError && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded-md flex items-start gap-2 text-xs">
+                <div className="bg-red-50 border border-red-200 text-red-700 px-3.5 py-2.5 rounded-xl flex items-start gap-2 text-xs">
                   <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
                   <span>{gstError}</span>
                 </div>
               )}
 
               <div>
-                <label className="block font-medium text-[#202124] mb-1">
+                <label className="block font-semibold text-slate-800 mb-1">
                   Supplier / Vendor Firm Name *
                 </label>
                 <input
@@ -299,13 +299,13 @@ export const SupplierListView: React.FC<SupplierListViewProps> = ({
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="e.g. Apex Raw Materials Hub"
-                  className="w-full p-2 bg-[#F8F9FA] border border-[#DADCE0] rounded-md text-[#202124] focus:bg-white focus:border-[#1A73E8] focus:outline-none"
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:border-brand-600 focus:ring-2 focus:ring-brand-500/20 focus:outline-none transition-all"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-medium text-[#202124] mb-1">
+                  <label className="block font-semibold text-slate-800 mb-1">
                     Mobile / Phone Number *
                   </label>
                   <input
@@ -314,28 +314,28 @@ export const SupplierListView: React.FC<SupplierListViewProps> = ({
                     value={mobile}
                     onChange={(e) => setMobile(e.target.value)}
                     placeholder="10-digit mobile"
-                    className="w-full p-2 bg-[#F8F9FA] border border-[#DADCE0] rounded-md text-[#202124] focus:bg-white focus:border-[#1A73E8] focus:outline-none"
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:border-brand-600 focus:ring-2 focus:ring-brand-500/20 focus:outline-none transition-all"
                   />
                 </div>
 
                 <div>
                   <div className="flex items-center justify-between mb-1">
-                    <label className="font-medium text-[#202124]">
+                    <label className="font-semibold text-slate-800">
                       GSTIN (15 Digits)
                     </label>
-                    <span className="text-[10px] text-slate-500">Optional</span>
+                    <span className="text-[10px] text-slate-500 font-medium">Optional</span>
                   </div>
                   <input
                     type="text"
                     value={registerNumber}
                     onChange={(e) => handleGstinChange(e.target.value)}
                     placeholder="33AAAAA0000A1Z5"
-                    className={`w-full p-2 bg-[#F8F9FA] border rounded-md font-mono uppercase text-[#202124] focus:bg-white focus:outline-none ${
+                    className={`w-full p-2.5 bg-slate-50 border rounded-xl font-mono uppercase text-slate-900 focus:bg-white focus:outline-none transition-all ${
                       registerNumber && !gstValidation.isValid
                         ? 'border-red-400 focus:border-red-500 bg-red-50/30'
                         : registerNumber && gstValidation.isValid && !gstValidation.isUnregistered
                         ? 'border-emerald-400 focus:border-emerald-500 bg-emerald-50/20'
-                        : 'border-[#DADCE0] focus:border-[#1A73E8]'
+                        : 'border-slate-200 focus:border-brand-600 focus:ring-2 focus:ring-brand-500/20'
                     }`}
                   />
                   {/* Real-time GSTIN validation feedback */}
@@ -360,7 +360,7 @@ export const SupplierListView: React.FC<SupplierListViewProps> = ({
               </div>
 
               <div>
-                <label className="block font-medium text-[#202124] mb-1">
+                <label className="block font-semibold text-slate-800 mb-1">
                   Address
                 </label>
                 <input
@@ -368,25 +368,25 @@ export const SupplierListView: React.FC<SupplierListViewProps> = ({
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
                   placeholder="Warehouse / Factory address"
-                  className="w-full p-2 bg-[#F8F9FA] border border-[#DADCE0] rounded-md text-[#202124] focus:bg-white focus:border-[#1A73E8] focus:outline-none"
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:border-brand-600 focus:ring-2 focus:ring-brand-500/20 focus:outline-none transition-all"
                 />
               </div>
 
               <div className="grid grid-cols-3 gap-3">
                 <div>
-                  <label className="block font-medium text-[#202124] mb-1">
+                  <label className="block font-semibold text-slate-800 mb-1">
                     City
                   </label>
                   <input
                     type="text"
                     value={city}
                     onChange={(e) => setCity(e.target.value)}
-                    className="w-full p-2 bg-[#F8F9FA] border border-[#DADCE0] rounded-md text-[#202124] focus:bg-white focus:border-[#1A73E8] focus:outline-none"
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:border-brand-600 focus:ring-2 focus:ring-brand-500/20 focus:outline-none transition-all"
                   />
                 </div>
                 <div>
                   <div className="flex items-center justify-between mb-1">
-                    <label className="font-medium text-[#202124]">
+                    <label className="font-semibold text-slate-800">
                       State
                     </label>
                     <span className="text-[10px] text-slate-500 font-mono">
@@ -396,7 +396,7 @@ export const SupplierListView: React.FC<SupplierListViewProps> = ({
                   <select
                     value={state}
                     onChange={(e) => handleStateChange(e.target.value)}
-                    className="w-full p-2 bg-[#F8F9FA] border border-[#DADCE0] rounded-md text-[#202124] focus:bg-white focus:border-[#1A73E8] focus:outline-none"
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:border-brand-600 focus:ring-2 focus:ring-brand-500/20 focus:outline-none transition-all"
                   >
                     {INDIAN_STATES.map((s) => (
                       <option key={s.code} value={s.name}>
@@ -406,29 +406,29 @@ export const SupplierListView: React.FC<SupplierListViewProps> = ({
                   </select>
                 </div>
                 <div>
-                  <label className="block font-medium text-[#202124] mb-1">
+                  <label className="block font-semibold text-slate-800 mb-1">
                     PIN
                   </label>
                   <input
                     type="text"
                     value={pin}
                     onChange={(e) => setPin(e.target.value)}
-                    className="w-full p-2 bg-[#F8F9FA] border border-[#DADCE0] rounded-md text-[#202124] focus:bg-white focus:border-[#1A73E8] focus:outline-none"
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:border-brand-600 focus:ring-2 focus:ring-brand-500/20 focus:outline-none transition-all"
                   />
                 </div>
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-4 border-t border-[#DADCE0]">
+              <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 font-medium text-[#5F6368] hover:bg-[#F1F3F4] rounded-md transition-colors"
+                  className="px-4 py-2 font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 font-medium text-white bg-[#1A73E8] hover:bg-[#1557B0] rounded-md shadow-sm transition-colors"
+                  className="px-5 py-2 font-bold text-white bg-brand-600 hover:bg-brand-700 rounded-xl shadow-xs transition-colors cursor-pointer"
                 >
                   Save Supplier
                 </button>

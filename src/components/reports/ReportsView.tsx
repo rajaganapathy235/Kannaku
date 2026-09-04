@@ -142,19 +142,19 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
   return (
     <div className="space-y-6 pb-12">
       {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-5 rounded-lg border border-[#DADCE0] shadow-sm">
+      <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
         <div>
-          <h2 className="text-base font-semibold text-[#202124]">
+          <h2 className="text-base font-bold text-slate-900">
             GST Tax Reports & GSTR-1 Audit
           </h2>
-          <p className="text-xs text-[#5F6368]">
+          <p className="text-xs text-slate-500">
             Compliant HSN-wise tax breakdown, monthly register & exportable audit files
           </p>
         </div>
 
         <button
           onClick={handleExportCsv}
-          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md text-xs font-medium text-white bg-green-700 hover:bg-green-800 shadow-sm active:scale-98 transition-colors"
+          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-brand-600 hover:bg-brand-700 shadow-xs active:scale-98 transition-colors cursor-pointer"
         >
           <Download className="w-4 h-4" />
           <span>Export GSTR-1 (CSV)</span>
@@ -162,33 +162,33 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
       </div>
 
       {/* Report Switcher Tabs */}
-      <div className="bg-white p-2 rounded-lg border border-[#DADCE0] shadow-sm flex items-center gap-2">
+      <div className="bg-white p-1.5 rounded-xl border border-slate-200 shadow-xs flex flex-wrap items-center gap-1.5">
         <button
           onClick={() => setReportTab('gstr1')}
-          className={`px-4 py-2 rounded-md text-xs font-medium transition-colors ${
+          className={`px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
             reportTab === 'gstr1'
-              ? 'bg-[#1A73E8] text-white shadow-xs'
-              : 'text-[#5F6368] hover:bg-[#F1F3F4] hover:text-[#202124]'
+              ? 'bg-brand-600 text-white shadow-xs'
+              : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
           }`}
         >
           GSTR-1 (HSN Summary)
         </button>
         <button
           onClick={() => setReportTab('sales')}
-          className={`px-4 py-2 rounded-md text-xs font-medium transition-colors ${
+          className={`px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
             reportTab === 'sales'
-              ? 'bg-[#1A73E8] text-white shadow-xs'
-              : 'text-[#5F6368] hover:bg-[#F1F3F4] hover:text-[#202124]'
+              ? 'bg-brand-600 text-white shadow-xs'
+              : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
           }`}
         >
           Sales Register ({salesInvoices.length})
         </button>
         <button
           onClick={() => setReportTab('purchases')}
-          className={`px-4 py-2 rounded-md text-xs font-medium transition-colors ${
+          className={`px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
             reportTab === 'purchases'
-              ? 'bg-[#1A73E8] text-white shadow-xs'
-              : 'text-[#5F6368] hover:bg-[#F1F3F4] hover:text-[#202124]'
+              ? 'bg-brand-600 text-white shadow-xs'
+              : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
           }`}
         >
           Purchase Register ({purchaseInvoices.length})
@@ -198,68 +198,68 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
       {reportTab === 'gstr1' && (
         <div className="space-y-6">
           {/* Summary Strip */}
-          <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-            <div className="bg-white p-5 rounded-lg border border-[#DADCE0] shadow-sm space-y-1">
-              <span className="text-[10px] font-medium uppercase text-[#5F6368] block">
+          <div className="grid grid-cols-2 lg:grid-cols-5 gap-3.5">
+            <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-xs space-y-1">
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 block">
                 Total Taxable Value
               </span>
-              <div className="text-base sm:text-xl font-bold font-mono text-[#202124]">
+              <div className="text-base sm:text-xl font-bold font-mono text-slate-900">
                 ₹{formatNumberIndian(totalTaxable)}
               </div>
             </div>
 
-            <div className="bg-white p-5 rounded-lg border border-[#DADCE0] shadow-sm space-y-1">
-              <span className="text-[10px] font-medium uppercase text-[#5F6368] block">
+            <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-xs space-y-1">
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 block">
                 Central Tax (CGST)
               </span>
-              <div className="text-base sm:text-xl font-bold font-mono text-[#1A73E8]">
+              <div className="text-base sm:text-xl font-bold font-mono text-brand-700">
                 ₹{formatNumberIndian(totalCgst)}
               </div>
             </div>
 
-            <div className="bg-white p-5 rounded-lg border border-[#DADCE0] shadow-sm space-y-1">
-              <span className="text-[10px] font-medium uppercase text-[#5F6368] block">
+            <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-xs space-y-1">
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 block">
                 State Tax (SGST)
               </span>
-              <div className="text-base sm:text-xl font-bold font-mono text-[#1A73E8]">
+              <div className="text-base sm:text-xl font-bold font-mono text-brand-700">
                 ₹{formatNumberIndian(totalSgst)}
               </div>
             </div>
 
-            <div className="bg-white p-5 rounded-lg border border-[#DADCE0] shadow-sm space-y-1">
-              <span className="text-[10px] font-medium uppercase text-[#5F6368] block">
+            <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-xs space-y-1">
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 block">
                 Integrated Tax (IGST)
               </span>
-              <div className="text-base sm:text-xl font-bold font-mono text-[#1A73E8]">
+              <div className="text-base sm:text-xl font-bold font-mono text-brand-700">
                 ₹{formatNumberIndian(totalIgst)}
               </div>
             </div>
 
-            <div className="col-span-2 lg:col-span-1 bg-white p-5 rounded-lg border border-[#DADCE0] shadow-sm space-y-1">
-              <span className="text-[10px] font-medium uppercase text-[#5F6368] block">
+            <div className="col-span-2 lg:col-span-1 bg-brand-50/70 p-4 sm:p-5 rounded-2xl border border-brand-200/80 shadow-xs space-y-1">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-brand-800 block">
                 Total Tax Output
               </span>
-              <div className="text-base sm:text-xl font-bold font-mono text-green-700">
+              <div className="text-base sm:text-xl font-black font-mono text-brand-800">
                 ₹{formatNumberIndian(totalTax)}
               </div>
             </div>
           </div>
 
           {/* GSTR-1 HSN Table */}
-          <div className="bg-white rounded-lg border border-[#DADCE0] shadow-sm overflow-hidden">
-            <div className="p-4 border-b border-[#DADCE0] flex items-center justify-between">
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-[#202124]">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+            <div className="p-4 sm:p-5 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2 bg-slate-50/50">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800">
                 Table 12: HSN-wise Summary of Outward Supplies (GSTR-1)
               </h3>
-              <span className="text-xs font-mono text-[#5F6368]">
-                GSTIN: {company.registerNumber}
+              <span className="text-xs font-mono font-medium text-slate-500 bg-white px-2.5 py-1 rounded-lg border border-slate-200">
+                GSTIN: <span className="text-slate-900 font-semibold">{company.registerNumber}</span>
               </span>
             </div>
 
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead>
-                  <tr className="bg-[#F8F9FA] border-b border-[#DADCE0] font-semibold text-[#5F6368] uppercase tracking-wider text-[11px]">
+                  <tr className="bg-slate-50 border-b border-slate-200 font-bold text-slate-600 uppercase tracking-wider text-[11px]">
                     <th className="py-3 px-4">HSN/SAC</th>
                     <th className="py-3 px-4 text-center">Tax Rate %</th>
                     <th className="py-3 px-4 text-right">Taxable Value</th>
@@ -269,48 +269,50 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
                     <th className="py-3 px-4 text-right">Total GST</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#DADCE0] font-mono">
+                <tbody className="divide-y divide-slate-100 font-mono">
                   {aggregatedHsnList.map((h, idx) => (
-                    <tr key={idx} className="hover:bg-[#F8F9FA] transition-colors">
-                      <td className="py-3 px-4 font-semibold text-[#202124]">
+                    <tr key={idx} className="hover:bg-slate-50/80 transition-colors">
+                      <td className="py-3 px-4 font-semibold text-slate-900">
                         {h.hsnCode}
                       </td>
-                      <td className="py-3 px-4 text-center font-bold text-[#1A73E8]">
-                        {h.taxPercentage}%
+                      <td className="py-3 px-4 text-center">
+                        <span className="inline-block px-2 py-0.5 rounded text-[11px] font-bold bg-brand-50 text-brand-700 border border-brand-200/60">
+                          {h.taxPercentage}%
+                        </span>
                       </td>
-                      <td className="py-3 px-4 text-right font-medium text-[#202124]">
+                      <td className="py-3 px-4 text-right font-medium text-slate-900">
                         ₹{formatNumberIndian(h.taxableAmount)}
                       </td>
-                      <td className="py-3 px-4 text-right text-[#5F6368]">
+                      <td className="py-3 px-4 text-right text-slate-600">
                         ₹{formatNumberIndian(h.cgstAmount)}
                       </td>
-                      <td className="py-3 px-4 text-right text-[#5F6368]">
+                      <td className="py-3 px-4 text-right text-slate-600">
                         ₹{formatNumberIndian(h.sgstAmount)}
                       </td>
-                      <td className="py-3 px-4 text-right text-[#5F6368]">
+                      <td className="py-3 px-4 text-right text-slate-600">
                         ₹{formatNumberIndian(h.igstAmount)}
                       </td>
-                      <td className="py-3 px-4 text-right font-bold text-green-700">
+                      <td className="py-3 px-4 text-right font-bold text-brand-700">
                         ₹{formatNumberIndian(h.totalTaxAmount)}
                       </td>
                     </tr>
                   ))}
-                  <tr className="bg-[#F8F9FA] font-bold text-[#202124] border-t-2 border-[#DADCE0]">
-                    <td className="py-3 px-4">TOTALS</td>
-                    <td className="py-3 px-4 text-center">-</td>
-                    <td className="py-3 px-4 text-right">
+                  <tr className="bg-slate-50 font-bold text-slate-900 border-t-2 border-slate-200">
+                    <td className="py-3.5 px-4 font-bold">TOTALS</td>
+                    <td className="py-3.5 px-4 text-center text-slate-400">-</td>
+                    <td className="py-3.5 px-4 text-right">
                       ₹{formatNumberIndian(totalTaxable)}
                     </td>
-                    <td className="py-3 px-4 text-right">
+                    <td className="py-3.5 px-4 text-right">
                       ₹{formatNumberIndian(totalCgst)}
                     </td>
-                    <td className="py-3 px-4 text-right">
+                    <td className="py-3.5 px-4 text-right">
                       ₹{formatNumberIndian(totalSgst)}
                     </td>
-                    <td className="py-3 px-4 text-right">
+                    <td className="py-3.5 px-4 text-right">
                       ₹{formatNumberIndian(totalIgst)}
                     </td>
-                    <td className="py-3 px-4 text-right text-green-800">
+                    <td className="py-3.5 px-4 text-right text-brand-800 font-black">
                       ₹{formatNumberIndian(totalTax)}
                     </td>
                   </tr>
@@ -322,16 +324,16 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
       )}
 
       {reportTab === 'sales' && (
-        <div className="bg-white rounded-lg border border-[#DADCE0] shadow-sm overflow-hidden">
-          <div className="p-4 border-b border-[#DADCE0]">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-[#202124]">
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+          <div className="p-4 sm:p-5 border-b border-slate-200 bg-slate-50/50">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800">
               Monthly Sales Register
             </h3>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead>
-                <tr className="bg-[#F8F9FA] border-b border-[#DADCE0] font-semibold text-[#5F6368] uppercase tracking-wider text-[11px]">
+                <tr className="bg-slate-50 border-b border-slate-200 font-bold text-slate-600 uppercase tracking-wider text-[11px]">
                   <th className="py-3 px-4">Date</th>
                   <th className="py-3 px-4">Invoice #</th>
                   <th className="py-3 px-4">Party</th>
@@ -341,26 +343,26 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
                   <th className="py-3 px-4 text-right">Total (₹)</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#DADCE0] font-mono">
+              <tbody className="divide-y divide-slate-100 font-mono">
                 {salesInvoices.map((inv) => (
-                  <tr key={inv.id} className="hover:bg-[#F8F9FA] transition-colors">
-                    <td className="py-3 px-4 text-[#5F6368]">{inv.invoiceDate || inv.date || ''}</td>
-                    <td className="py-3 px-4 font-semibold text-[#1A73E8]">
+                  <tr key={inv.id} className="hover:bg-slate-50/80 transition-colors">
+                    <td className="py-3 px-4 text-slate-500">{inv.invoiceDate || inv.date || ''}</td>
+                    <td className="py-3 px-4 font-semibold text-brand-600">
                       {inv.invoiceNumber}
                     </td>
-                    <td className="py-3 px-4 font-sans font-medium text-[#202124]">
+                    <td className="py-3 px-4 font-sans font-medium text-slate-900">
                       {inv.clientSnapshot?.name || 'Customer'}
                     </td>
-                    <td className="py-3 px-4 text-[#5F6368]">
+                    <td className="py-3 px-4 text-slate-500">
                       {inv.clientSnapshot?.registerNumber || 'URP'}
                     </td>
-                    <td className="py-3 px-4 text-right">
+                    <td className="py-3 px-4 text-right text-slate-700">
                       ₹{formatNumberIndian(inv.calc?.subTotal || 0)}
                     </td>
-                    <td className="py-3 px-4 text-right text-[#5F6368]">
+                    <td className="py-3 px-4 text-right text-slate-500">
                       ₹{formatNumberIndian(inv.calc?.taxAmount || 0)}
                     </td>
-                    <td className="py-3 px-4 text-right font-bold text-[#202124]">
+                    <td className="py-3 px-4 text-right font-bold text-slate-900">
                       ₹{formatNumberIndian(inv.calc?.billFigure || 0)}
                     </td>
                   </tr>
@@ -372,16 +374,16 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
       )}
 
       {reportTab === 'purchases' && (
-        <div className="bg-white rounded-lg border border-[#DADCE0] shadow-sm overflow-hidden">
-          <div className="p-4 border-b border-[#DADCE0]">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-[#202124]">
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+          <div className="p-4 sm:p-5 border-b border-slate-200 bg-slate-50/50">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800">
               Monthly Purchase Register
             </h3>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead>
-                <tr className="bg-[#F8F9FA] border-b border-[#DADCE0] font-semibold text-[#5F6368] uppercase tracking-wider text-[11px]">
+                <tr className="bg-slate-50 border-b border-slate-200 font-bold text-slate-600 uppercase tracking-wider text-[11px]">
                   <th className="py-3 px-4">Date</th>
                   <th className="py-3 px-4">Bill #</th>
                   <th className="py-3 px-4">Supplier</th>
@@ -391,26 +393,26 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
                   <th className="py-3 px-4 text-right">Total (₹)</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#DADCE0] font-mono">
+              <tbody className="divide-y divide-slate-100 font-mono">
                 {purchaseInvoices.map((inv) => (
-                  <tr key={inv.id} className="hover:bg-[#F8F9FA] transition-colors">
-                    <td className="py-3 px-4 text-[#5F6368]">{inv.invoiceDate || inv.date || ''}</td>
-                    <td className="py-3 px-4 font-semibold text-[#1A73E8]">
+                  <tr key={inv.id} className="hover:bg-slate-50/80 transition-colors">
+                    <td className="py-3 px-4 text-slate-500">{inv.invoiceDate || inv.date || ''}</td>
+                    <td className="py-3 px-4 font-semibold text-brand-600">
                       {inv.invoiceNumber}
                     </td>
-                    <td className="py-3 px-4 font-sans font-medium text-[#202124]">
+                    <td className="py-3 px-4 font-sans font-medium text-slate-900">
                       {inv.clientSnapshot?.name || 'Supplier'}
                     </td>
-                    <td className="py-3 px-4 text-[#5F6368]">
+                    <td className="py-3 px-4 text-slate-500">
                       {inv.clientSnapshot?.registerNumber || 'URP'}
                     </td>
-                    <td className="py-3 px-4 text-right">
+                    <td className="py-3 px-4 text-right text-slate-700">
                       ₹{formatNumberIndian(inv.calc?.subTotal || 0)}
                     </td>
-                    <td className="py-3 px-4 text-right text-[#5F6368]">
+                    <td className="py-3 px-4 text-right text-slate-500">
                       ₹{formatNumberIndian(inv.calc?.taxAmount || 0)}
                     </td>
-                    <td className="py-3 px-4 text-right font-bold text-[#202124]">
+                    <td className="py-3 px-4 text-right font-bold text-slate-900">
                       ₹{formatNumberIndian(inv.calc?.billFigure || 0)}
                     </td>
                   </tr>

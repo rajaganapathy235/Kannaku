@@ -256,9 +256,13 @@ export const SuperAdminLayout: React.FC<SuperAdminLayoutProps> = ({
             {/* Admin User Profile */}
             <div className="flex items-center gap-2.5 px-3 py-1.5 bg-slate-900 border border-slate-800 rounded-xl">
               <img
-                src={adminUser.avatarUrl || 'https://ui-avatars.com/api/?name=Admin'}
+                src={
+                  adminUser.avatarUrl && !adminUser.avatarUrl.includes('ui-avatars.com')
+                    ? adminUser.avatarUrl
+                    : `https://ui-avatars.com/api/?name=${encodeURIComponent(adminUser.name || 'Admin')}&background=059669&color=fff&bold=true`
+                }
                 alt="Admin"
-                className="w-7 h-7 rounded-lg object-cover border border-slate-700 shrink-0"
+                className="w-7 h-7 rounded-lg object-cover border border-brand-500/30 shrink-0"
               />
               <div className="hidden sm:block text-left min-w-0">
                 <div className="text-xs font-bold text-white truncate max-w-[140px]">

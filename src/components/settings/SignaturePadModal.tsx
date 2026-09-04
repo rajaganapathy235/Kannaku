@@ -135,7 +135,7 @@ export const SignaturePadModal: React.FC<SignaturePadModalProps> = ({
         {/* Header */}
         <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Edit3 className="w-5 h-5 text-[#1A73E8]" />
+            <Edit3 className="w-5 h-5 text-brand-600" />
             <h3 className="text-base font-bold text-slate-900">
               Configure Tenant Signature
             </h3>
@@ -154,7 +154,7 @@ export const SignaturePadModal: React.FC<SignaturePadModalProps> = ({
             onClick={() => setActiveTab('type')}
             className={`flex-1 py-3 px-4 flex items-center justify-center gap-1.5 border-b-2 transition-colors ${
               activeTab === 'type'
-                ? 'border-[#1A73E8] text-[#1A73E8] bg-white'
+                ? 'border-brand-600 text-brand-600 bg-white'
                 : 'border-transparent text-slate-600 hover:text-slate-900'
             }`}
           >
@@ -165,7 +165,7 @@ export const SignaturePadModal: React.FC<SignaturePadModalProps> = ({
             onClick={() => setActiveTab('draw')}
             className={`flex-1 py-3 px-4 flex items-center justify-center gap-1.5 border-b-2 transition-colors ${
               activeTab === 'draw'
-                ? 'border-[#1A73E8] text-[#1A73E8] bg-white'
+                ? 'border-brand-600 text-brand-600 bg-white'
                 : 'border-transparent text-slate-600 hover:text-slate-900'
             }`}
           >
@@ -176,7 +176,7 @@ export const SignaturePadModal: React.FC<SignaturePadModalProps> = ({
             onClick={() => setActiveTab('upload')}
             className={`flex-1 py-3 px-4 flex items-center justify-center gap-1.5 border-b-2 transition-colors ${
               activeTab === 'upload'
-                ? 'border-[#1A73E8] text-[#1A73E8] bg-white'
+                ? 'border-brand-600 text-brand-600 bg-white'
                 : 'border-transparent text-slate-600 hover:text-slate-900'
             }`}
           >
@@ -197,7 +197,7 @@ export const SignaturePadModal: React.FC<SignaturePadModalProps> = ({
               value={signName}
               onChange={(e) => setSignName(e.target.value)}
               placeholder="e.g. K. Vasanthi"
-              className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm font-semibold text-slate-900 focus:bg-white focus:border-[#1A73E8] focus:outline-none"
+              className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-900 focus:bg-white focus:border-brand-600 focus:ring-2 focus:ring-brand-500/20 focus:outline-none transition-all"
             />
           </div>
 
@@ -211,9 +211,9 @@ export const SignaturePadModal: React.FC<SignaturePadModalProps> = ({
                 <button
                   type="button"
                   onClick={() => setSelectedFont('font1')}
-                  className={`p-3 rounded-lg border text-left transition-all ${
+                  className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
                     selectedFont === 'font1'
-                      ? 'border-[#1A73E8] bg-brand-50/50 shadow-xs ring-1 ring-[#1A73E8]'
+                      ? 'border-brand-600 bg-brand-50/50 shadow-xs ring-1 ring-brand-600'
                       : 'border-slate-200 hover:bg-slate-50'
                   }`}
                 >
@@ -226,9 +226,9 @@ export const SignaturePadModal: React.FC<SignaturePadModalProps> = ({
                 <button
                   type="button"
                   onClick={() => setSelectedFont('font2')}
-                  className={`p-3 rounded-lg border text-left transition-all ${
+                  className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
                     selectedFont === 'font2'
-                      ? 'border-[#1A73E8] bg-brand-50/50 shadow-xs ring-1 ring-[#1A73E8]'
+                      ? 'border-brand-600 bg-brand-50/50 shadow-xs ring-1 ring-brand-600'
                       : 'border-slate-200 hover:bg-slate-50'
                   }`}
                 >

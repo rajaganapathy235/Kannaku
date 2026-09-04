@@ -72,14 +72,14 @@ export const LogoPickerModal: React.FC<LogoPickerModalProps> = ({
         {/* Header */}
         <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Building2 className="w-5 h-5 text-[#1A73E8]" />
+            <Building2 className="w-5 h-5 text-brand-600" />
             <h3 className="text-base font-bold text-slate-900">
               Tenant Brand Logo
             </h3>
           </div>
           <button
             onClick={onClose}
-            className="p-1 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100"
+            className="p-1 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -89,9 +89,9 @@ export const LogoPickerModal: React.FC<LogoPickerModalProps> = ({
         <div className="flex border-b border-slate-200 bg-slate-50 text-xs font-semibold">
           <button
             onClick={() => setActiveTab('presets')}
-            className={`flex-1 py-3 px-4 flex items-center justify-center gap-1.5 border-b-2 transition-colors ${
+            className={`flex-1 py-3 px-4 flex items-center justify-center gap-1.5 border-b-2 transition-colors cursor-pointer ${
               activeTab === 'presets'
-                ? 'border-[#1A73E8] text-[#1A73E8] bg-white'
+                ? 'border-brand-600 text-brand-700 bg-white font-bold'
                 : 'border-transparent text-slate-600 hover:text-slate-900'
             }`}
           >
@@ -100,9 +100,9 @@ export const LogoPickerModal: React.FC<LogoPickerModalProps> = ({
           </button>
           <button
             onClick={() => setActiveTab('upload')}
-            className={`flex-1 py-3 px-4 flex items-center justify-center gap-1.5 border-b-2 transition-colors ${
+            className={`flex-1 py-3 px-4 flex items-center justify-center gap-1.5 border-b-2 transition-colors cursor-pointer ${
               activeTab === 'upload'
-                ? 'border-[#1A73E8] text-[#1A73E8] bg-white'
+                ? 'border-brand-600 text-brand-700 bg-white font-bold'
                 : 'border-transparent text-slate-600 hover:text-slate-900'
             }`}
           >
@@ -122,7 +122,7 @@ export const LogoPickerModal: React.FC<LogoPickerModalProps> = ({
                   className="w-full h-full object-contain p-1"
                 />
               ) : (
-                <span className="text-xl font-black text-[#1A73E8]">
+                <span className="text-xl font-black text-brand-600">
                   {companyName.slice(0, 2).toUpperCase()}
                 </span>
               )}

@@ -50,7 +50,7 @@ export const INITIAL_ADMIN_USER: AdminUser = {
   name: 'Rajaganapathy Kamalakannan',
   email: 'contact@justgst.in',
   role: 'SUPER_ADMIN',
-  avatarUrl: 'https://ui-avatars.com/api/?name=Raja+Ganapathy&background=1e293b&color=38bdf8',
+  avatarUrl: 'https://ui-avatars.com/api/?name=Raja+Ganapathy&background=064e3b&color=34d399&bold=true',
   lastLogin: new Date().toISOString(),
   twoFactorEnabled: true,
   department: 'Executive / Platform Ops',

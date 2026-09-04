@@ -228,7 +228,7 @@ export const AddLedgerEntryModal: React.FC<AddLedgerEntryModalProps> = ({
                   required
                   value={date}
                   onChange={(e) => setDate(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 font-medium focus:bg-white focus:border-[#1A73E8] focus:outline-none"
+                  className="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-medium focus:bg-white focus:border-brand-600 focus:ring-2 focus:ring-brand-500/20 focus:outline-none transition-all"
                 />
               </div>
             </div>
@@ -250,7 +250,7 @@ export const AddLedgerEntryModal: React.FC<AddLedgerEntryModalProps> = ({
                   placeholder="0.00"
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 font-mono font-bold text-sm focus:bg-white focus:border-[#1A73E8] focus:outline-none"
+                  className="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-mono font-bold text-sm focus:bg-white focus:border-brand-600 focus:ring-2 focus:ring-brand-500/20 focus:outline-none transition-all"
                 />
               </div>
             </div>
@@ -270,7 +270,7 @@ export const AddLedgerEntryModal: React.FC<AddLedgerEntryModalProps> = ({
                   placeholder="e.g. Sales, Goods Inward, Cheque Payment"
                   value={particular}
                   onChange={(e) => setParticular(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 font-medium focus:bg-white focus:border-[#1A73E8] focus:outline-none"
+                  className="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-medium focus:bg-white focus:border-brand-600 focus:ring-2 focus:ring-brand-500/20 focus:outline-none transition-all"
                 />
               </div>
             </div>
@@ -289,7 +289,7 @@ export const AddLedgerEntryModal: React.FC<AddLedgerEntryModalProps> = ({
                   placeholder="e.g. 52, 62, INV-091"
                   value={vchNo}
                   onChange={(e) => setVchNo(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 font-mono focus:bg-white focus:border-[#1A73E8] focus:outline-none"
+                  className="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-mono focus:bg-white focus:border-brand-600 focus:ring-2 focus:ring-brand-500/20 focus:outline-none transition-all"
                 />
               </div>
             </div>
@@ -299,9 +299,9 @@ export const AddLedgerEntryModal: React.FC<AddLedgerEntryModalProps> = ({
           <div className="pt-3">
             <button
               type="submit"
-              className="w-full py-3 px-4 rounded-lg bg-[#1A73E8] hover:bg-[#1557B0] active:bg-[#0D47A1] text-white font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2"
+              className="w-full py-3 px-4 rounded-xl bg-brand-600 hover:bg-brand-700 active:bg-brand-800 text-white font-bold text-sm shadow-xs active:scale-98 transition-all flex items-center justify-center gap-2 cursor-pointer"
             >
-              <span>Add Entry</span>
+              <span>{isEditing ? 'Update Entry' : 'Add Entry'}</span>
             </button>
           </div>
         </form>
