@@ -121,8 +121,11 @@ export default function App() {
 
     // Check for PayU browser return callback query params
     const urlParams = new URLSearchParams(window.location.search);
-    const paymentStatus = urlParams.get('payment_status');
+    const pathname = window.location.pathname;
+    const paymentStatus = urlParams.get('payment_status') || (pathname.includes('order-success') ? 'success' : pathname.includes('order-failed') ? 'failure' : null);
     const returnTxnId = urlParams.get('txnid');
+    const returnError = urlParams.get('error');
+
     if (paymentStatus === 'success') {
       confetti({
         particleCount: 100,
@@ -131,11 +134,12 @@ export default function App() {
       });
       showToast(`🎉 Payment Verified via PayU! Your Pro subscription is now active.${returnTxnId ? ` (Ref: ${returnTxnId})` : ''}`);
       KannakuDB.syncFromD1().then(() => reloadAllState());
-      const cleanUrl = window.location.pathname + window.location.hash;
+      const cleanUrl = '/' + window.location.hash;
       window.history.replaceState({}, document.title, cleanUrl);
     } else if (paymentStatus === 'failure') {
-      showToast('❌ PayU Payment was not completed or failed. Please try again.');
-      const cleanUrl = window.location.pathname + window.location.hash;
+      const errMsg = returnError ? `: ${decodeURIComponent(returnError)}` : '. Please try again.';
+      showToast(`❌ PayU Payment was not completed${errMsg}`);
+      const cleanUrl = '/' + window.location.hash;
       window.history.replaceState({}, document.title, cleanUrl);
     }
 

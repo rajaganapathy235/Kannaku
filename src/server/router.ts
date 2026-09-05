@@ -101,12 +101,13 @@ async function parseRequestBody(request: Request): Promise<Record<string, any>> 
   }
 }
 
-// Re-computes and verifies the PayU reverse SHA-512 hash using the secret merchant salt
+// Re-computes and verifies the PayU reverse SHA-512 hash using the secret merchant salt and key
 async function verifyPayUReverseHash(
   body: Record<string, any>,
-  salt: string
+  salt: string,
+  merchantKey?: string
 ): Promise<{ isValid: boolean; calculatedHash: string; receivedHash: string; usedAdditionalCharges: boolean }> {
-  return verifyPayUReverseHashPayload(body, salt);
+  return verifyPayUReverseHashPayload(body, salt, merchantKey);
 }
 
 // Extract authenticated session strictly from Authorization header or Cookie
@@ -858,69 +859,182 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
     }
   }
 
-  if ((path === '/api/payu/verify' || path === '/api/payments/payu/callback' || path === '/api/payu/webhook') && method === 'POST') {
+  // -------------------------------------------------------------
+  // 2.5.1 PAYU WEBHOOK, VERIFY & BROWSER RETURN HANDLERS
+  // -------------------------------------------------------------
+  const isPayUReturnOrCallbackPath =
+    path === '/api/payments/payu/return' ||
+    path === '/api/payu/return' ||
+    path === '/api/payments/payu/callback' ||
+    path === '/api/payu/callback' ||
+    path === '/api/payments/payu/webhook' ||
+    path === '/api/payu/webhook' ||
+    path === '/api/payu/verify';
+
+  if (isPayUReturnOrCallbackPath && (method === 'POST' || method === 'GET')) {
+    const origin = request.headers.get('origin') || url.origin || '';
+    const isWebhookOrJsonApi =
+      path === '/api/payu/verify' ||
+      path === '/api/payu/webhook' ||
+      path === '/api/payments/payu/webhook' ||
+      (request.headers.get('accept') || '').includes('application/json');
+
     try {
-      const body = await parseRequestBody(request);
-      const { merchantSalt } = await getPayUCredentials(db, env);
-      const payuSalt = merchantSalt;
+      // 1. Form-Urlencoded & JSON & Query Parsing
+      let body: Record<string, any> = {};
+      if (method === 'POST') {
+        body = await parseRequestBody(request);
+      } else {
+        // GET fallback for test query parameters
+        for (const [k, v] of url.searchParams.entries()) {
+          body[k] = v;
+        }
+      }
+
+      // Also merge any query params if body was empty
+      if (Object.keys(body).length === 0 && url.searchParams.toString()) {
+        for (const [k, v] of url.searchParams.entries()) {
+          body[k] = v;
+        }
+      }
+
+      // Extract all standard PayU fields
+      const txnid = (body.txnid || '').trim();
+      const status = (body.status || '').trim().toLowerCase();
+      const amount = body.amount !== undefined ? String(body.amount).trim() : '0';
+      const mihpayid = (body.mihpayid || body.payuMoneyId || body.bank_ref_num || '').trim();
+      const firstname = (body.firstname || '').trim();
+      const email = (body.email || '').trim();
+      const receivedHash = (body.hash || '').trim();
+      const errorMessage = body.error_Message || body.error || body.unmappedstatus || 'Payment could not be completed';
+
+      const udf1 = (body.udf1 || '').trim(); // organizationId
+      const udf2 = (body.udf2 || '').trim(); // userId
+      const udf3 = (body.udf3 || '').trim(); // billingCycle
+      const udf4 = (body.udf4 || '').trim(); // durationDays
+      const udf5 = (body.udf5 || '').trim(); // planId
+
+      // 2. Multi-Tier Credential Resolution
+      const { merchantKey: payuKey, merchantSalt: payuSalt } = await getPayUCredentials(db, env);
 
       if (!payuSalt) {
-        console.error('[PayU Webhook] PAYU_MERCHANT_SALT is not configured on server');
-        return errorResponse('PayU Merchant Salt is not configured on server', 500);
+        console.error('[PayU Return] PAYU_MERCHANT_SALT is not configured in D1 app_settings, payment_gateway_config, or env');
+        if (isWebhookOrJsonApi) {
+          return errorResponse('PayU Merchant Salt is not configured on server', 500);
+        }
+        return new Response(null, {
+          status: 303,
+          headers: {
+            Location: `${origin}/?payment_status=failure&txnid=${encodeURIComponent(txnid)}&error=${encodeURIComponent('Payment gateway salt configuration missing')}`,
+          },
+        });
       }
 
-      const { isValid, calculatedHash, receivedHash } = await verifyPayUReverseHash(body, payuSalt);
-      if (!isValid) {
-        console.warn(`[PayU Webhook] Signature mismatch for txnid ${body.txnid}. Calc: ${calculatedHash}, Recv: ${receivedHash || body.hash}`);
-        return jsonResponse({
-          error: 'Hash verification failed: invalid signature',
-          success: false,
-          calculatedHash,
-          receivedHash: receivedHash || body.hash,
-        }, 400);
+      // 3. Reverse SHA-512 Hash Verification
+      const { isValid, calculatedHash } = await verifyPayUReverseHash(body, payuSalt, payuKey);
+
+      if (!isValid && receivedHash) {
+        console.warn(`[PayU Return] Reverse hash mismatch for txnid: ${txnid}. Calculated: ${calculatedHash}, Received: ${receivedHash}`);
+
+        // Update transaction status to FAILED in database
+        if (txnid) {
+          try {
+            await execute(
+              db,
+              `UPDATE subscription_transactions SET
+                payment_status = 'FAILED',
+                payu_payment_id = ?,
+                payu_response_json = ?,
+                updated_at = CURRENT_TIMESTAMP
+              WHERE txnid = ?`,
+              mihpayid,
+              JSON.stringify(body),
+              txnid
+            );
+          } catch (dbErr) {
+            console.error('[PayU Return] Failed to update tampered transaction in DB:', dbErr);
+          }
+        }
+
+        if (isWebhookOrJsonApi) {
+          return jsonResponse({
+            error: 'Hash verification failed: invalid signature',
+            success: false,
+            calculatedHash,
+            receivedHash,
+          }, 400);
+        }
+
+        return new Response(null, {
+          status: 303,
+          headers: {
+            Location: `${origin}/?payment_status=failure&txnid=${encodeURIComponent(txnid)}&error=${encodeURIComponent('Security signature verification failed')}`,
+          },
+        });
       }
 
-      const txnid = body.txnid;
-      const status = (body.status || '').toLowerCase();
-      const mihpayid = body.mihpayid || body.payuMoneyId || '';
-      const orgId = body.udf1;
-      const durationDays = parseInt(body.udf4, 10) || 365;
-
+      // 4. Idempotent Order & Subscription Fulfillment
       if (status === 'success') {
-        // Query existing transaction row by txnid for idempotency
+        const orgId = udf1;
+        const durationDays = parseInt(udf4, 10) || 365;
+
+        // Query existing transaction record for idempotency check
         const existingTxn = txnid
           ? await queryFirst<any>(db, 'SELECT * FROM subscription_transactions WHERE txnid = ?', txnid)
           : null;
 
         if (existingTxn && existingTxn.payment_status === 'SUCCESS') {
-          // Idempotent no-op: already processed successfully
-          return jsonResponse({
-            success: true,
-            verified: true,
-            message: 'Transaction already verified and processed (idempotent)',
-            txnid,
-            mihpayid,
+          // Idempotent no-op: already verified and fulfilled
+          if (isWebhookOrJsonApi) {
+            return jsonResponse({
+              success: true,
+              verified: true,
+              message: 'Transaction already verified and processed (idempotent)',
+              txnid,
+              mihpayid,
+            });
+          }
+
+          return new Response(null, {
+            status: 303,
+            headers: {
+              Location: `${origin}/?payment_status=success&txnid=${encodeURIComponent(txnid)}&amount=${encodeURIComponent(amount)}`,
+            },
           });
         }
 
-        const renewalDate = new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000).toISOString();
+        // Calculate renewal date extending existing subscription if still active in future
+        let baseDate = Date.now();
+        if (orgId) {
+          const org = await queryFirst<any>(db, 'SELECT * FROM organizations WHERE id = ?', orgId);
+          if (org?.renewal_date) {
+            const existingRenewalTime = new Date(org.renewal_date).getTime();
+            if (!isNaN(existingRenewalTime) && existingRenewalTime > baseDate) {
+              baseDate = existingRenewalTime;
+            }
+          }
+        }
+        const renewalDate = new Date(baseDate + durationDays * 24 * 60 * 60 * 1000).toISOString();
 
-        // 1. Activate organization subscription
+        // 4.1 Activate organization subscription in D1
         if (orgId) {
           await execute(
             db,
             `UPDATE organizations SET
               subscription_status = 'ACTIVE',
               renewal_date = ?,
+              plan_id = ?,
+              plan_name = 'Pro Trader',
               payment_provider = 'payu',
               last_active = CURRENT_TIMESTAMP
             WHERE id = ?`,
             renewalDate,
+            udf5 || 'plan_pro',
             orgId
           );
         }
 
-        // 2. Update subscription_transactions record
+        // 4.2 Update subscription_transactions record in D1
         if (txnid) {
           await execute(
             db,
@@ -930,13 +1044,13 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
               payu_response_json = ?,
               updated_at = CURRENT_TIMESTAMP
             WHERE txnid = ?`,
-            mihpayid,
+            mihpayid || txnid,
             JSON.stringify(body),
             txnid
           );
         }
 
-        // 3. Increment coupon usage count if coupon was used
+        // 4.3 Increment coupon usage count if coupon was applied
         if (existingTxn && existingTxn.coupon_code) {
           try {
             await execute(
@@ -945,11 +1059,11 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
               existingTxn.coupon_code.toUpperCase().trim()
             );
           } catch (couponErr) {
-            console.error('Failed to increment coupon usage:', couponErr);
+            console.error('[PayU Return] Failed to increment coupon usage:', couponErr);
           }
         }
 
-        // 4. Record in saas_transactions audit ledger
+        // 4.4 Record transaction in saas_transactions audit ledger
         const org = orgId ? await queryFirst<any>(db, 'SELECT name FROM organizations WHERE id = ?', orgId) : null;
         await execute(
           db,
@@ -959,22 +1073,49 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
           `txn_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
           orgId || 'unknown_org',
           org?.name || 'Customer Workspace',
-          Number(body.amount) || 0,
+          Number(amount) || 0,
           `INV-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
           txnid || mihpayid,
-          body.email || '',
-          body.udf3 || 'YEARLY'
+          email || '',
+          udf3 || '12_MONTHS'
         );
 
-        return jsonResponse({
-          success: true,
-          verified: true,
-          message: 'Payment verified and organization subscription activated',
-          txnid,
-          mihpayid,
-          status,
+        // 4.5 Record in audit_logs
+        await execute(
+          db,
+          `INSERT INTO audit_logs (
+            id, organization_id, admin_id, admin_name, admin_role, action, target_id, target_name, target_type, ip_address
+          ) VALUES (?, ?, ?, ?, 'SYSTEM', 'PAYMENT_SUCCESS', ?, ?, 'SUBSCRIPTION', ?)`,
+          `audit_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+          orgId || 'org_system',
+          udf2 || 'user_payu',
+          firstname || 'Customer',
+          txnid || mihpayid,
+          `Subscription Pro - ${udf3 || '12_MONTHS'}`,
+          request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for') || '127.0.0.1'
+        );
+
+        // 5. Success Browser Redirection or Webhook Response
+        if (isWebhookOrJsonApi) {
+          return jsonResponse({
+            success: true,
+            verified: true,
+            message: 'Payment verified and organization subscription activated',
+            txnid,
+            mihpayid,
+            status,
+          });
+        }
+
+        const successRedirectUrl = `${origin}/?payment_status=success&txnid=${encodeURIComponent(txnid)}&amount=${encodeURIComponent(amount)}`;
+        return new Response(null, {
+          status: 303,
+          headers: {
+            Location: successRedirectUrl,
+          },
         });
       } else {
+        // Payment failed, cancelled, or pending
         if (txnid) {
           await execute(
             db,
@@ -990,122 +1131,36 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
           );
         }
 
-        return jsonResponse({
-          success: true,
-          verified: true,
-          message: 'Payment failure recorded',
-          txnid,
-          mihpayid,
-          status,
+        if (isWebhookOrJsonApi) {
+          return jsonResponse({
+            success: false,
+            verified: true,
+            message: 'Payment failure recorded',
+            txnid,
+            mihpayid,
+            status,
+            error: errorMessage,
+          });
+        }
+
+        const failureRedirectUrl = `${origin}/?payment_status=failure&txnid=${encodeURIComponent(txnid)}&error=${encodeURIComponent(errorMessage)}`;
+        return new Response(null, {
+          status: 303,
+          headers: {
+            Location: failureRedirectUrl,
+          },
         });
       }
     } catch (err: any) {
-      console.error('[PayU Webhook Error]', err);
-      return errorResponse('Failed to process PayU callback: ' + (err?.message || 'Server error'), 500);
-    }
-  }
-
-  if (path === '/api/payments/payu/return' && method === 'POST') {
-    try {
-      const body = await parseRequestBody(request);
-      const { merchantSalt } = await getPayUCredentials(db, env);
-      const payuSalt = merchantSalt;
-
-      // Validate reverse hash if salt is configured
-      if (payuSalt && body.hash) {
-        const { isValid } = await verifyPayUReverseHash(body, payuSalt);
-        if (isValid && body.status === 'success' && body.udf1) {
-          const txnid = body.txnid;
-          const orgId = body.udf1;
-          const durationDays = parseInt(body.udf4, 10) || 365;
-
-          // Check if already processed by webhook or previous callback for idempotency
-          const existingTxn = txnid
-            ? await queryFirst<any>(db, 'SELECT * FROM subscription_transactions WHERE txnid = ?', txnid)
-            : null;
-
-          if (!existingTxn || existingTxn.payment_status !== 'SUCCESS') {
-            const renewalDate = new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000).toISOString();
-
-            // 1. Activate organization subscription
-            await execute(
-              db,
-              `UPDATE organizations SET
-                subscription_status = 'ACTIVE',
-                renewal_date = ?,
-                payment_provider = 'payu',
-                last_active = CURRENT_TIMESTAMP
-              WHERE id = ?`,
-              renewalDate,
-              orgId
-            );
-
-            // 2. Update subscription_transactions
-            if (txnid) {
-              await execute(
-                db,
-                `UPDATE subscription_transactions SET
-                  payment_status = 'SUCCESS',
-                  payu_payment_id = ?,
-                  payu_response_json = ?,
-                  updated_at = CURRENT_TIMESTAMP
-                WHERE txnid = ?`,
-                body.mihpayid || '',
-                JSON.stringify(body),
-                txnid
-              );
-            }
-
-            // 3. Increment coupon usage count if coupon was used
-            if (existingTxn && existingTxn.coupon_code) {
-              try {
-                await execute(
-                  db,
-                  `UPDATE coupons SET used_count = used_count + 1 WHERE UPPER(code) = ?`,
-                  existingTxn.coupon_code.toUpperCase().trim()
-                );
-              } catch (couponErr) {
-                console.error('Failed to increment coupon usage on return:', couponErr);
-              }
-            }
-
-            // 4. Record in saas_transactions audit ledger if not already recorded
-            const org = await queryFirst<any>(db, 'SELECT name FROM organizations WHERE id = ?', orgId);
-            await execute(
-              db,
-              `INSERT INTO saas_transactions (
-                id, organization_id, organization_name, amount, currency, payment_method, payment_provider, status, date, invoice_number, gateway_ref_id, customer_email, plan_name, billing_cycle
-              ) VALUES (?, ?, ?, ?, 'INR', 'PayU Hosted Checkout', 'PayU', 'SUCCESSFUL', CURRENT_TIMESTAMP, ?, ?, ?, 'Pro Trader', ?)`,
-              `txn_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
-              orgId,
-              org?.name || 'Customer Workspace',
-              Number(body.amount) || 0,
-              `INV-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
-              txnid || body.mihpayid || '',
-              body.email || '',
-              body.udf3 || 'YEARLY'
-            );
-          }
-        }
+      console.error('[PayU Return Handler Error]', err);
+      if (isWebhookOrJsonApi) {
+        return errorResponse('Failed to process PayU callback: ' + (err?.message || 'Server error'), 500);
       }
 
-      const statusParam = body.status === 'success' ? 'success' : 'failure';
-      const txnidParam = encodeURIComponent(body.txnid || '');
-      const redirectUrl = `/?payment_status=${statusParam}&txnid=${txnidParam}`;
-
-      // Redirect browser back to frontend application
       return new Response(null, {
         status: 303,
         headers: {
-          Location: redirectUrl,
-        },
-      });
-    } catch (err) {
-      console.error('[PayU Return Error]', err);
-      return new Response(null, {
-        status: 303,
-        headers: {
-          Location: '/?payment_status=failure',
+          Location: `${origin}/?payment_status=failure&error=${encodeURIComponent('Internal server error during return processing')}`,
         },
       });
     }

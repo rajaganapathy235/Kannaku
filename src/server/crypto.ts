@@ -119,13 +119,27 @@ export interface PayUReverseHashParams {
 }
 
 /**
+ * Constant-time string comparison to prevent timing attacks.
+ */
+export function constantTimeCompare(a: string, b: string): boolean {
+  if (typeof a !== 'string' || typeof b !== 'string') return false;
+  if (a.length !== b.length) return false;
+  let result = 0;
+  for (let i = 0; i < a.length; i++) {
+    result |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  }
+  return result === 0;
+}
+
+/**
  * Verify PayU Webhook / IPN / Browser Return Reverse SHA-512 Hash
  * Standard Sequence: sha512(salt|status|udf10|udf9|udf8|udf7|udf6|udf5|udf4|udf3|udf2|udf1|email|firstname|productinfo|amount|txnid|key)
  * Additional Charges Sequence: sha512(additionalCharges|salt|status|udf10|udf9|udf8|udf7|udf6|udf5|udf4|udf3|udf2|udf1|email|firstname|productinfo|amount|txnid|key)
  */
 export async function verifyPayUReverseHashPayload(
   payload: Record<string, any>,
-  salt: string
+  salt: string,
+  configuredKey?: string
 ): Promise<{
   isValid: boolean;
   calculatedHash: string;
@@ -136,14 +150,14 @@ export async function verifyPayUReverseHashPayload(
     return { isValid: false, calculatedHash: '', receivedHash: '', usedAdditionalCharges: false };
   }
 
-  const key = payload.key || '';
-  const txnid = payload.txnid || '';
-  const amount = payload.amount !== undefined ? String(payload.amount) : '';
-  const productinfo = payload.productinfo || '';
-  const firstname = payload.firstname || '';
-  const email = payload.email || '';
-  const status = payload.status || '';
-  const receivedHash = (payload.hash || '').toLowerCase();
+  const key = (payload.key || configuredKey || '').trim();
+  const txnid = (payload.txnid || '').trim();
+  const amount = payload.amount !== undefined ? String(payload.amount).trim() : '';
+  const productinfo = (payload.productinfo || '').trim();
+  const firstname = (payload.firstname || '').trim();
+  const email = (payload.email || '').trim();
+  const status = (payload.status || '').trim();
+  const receivedHash = (payload.hash || '').trim().toLowerCase();
 
   const udf1 = payload.udf1 || '';
   const udf2 = payload.udf2 || '';
@@ -182,6 +196,24 @@ export async function verifyPayUReverseHashPayload(
         receivedHash,
         usedAdditionalCharges: true,
       };
+    }
+  }
+
+  // 3. Fallback: try formatting amount with two decimals if original didn't match
+  const numAmount = parseFloat(amount);
+  if (!isNaN(numAmount)) {
+    const formattedAmount = numAmount.toFixed(2);
+    if (formattedAmount !== amount) {
+      const altStandardSequence = `${salt}|${status}|${udf10}|${udf9}|${udf8}|${udf7}|${udf6}|${udf5}|${udf4}|${udf3}|${udf2}|${udf1}|${email}|${firstname}|${productinfo}|${formattedAmount}|${txnid}|${key}`;
+      const calcAltHash = await sha512Hex(altStandardSequence);
+      if (receivedHash && constantTimeCompare(calcAltHash.toLowerCase(), receivedHash)) {
+        return {
+          isValid: true,
+          calculatedHash: calcAltHash,
+          receivedHash,
+          usedAdditionalCharges: false,
+        };
+      }
     }
   }
 
@@ -267,15 +299,6 @@ export async function verifyPassword(password: string, storedHash: string): Prom
 
   // 2. Safe transition for initial bootstrap accounts (e.g. hytex123)
   return constantTimeCompare(password, storedHash);
-}
-
-function constantTimeCompare(a: string, b: string): boolean {
-  if (a.length !== b.length) return false;
-  let result = 0;
-  for (let i = 0; i < a.length; i++) {
-    result |= a.charCodeAt(i) ^ b.charCodeAt(i);
-  }
-  return result === 0;
 }
 
 /**
