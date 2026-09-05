@@ -443,6 +443,12 @@ export async function ensureTables(db: D1Database): Promise<void> {
         stack_trace TEXT
       );
 
+      CREATE TABLE IF NOT EXISTS app_settings (
+        config_key TEXT PRIMARY KEY,
+        config_value TEXT NOT NULL,
+        updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+      );
+
       CREATE TABLE IF NOT EXISTS platform_settings (
         id INTEGER PRIMARY KEY CHECK (id = 1),
         settings_json TEXT NOT NULL,

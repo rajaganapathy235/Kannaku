@@ -203,31 +203,154 @@ export async function getPayUCredentials(db: D1Database, env: RequestContext['en
   merchantSalt: string;
   isTestMode: boolean;
   endpoint: string;
+  headerAuthKey?: string;
 }> {
-  let merchantKey = env.PAYU_MERCHANT_KEY || (typeof process !== 'undefined' ? process.env?.PAYU_MERCHANT_KEY : '') || '';
-  let merchantSalt = env.PAYU_MERCHANT_SALT || (typeof process !== 'undefined' ? process.env?.PAYU_MERCHANT_SALT : '') || '';
-  let isTestMode = (env.PAYU_ENV || (typeof process !== 'undefined' ? process.env?.PAYU_ENV : '') || 'test') !== 'production';
-  let endpoint = isTestMode ? 'https://test.payu.in/_payment' : 'https://secure.payu.in/_payment';
+  let merchantKey = '';
+  let merchantSalt = '';
+  let isTestMode = true;
+  let endpoint = '';
+  let headerAuthKey = '';
 
+  // 1. Primary DB Source: Dynamically query Cloudflare D1 from 'app_settings' table where config_key = 'payu_config'
   try {
-    const row = await queryFirst<any>(db, "SELECT * FROM payment_gateway_config WHERE provider = 'PAYU'");
+    const row = await queryFirst<any>(
+      db,
+      "SELECT * FROM app_settings WHERE config_key = 'payu_config'"
+    );
+
     if (row) {
-      if (row.merchant_key) merchantKey = row.merchant_key;
-      if (row.merchant_salt) merchantSalt = row.merchant_salt;
-      if (row.is_test_mode !== undefined && row.is_test_mode !== null) {
-        isTestMode = Boolean(row.is_test_mode);
+      const rawJson = row.config_value || row.value || row.settings_json;
+      let parsed: any = null;
+
+      if (typeof rawJson === 'string') {
+        try {
+          parsed = JSON.parse(rawJson);
+        } catch (jsonErr) {
+          console.warn('[PayU Config] Failed to parse JSON from app_settings config_value:', jsonErr);
+        }
+      } else if (typeof rawJson === 'object' && rawJson !== null) {
+        parsed = rawJson;
       }
-      if (row.endpoint) {
-        endpoint = row.endpoint;
-      } else {
-        endpoint = isTestMode ? 'https://test.payu.in/_payment' : 'https://secure.payu.in/_payment';
+
+      if (parsed) {
+        // Extract merchant key
+        merchantKey =
+          parsed.merchantKey ||
+          parsed.merchant_key ||
+          parsed.payuMerchantKey ||
+          parsed.payu_merchant_key ||
+          parsed.key ||
+          parsed.apiKey ||
+          parsed.PAYU_MERCHANT_KEY ||
+          '';
+
+        // Extract merchant salt
+        merchantSalt =
+          parsed.merchantSalt ||
+          parsed.merchant_salt ||
+          parsed.payuMerchantSalt ||
+          parsed.payu_merchant_salt ||
+          parsed.salt ||
+          parsed.apiSecret ||
+          parsed.PAYU_MERCHANT_SALT ||
+          '';
+
+        // Extract test mode
+        if (parsed.isTestMode !== undefined && parsed.isTestMode !== null) {
+          isTestMode = Boolean(parsed.isTestMode);
+        } else if (parsed.is_test_mode !== undefined && parsed.is_test_mode !== null) {
+          isTestMode = Boolean(parsed.is_test_mode);
+        } else if (parsed.environment) {
+          isTestMode = String(parsed.environment).toLowerCase() !== 'production';
+        } else if (parsed.env) {
+          isTestMode = String(parsed.env).toLowerCase() !== 'production';
+        } else if (parsed.mode) {
+          isTestMode = !['production', 'live'].includes(String(parsed.mode).toLowerCase());
+        }
+
+        // Extract endpoint
+        if (parsed.endpoint || parsed.actionUrl || parsed.action_url || parsed.paymentUrl) {
+          endpoint = parsed.endpoint || parsed.actionUrl || parsed.action_url || parsed.paymentUrl;
+        }
+
+        // Extract header auth key
+        if (parsed.payuHeaderAuthKey || parsed.headerAuthKey || parsed.header_auth_key) {
+          headerAuthKey = parsed.payuHeaderAuthKey || parsed.headerAuthKey || parsed.header_auth_key;
+        }
       }
     }
-  } catch (err) {
-    console.error('Failed to read payment_gateway_config from DB:', err);
+  } catch (err: any) {
+    console.warn('[PayU Config] Error querying app_settings table:', err?.message || err);
   }
 
-  return { merchantKey, merchantSalt, isTestMode, endpoint };
+  // 2. Secondary DB Source: Query payment_gateway_config table if credentials still missing
+  if (!merchantKey || !merchantSalt) {
+    try {
+      const gwRow = await queryFirst<any>(
+        db,
+        "SELECT * FROM payment_gateway_config WHERE UPPER(provider) = 'PAYU'"
+      );
+      if (gwRow) {
+        if (!merchantKey && gwRow.merchant_key) merchantKey = gwRow.merchant_key;
+        if (!merchantSalt && gwRow.merchant_salt) merchantSalt = gwRow.merchant_salt;
+        if (gwRow.is_test_mode !== undefined && gwRow.is_test_mode !== null) {
+          isTestMode = Boolean(gwRow.is_test_mode);
+        }
+        if (!endpoint && gwRow.endpoint) {
+          endpoint = gwRow.endpoint;
+        }
+        if (!headerAuthKey && gwRow.header_auth_key) {
+          headerAuthKey = gwRow.header_auth_key;
+        }
+        if (gwRow.config_json) {
+          try {
+            const extra = JSON.parse(gwRow.config_json);
+            if (!merchantKey && (extra.merchantKey || extra.payuMerchantKey)) {
+              merchantKey = extra.merchantKey || extra.payuMerchantKey;
+            }
+            if (!merchantSalt && (extra.merchantSalt || extra.payuMerchantSalt)) {
+              merchantSalt = extra.merchantSalt || extra.payuMerchantSalt;
+            }
+          } catch {}
+        }
+      }
+    } catch (gwErr: any) {
+      console.warn('[PayU Config] Error querying payment_gateway_config table:', gwErr?.message || gwErr);
+    }
+  }
+
+  // 3. Fallback to Environment Variables only if missing from D1
+  if (!merchantKey) {
+    merchantKey =
+      env.PAYU_MERCHANT_KEY ||
+      (typeof process !== 'undefined' ? process.env?.PAYU_MERCHANT_KEY : '') ||
+      '';
+  }
+
+  if (!merchantSalt) {
+    merchantSalt =
+      env.PAYU_MERCHANT_SALT ||
+      (typeof process !== 'undefined' ? process.env?.PAYU_MERCHANT_SALT : '') ||
+      '';
+  }
+
+  if (!merchantKey && !merchantSalt) {
+    const envMode = env.PAYU_ENV || (typeof process !== 'undefined' ? process.env?.PAYU_ENV : '') || '';
+    if (envMode) {
+      isTestMode = envMode.toLowerCase() !== 'production';
+    }
+  }
+
+  // Clean strings
+  merchantKey = (merchantKey || '').trim();
+  merchantSalt = (merchantSalt || '').trim();
+
+  // Resolve final endpoint
+  if (!endpoint) {
+    endpoint = isTestMode ? 'https://test.payu.in/_payment' : 'https://secure.payu.in/_payment';
+  }
+
+  return { merchantKey, merchantSalt, isTestMode, endpoint, headerAuthKey };
 }
 
 export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
@@ -3626,6 +3749,138 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
       }
     }
 
+    // 10.16.1 PAYU SETTINGS DEDICATED ADMIN ENDPOINTS (Cloudflare D1 app_settings upsert)
+    if (
+      (path === '/api/admin/payments/payu/settings' ||
+        path === '/api/admin/payu/settings' ||
+        path === '/api/admin/settings/payu' ||
+        path === '/api/admin/payments/gateways/payu' ||
+        path === '/api/admin/payments/gateways/PAYU') &&
+      (method === 'POST' || method === 'PUT')
+    ) {
+      try {
+        const body = (await request.json().catch(() => ({}))) as any;
+        const merchantKey = (body.merchantKey || body.payuMerchantKey || body.apiKey || body.key || '').trim();
+        const merchantSalt = (body.merchantSalt || body.payuMerchantSalt || body.apiSecret || body.salt || '').trim();
+        const isTestMode = body.isTestMode !== undefined ? Boolean(body.isTestMode) : (body.is_test_mode !== undefined ? Boolean(body.is_test_mode) : true);
+        const endpoint = (body.endpoint || (isTestMode ? 'https://test.payu.in/_payment' : 'https://secure.payu.in/_payment')).trim();
+        const headerAuthKey = (body.headerAuthKey || body.payuHeaderAuthKey || body.header_auth_key || '').trim();
+        const isEnabled = body.isEnabled !== undefined ? Boolean(body.isEnabled) : true;
+        const name = body.name || 'PayU India Hosted Gateway';
+
+        const payuConfigPayload = {
+          provider: 'payu',
+          name,
+          isEnabled,
+          isTestMode,
+          merchantKey,
+          merchantSalt,
+          payuMerchantKey: merchantKey,
+          payuMerchantSalt: merchantSalt,
+          headerAuthKey,
+          payuHeaderAuthKey: headerAuthKey,
+          endpoint,
+          currency: body.currency || 'INR',
+          supportedMethods: body.supportedMethods || ['UPI', 'NET_BANKING', 'CARDS'],
+          updatedAt: new Date().toISOString(),
+          ...body,
+        };
+
+        const configValueJson = JSON.stringify(payuConfigPayload);
+
+        // 1. Explicit Upsert into Cloudflare D1 database table 'app_settings'
+        await execute(
+          db,
+          `INSERT INTO app_settings (config_key, config_value, updated_at)
+           VALUES ('payu_config', ?, CURRENT_TIMESTAMP)
+           ON CONFLICT(config_key) DO UPDATE SET
+             config_value = excluded.config_value,
+             updated_at = CURRENT_TIMESTAMP`,
+          configValueJson
+        );
+
+        // 2. Cross-table synchronization with payment_gateway_config
+        await execute(
+          db,
+          `INSERT INTO payment_gateway_config (
+            provider, name, is_enabled, is_test_mode, merchant_key, merchant_salt, header_auth_key, endpoint, config_json, updated_at
+          ) VALUES ('PAYU', ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+          ON CONFLICT(provider) DO UPDATE SET
+            name = excluded.name,
+            is_enabled = excluded.is_enabled,
+            is_test_mode = excluded.is_test_mode,
+            merchant_key = excluded.merchant_key,
+            merchant_salt = excluded.merchant_salt,
+            header_auth_key = excluded.header_auth_key,
+            endpoint = excluded.endpoint,
+            config_json = excluded.config_json,
+            updated_at = CURRENT_TIMESTAMP`,
+          name,
+          isEnabled ? 1 : 0,
+          isTestMode ? 1 : 0,
+          merchantKey,
+          merchantSalt,
+          headerAuthKey,
+          endpoint,
+          configValueJson
+        );
+
+        // 3. Log into audit_logs
+        await execute(
+          db,
+          `INSERT INTO audit_logs (
+            id, organization_id, admin_id, admin_name, admin_role, action, target_id, target_name, target_type, ip_address
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          `audit_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+          null,
+          session?.userId || 'admin',
+          session?.name || 'Super Admin',
+          session?.role || 'SUPER_ADMIN',
+          'UPDATE_PAYU_CONFIG',
+          'payu_config',
+          'PayU Settings',
+          'SETTINGS',
+          request.headers.get('cf-connecting-ip') || '127.0.0.1'
+        );
+
+        return jsonResponse({
+          success: true,
+          message: 'PayU gateway settings saved successfully to Cloudflare D1 app_settings table',
+          config_key: 'payu_config',
+          data: payuConfigPayload,
+        });
+      } catch (err: any) {
+        return errorResponse('Failed to save PayU settings: ' + (err?.message || 'Database error'), 500);
+      }
+    }
+
+    if (
+      (path === '/api/admin/payments/payu/settings' ||
+        path === '/api/admin/payu/settings' ||
+        path === '/api/admin/settings/payu') &&
+      method === 'GET'
+    ) {
+      try {
+        const row = await queryFirst<any>(db, "SELECT * FROM app_settings WHERE config_key = 'payu_config'");
+        let config: any = null;
+        if (row && row.config_value) {
+          try {
+            config = JSON.parse(row.config_value);
+          } catch {
+            config = { raw: row.config_value };
+          }
+        }
+        return jsonResponse({
+          success: true,
+          config_key: 'payu_config',
+          data: config,
+          updated_at: row?.updated_at || null,
+        });
+      } catch (err: any) {
+        return errorResponse('Failed to retrieve PayU settings: ' + (err?.message || 'Database error'), 500);
+      }
+    }
+
     // 10.17 PLATFORM SETTINGS
     if (path === '/api/admin/platform-settings' && method === 'GET') {
       const settings = await getPlatformSettingsFromDB(db);
@@ -3789,6 +4044,32 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
           JSON.stringify(extraConfig)
         );
 
+        // Also sync payu_config into app_settings table for dynamic D1 configuration
+        if (provider.toLowerCase() === 'payu') {
+          try {
+            const payuConfigJson = JSON.stringify({
+              merchantKey: body.merchantKey || body.payuMerchantKey || body.apiKey || '',
+              merchantSalt: body.merchantSalt || body.payuMerchantSalt || body.apiSecret || '',
+              isTestMode: body.isTestMode !== undefined ? Boolean(body.isTestMode) : true,
+              endpoint: body.endpoint || '',
+              headerAuthKey: body.headerAuthKey || body.payuHeaderAuthKey || '',
+              updatedAt: new Date().toISOString(),
+            });
+
+            await execute(
+              db,
+              `INSERT INTO app_settings (config_key, config_value, updated_at)
+               VALUES ('payu_config', ?, CURRENT_TIMESTAMP)
+               ON CONFLICT(config_key) DO UPDATE SET
+                 config_value = excluded.config_value,
+                 updated_at = CURRENT_TIMESTAMP`,
+              payuConfigJson
+            );
+          } catch (appSetErr) {
+            console.warn('[app_settings] Failed to sync payu_config to app_settings:', appSetErr);
+          }
+        }
+
         // Audit Log
         await execute(
           db,
@@ -3809,6 +4090,39 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
 
         return jsonResponse({ success: true, provider });
       }
+    }
+
+    // 10.19 APP SETTINGS KEY-VALUE ENDPOINTS
+    if (path.startsWith('/api/admin/app-settings/') && method === 'GET') {
+      const configKey = path.substring('/api/admin/app-settings/'.length);
+      const row = await queryFirst<any>(db, 'SELECT * FROM app_settings WHERE config_key = ?', configKey);
+      if (!row) {
+        return errorResponse(`Config key '${configKey}' not found`, 404);
+      }
+      let parsed = row.config_value;
+      try {
+        parsed = JSON.parse(row.config_value);
+      } catch {}
+      return jsonResponse({ success: true, key: configKey, value: parsed, updated_at: row.updated_at });
+    }
+
+    if (path.startsWith('/api/admin/app-settings/') && (method === 'POST' || method === 'PUT')) {
+      const configKey = path.substring('/api/admin/app-settings/'.length);
+      const body = (await request.json().catch(() => ({}))) as any;
+      const configValStr = typeof body === 'string' ? body : JSON.stringify(body);
+
+      await execute(
+        db,
+        `INSERT INTO app_settings (config_key, config_value, updated_at)
+         VALUES (?, ?, CURRENT_TIMESTAMP)
+         ON CONFLICT(config_key) DO UPDATE SET
+           config_value = excluded.config_value,
+           updated_at = CURRENT_TIMESTAMP`,
+        configKey,
+        configValStr
+      );
+
+      return jsonResponse({ success: true, key: configKey });
     }
   }
 

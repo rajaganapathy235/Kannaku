@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { SaaSAdminDB } from '../../utils/adminStorage';
 import { AuthService } from '../../utils/authService';
+import { ApiService } from '../../utils/apiService';
 import { PaymentGatewayConfig } from '../../types/admin';
 
 interface PayUGatewaySettingsProps {
@@ -62,9 +63,29 @@ export const PayUGatewaySettings: React.FC<PayUGatewaySettingsProps> = ({ onSave
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   useEffect(() => {
+    // Load existing settings from D1 app_settings via API first
+    ApiService.getPayUSettings()
+      .then((res) => {
+        if (res?.success && res.data?.data) {
+          const remoteData = res.data.data;
+          setPayuConfig((prev) => ({
+            ...prev,
+            payuMerchantKey: remoteData.merchantKey || remoteData.payuMerchantKey || prev.payuMerchantKey || '',
+            payuMerchantSalt: remoteData.merchantSalt || remoteData.payuMerchantSalt || prev.payuMerchantSalt || '',
+            payuHeaderAuthKey: remoteData.headerAuthKey || remoteData.payuHeaderAuthKey || prev.payuHeaderAuthKey || '',
+            isTestMode: remoteData.isTestMode !== undefined ? Boolean(remoteData.isTestMode) : prev.isTestMode,
+            isEnabled: remoteData.isEnabled !== undefined ? Boolean(remoteData.isEnabled) : prev.isEnabled,
+          }));
+        }
+      })
+      .catch(() => {});
+
     SaaSAdminDB.getPaymentGatewaysConfigAsync().then((mgr) => {
       if (mgr && mgr.gateways?.payu) {
-        setPayuConfig(mgr.gateways.payu);
+        setPayuConfig((prev) => ({
+          ...prev,
+          ...mgr.gateways.payu,
+        }));
         setIsActiveProvider(mgr.activeProvider === 'payu');
       }
     });
@@ -98,8 +119,22 @@ export const PayUGatewaySettings: React.FC<PayUGatewaySettingsProps> = ({ onSave
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      await SaaSAdminDB.updateGatewayConfig('payu', payuConfig);
-      showToast('PayU gateway configuration saved successfully to Cloudflare D1!');
+      const response = await ApiService.savePayUSettings({
+        merchantKey: (payuConfig.payuMerchantKey || '').trim(),
+        merchantSalt: (payuConfig.payuMerchantSalt || '').trim(),
+        payuMerchantKey: (payuConfig.payuMerchantKey || '').trim(),
+        payuMerchantSalt: (payuConfig.payuMerchantSalt || '').trim(),
+        headerAuthKey: (payuConfig.payuHeaderAuthKey || '').trim(),
+        payuHeaderAuthKey: (payuConfig.payuHeaderAuthKey || '').trim(),
+        isTestMode: payuConfig.isTestMode,
+        isEnabled: payuConfig.isEnabled,
+        name: payuConfig.name || 'PayU India Hosted Gateway',
+      });
+
+      SaaSAdminDB.updateGatewayConfig('payu', payuConfig);
+      
+      const successMsg = response?.data?.message || 'PayU gateway configuration saved successfully to Cloudflare D1 app_settings table!';
+      showToast(successMsg);
       if (onSaved) onSaved();
     } catch (err: any) {
       console.error('Failed to save PayU settings:', err);

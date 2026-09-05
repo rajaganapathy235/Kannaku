@@ -459,6 +459,22 @@ export class ApiService {
     return this.request<any>('/api/admin/payments/gateways');
   }
 
+  static async savePayUSettings(config: any) {
+    return this.request<{ success: boolean; message: string; config_key: string; data: any }>(
+      '/api/admin/payments/payu/settings',
+      {
+        method: 'POST',
+        body: JSON.stringify(config),
+      }
+    );
+  }
+
+  static async getPayUSettings() {
+    return this.request<{ success: boolean; config_key: string; data: any; updated_at?: string }>(
+      '/api/admin/payments/payu/settings'
+    );
+  }
+
   static async updateAdminPaymentGateway(provider: string, config: any) {
     return this.request(`/api/admin/payments/gateways/${provider}`, {
       method: 'POST',
