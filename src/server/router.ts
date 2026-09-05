@@ -7,9 +7,11 @@ import {
   AuthTokenPayload,
   checkRateLimit,
   createSessionToken,
+  generatePayUForwardHash,
   hashPassword,
   sha512Hex,
   verifyPassword,
+  verifyPayUReverseHashPayload,
   verifySessionToken,
 } from './crypto';
 import { D1Database, ensureTables, execute, queryAll, queryFirst, seedInitialTenants } from './db';
@@ -103,45 +105,8 @@ async function parseRequestBody(request: Request): Promise<Record<string, any>> 
 async function verifyPayUReverseHash(
   body: Record<string, any>,
   salt: string
-): Promise<{ isValid: boolean; calculatedHash: string }> {
-  if (!salt) return { isValid: false, calculatedHash: '' };
-
-  const key = body.key || '';
-  const txnid = body.txnid || '';
-  const amount = body.amount || '';
-  const productinfo = body.productinfo || '';
-  const firstname = body.firstname || '';
-  const email = body.email || '';
-  const status = body.status || '';
-  const receivedHash = (body.hash || '').toLowerCase();
-
-  const udf1 = body.udf1 || '';
-  const udf2 = body.udf2 || '';
-  const udf3 = body.udf3 || '';
-  const udf4 = body.udf4 || '';
-  const udf5 = body.udf5 || '';
-  const additionalCharges = body.additionalCharges;
-
-  // PayU standard reverse hash sequence:
-  // salt|status||||||udf5|udf4|udf3|udf2|udf1|email|firstname|productinfo|amount|txnid|key
-  const sequenceWithoutCharges = `${salt}|${status}||||||${udf5}|${udf4}|${udf3}|${udf2}|${udf1}|${email}|${firstname}|${productinfo}|${amount}|${txnid}|${key}`;
-  const calcHash = await sha512Hex(sequenceWithoutCharges);
-
-  if (calcHash.toLowerCase() === receivedHash) {
-    return { isValid: true, calculatedHash: calcHash };
-  }
-
-  // If additional charges applied by PayU:
-  // additionalCharges|salt|status||||||udf5|udf4|udf3|udf2|udf1|email|firstname|productinfo|amount|txnid|key
-  if (additionalCharges) {
-    const sequenceWithCharges = `${additionalCharges}|${salt}|${status}||||||${udf5}|${udf4}|${udf3}|${udf2}|${udf1}|${email}|${firstname}|${productinfo}|${amount}|${txnid}|${key}`;
-    const calcHashWithCharges = await sha512Hex(sequenceWithCharges);
-    if (calcHashWithCharges.toLowerCase() === receivedHash) {
-      return { isValid: true, calculatedHash: calcHashWithCharges };
-    }
-  }
-
-  return { isValid: false, calculatedHash: calcHash };
+): Promise<{ isValid: boolean; calculatedHash: string; receivedHash: string; usedAdditionalCharges: boolean }> {
+  return verifyPayUReverseHashPayload(body, salt);
 }
 
 // Extract authenticated session strictly from Authorization header or Cookie
@@ -598,9 +563,179 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
   }
 
   // -------------------------------------------------------------
-  // 2.5 PAYU WEBHOOK & BROWSER RETURN (PUBLIC / SIGNATURE VERIFIED)
+  // 2.5 PAYU PAYMENT GATEWAY (INIT, WEBHOOK/VERIFY, BROWSER RETURN)
   // -------------------------------------------------------------
-  if (path === '/api/payments/payu/callback' && method === 'POST') {
+  if ((path === '/api/payu/init' || path === '/api/payments/payu/initiate') && method === 'POST') {
+    try {
+      const session = await authenticateRequest(request, env.SESSION_SECRET || 'kannaku-dev-session-key');
+      const body = await parseRequestBody(request);
+
+      const effectiveOrgId = session?.organizationId || body.organizationId || body.orgId || 'org_demo_hytex';
+      const billingCycle = body.billingCycle === '1_MONTH' ? '1_MONTH' : body.billingCycle === '3_MONTHS' ? '3_MONTHS' : '12_MONTHS';
+
+      // Look up server-side plan pricing (NEVER trust client amounts)
+      let amount = 588.00;
+      let durationDays = 365;
+      let durationTitle = '12 Months (1 Year)';
+
+      if (billingCycle === '1_MONTH') {
+        amount = 99.00;
+        durationDays = 30;
+        durationTitle = '1 Month';
+      } else if (billingCycle === '3_MONTHS') {
+        amount = 267.00;
+        durationDays = 90;
+        durationTitle = '3 Months (Quarterly)';
+      }
+
+      const org = await queryFirst<any>(db, 'SELECT * FROM organizations WHERE id = ?', effectiveOrgId);
+      
+      // Check coupon code discount if provided
+      const couponCode = (body.couponCode || '').toUpperCase().trim();
+      let appliedCouponCode: string | null = null;
+      let discountAmount = 0;
+
+      if (couponCode) {
+        const coupon = await queryFirst<any>(
+          db,
+          `SELECT * FROM coupons WHERE UPPER(code) = ? AND status = 'ACTIVE'`,
+          couponCode
+        );
+
+        if (coupon) {
+          const isNotExpired = !coupon.expiry_date || new Date(coupon.expiry_date).getTime() >= Date.now();
+          const hasUsageLeft = !coupon.usage_limit || coupon.used_count < coupon.usage_limit;
+
+          if (isNotExpired && hasUsageLeft) {
+            appliedCouponCode = coupon.code;
+            if (coupon.discount_type === 'PERCENTAGE') {
+              discountAmount = Math.round(((amount * Number(coupon.discount_value)) / 100) * 100) / 100;
+            } else {
+              discountAmount = Number(coupon.discount_value) || 0;
+            }
+            discountAmount = Math.min(amount, discountAmount);
+            amount = Math.max(0, Math.round((amount - discountAmount) * 100) / 100);
+          }
+        }
+      }
+
+      const { merchantKey: payuKey, merchantSalt: payuSalt, endpoint: actionUrl, isTestMode } = await getPayUCredentials(db, env);
+
+      if (!payuKey || !payuSalt) {
+        return jsonResponse(
+          {
+            success: false,
+            configured: false,
+            error: 'PayU merchant credentials are not configured on the server. Please configure Payment Gateways in the Super Admin panel or set PAYU_MERCHANT_KEY and PAYU_MERCHANT_SALT secrets.',
+          },
+          400
+        );
+      }
+
+      const txnid = body.txnid || `txnid_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+      const amountStr = amount.toFixed(2);
+      const productinfo = body.productinfo || `JustGST Pro - ${durationTitle}${appliedCouponCode ? ` (Coupon: ${appliedCouponCode})` : ''}`;
+      const firstname = (body.firstname || org?.owner_name || session?.name || 'Customer').substring(0, 50).trim();
+      const email = (body.email || org?.admin_email || session?.email || 'customer@justgst.in').trim();
+      const phone = (body.phone || org?.mobile || '9999999999').replace(/[^0-9]/g, '').slice(-10) || '9999999999';
+
+      const udf1 = effectiveOrgId;
+      const udf2 = session?.userId || body.userId || 'guest_user';
+      const udf3 = billingCycle;
+      const udf4 = durationDays.toString();
+      const udf5 = org?.plan_id || 'plan_pro';
+      const udf6 = body.udf6 || '';
+      const udf7 = body.udf7 || '';
+      const udf8 = body.udf8 || '';
+      const udf9 = body.udf9 || '';
+      const udf10 = body.udf10 || '';
+
+      // Generate accurate SHA-512 forward hash using native Web Crypto API
+      const { hash } = await generatePayUForwardHash({
+        key: payuKey,
+        txnid,
+        amount: amountStr,
+        productinfo,
+        firstname,
+        email,
+        udf1,
+        udf2,
+        udf3,
+        udf4,
+        udf5,
+        udf6,
+        udf7,
+        udf8,
+        udf9,
+        udf10,
+        salt: payuSalt,
+      });
+
+      const reqOrigin = request.headers.get('origin') || url.origin;
+      const surl = body.surl || `${reqOrigin}/api/payments/payu/return`;
+      const furl = body.furl || `${reqOrigin}/api/payments/payu/return`;
+
+      // Record pending transaction for audit
+      try {
+        await execute(
+          db,
+          `INSERT INTO subscription_transactions (
+            id, organization_id, txnid, amount, currency, plan_id, plan_name, billing_cycle, duration_days, payment_provider, payment_status, customer_email, customer_phone, coupon_code
+          ) VALUES (?, ?, ?, ?, 'INR', ?, ?, ?, ?, 'payu', 'PENDING', ?, ?, ?)`,
+          `sub_txn_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+          effectiveOrgId,
+          txnid,
+          amount,
+          udf5,
+          org?.plan_name || 'Pro Trader',
+          billingCycle,
+          durationDays,
+          email,
+          phone,
+          appliedCouponCode
+        );
+      } catch (dbErr) {
+        console.warn('Failed to insert initial subscription transaction:', dbErr);
+      }
+
+      return jsonResponse({
+        success: true,
+        action: actionUrl,
+        endpoint: actionUrl,
+        isTestMode,
+        txnid,
+        hash,
+        params: {
+          key: payuKey,
+          txnid,
+          amount: amountStr,
+          productinfo,
+          firstname,
+          email,
+          phone,
+          surl,
+          furl,
+          hash,
+          udf1,
+          udf2,
+          udf3,
+          udf4,
+          udf5,
+          udf6,
+          udf7,
+          udf8,
+          udf9,
+          udf10,
+          service_provider: 'payu_paisa',
+        },
+      });
+    } catch (err: any) {
+      console.error('[PayU Initiate Error]', err);
+      return errorResponse('Failed to initiate PayU payment: ' + (err?.message || 'Server error'), 500);
+    }
+  }
+
+  if ((path === '/api/payu/verify' || path === '/api/payments/payu/callback' || path === '/api/payu/webhook') && method === 'POST') {
     try {
       const body = await parseRequestBody(request);
       const { merchantSalt } = await getPayUCredentials(db, env);
@@ -611,10 +746,15 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
         return errorResponse('PayU Merchant Salt is not configured on server', 500);
       }
 
-      const { isValid, calculatedHash } = await verifyPayUReverseHash(body, payuSalt);
+      const { isValid, calculatedHash, receivedHash } = await verifyPayUReverseHash(body, payuSalt);
       if (!isValid) {
-        console.warn(`[PayU Webhook] Signature mismatch for txnid ${body.txnid}. Calc: ${calculatedHash}, Recv: ${body.hash}`);
-        return jsonResponse({ error: 'Hash verification failed: invalid signature', success: false }, 400);
+        console.warn(`[PayU Webhook] Signature mismatch for txnid ${body.txnid}. Calc: ${calculatedHash}, Recv: ${receivedHash || body.hash}`);
+        return jsonResponse({
+          error: 'Hash verification failed: invalid signature',
+          success: false,
+          calculatedHash,
+          receivedHash: receivedHash || body.hash,
+        }, 400);
       }
 
       const txnid = body.txnid;
@@ -633,8 +773,10 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
           // Idempotent no-op: already processed successfully
           return jsonResponse({
             success: true,
+            verified: true,
             message: 'Transaction already verified and processed (idempotent)',
             txnid,
+            mihpayid,
           });
         }
 
@@ -703,8 +845,11 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
 
         return jsonResponse({
           success: true,
+          verified: true,
           message: 'Payment verified and organization subscription activated',
           txnid,
+          mihpayid,
+          status,
         });
       } else {
         if (txnid) {
@@ -724,8 +869,11 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
 
         return jsonResponse({
           success: true,
+          verified: true,
           message: 'Payment failure recorded',
           txnid,
+          mihpayid,
+          status,
         });
       }
     } catch (err: any) {
@@ -1102,144 +1250,6 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
       return jsonResponse({ success: true, message: 'Organization profile updated successfully' });
     } catch {
       return errorResponse('Failed to update organization profile', 500);
-    }
-  }
-
-  // -------------------------------------------------------------
-  // 4.5 REAL PAYU HOSTED CHECKOUT INITIATION (AUTHENTICATED)
-  // -------------------------------------------------------------
-  if (path === '/api/payments/payu/initiate' && method === 'POST') {
-    try {
-      const body = (await request.json().catch(() => ({}))) as any;
-      const billingCycle = body.billingCycle === '1_MONTH' ? '1_MONTH' : body.billingCycle === '3_MONTHS' ? '3_MONTHS' : '12_MONTHS';
-
-      // Look up server-side plan pricing (NEVER trust client amounts)
-      let amount = 588.00;
-      let durationDays = 365;
-      let durationTitle = '12 Months (1 Year)';
-
-      if (billingCycle === '1_MONTH') {
-        amount = 99.00;
-        durationDays = 30;
-        durationTitle = '1 Month';
-      } else if (billingCycle === '3_MONTHS') {
-        amount = 267.00;
-        durationDays = 90;
-        durationTitle = '3 Months (Quarterly)';
-      }
-
-      const org = await queryFirst<any>(db, 'SELECT * FROM organizations WHERE id = ?', effectiveOrgId);
-      if (!org) {
-        return errorResponse('Organization not found', 404);
-      }
-
-      // Check coupon code discount if provided
-      const couponCode = (body.couponCode || '').toUpperCase().trim();
-      let appliedCouponCode: string | null = null;
-      let discountAmount = 0;
-
-      if (couponCode) {
-        const coupon = await queryFirst<any>(
-          db,
-          `SELECT * FROM coupons WHERE UPPER(code) = ? AND status = 'ACTIVE'`,
-          couponCode
-        );
-
-        if (coupon) {
-          const isNotExpired = !coupon.expiry_date || new Date(coupon.expiry_date).getTime() >= Date.now();
-          const hasUsageLeft = !coupon.usage_limit || coupon.used_count < coupon.usage_limit;
-
-          if (isNotExpired && hasUsageLeft) {
-            appliedCouponCode = coupon.code;
-            if (coupon.discount_type === 'PERCENTAGE') {
-              discountAmount = Math.round(((amount * Number(coupon.discount_value)) / 100) * 100) / 100;
-            } else {
-              discountAmount = Number(coupon.discount_value) || 0;
-            }
-            discountAmount = Math.min(amount, discountAmount);
-            amount = Math.max(0, Math.round((amount - discountAmount) * 100) / 100);
-          }
-        }
-      }
-
-      const { merchantKey: payuKey, merchantSalt: payuSalt, endpoint: actionUrl } = await getPayUCredentials(db, env);
-
-      if (!payuKey || !payuSalt) {
-        return jsonResponse(
-          {
-            success: false,
-            configured: false,
-            error: 'PayU merchant credentials are not configured on the server. Please configure Payment Gateways in the Super Admin panel or set PAYU_MERCHANT_KEY and PAYU_MERCHANT_SALT secrets.',
-          },
-          400
-        );
-      }
-
-      const txnid = `txnid_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-      const amountStr = amount.toFixed(2);
-      const productinfo = `JustGST Pro - ${durationTitle}${appliedCouponCode ? ` (Coupon: ${appliedCouponCode})` : ''}`;
-      const firstname = (org.owner_name || session.name || 'Customer').substring(0, 50).trim();
-      const email = (org.admin_email || session.email || 'customer@justgst.in').trim();
-      const phone = (org.mobile || '9999999999').replace(/[^0-9]/g, '').slice(-10) || '9999999999';
-
-      const udf1 = effectiveOrgId;
-      const udf2 = session.userId;
-      const udf3 = billingCycle;
-      const udf4 = durationDays.toString();
-      const udf5 = org.plan_id || 'plan_pro';
-
-      // PayU Hosted Checkout SHA-512 Hash sequence:
-      // key|txnid|amount|productinfo|firstname|email|udf1|udf2|udf3|udf4|udf5||||||SALT
-      const hashSequence = `${payuKey}|${txnid}|${amountStr}|${productinfo}|${firstname}|${email}|${udf1}|${udf2}|${udf3}|${udf4}|${udf5}||||||${payuSalt}`;
-      const hash = await sha512Hex(hashSequence);
-
-      const reqOrigin = request.headers.get('origin') || url.origin;
-      const surl = `${reqOrigin}/api/payments/payu/return`;
-      const furl = `${reqOrigin}/api/payments/payu/return`;
-
-      // Record pending transaction for audit
-      await execute(
-        db,
-        `INSERT INTO subscription_transactions (
-          id, organization_id, txnid, amount, currency, plan_id, plan_name, billing_cycle, duration_days, payment_provider, payment_status, customer_email, customer_phone, coupon_code
-        ) VALUES (?, ?, ?, ?, 'INR', ?, ?, ?, ?, 'payu', 'PENDING', ?, ?, ?)`,
-        `sub_txn_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
-        effectiveOrgId,
-        txnid,
-        amount,
-        udf5,
-        org.plan_name || 'Pro Trader',
-        billingCycle,
-        durationDays,
-        email,
-        phone,
-        appliedCouponCode
-      );
-
-      return jsonResponse({
-        success: true,
-        action: actionUrl,
-        params: {
-          key: payuKey,
-          txnid,
-          amount: amountStr,
-          productinfo,
-          firstname,
-          email,
-          phone,
-          surl,
-          furl,
-          hash,
-          udf1,
-          udf2,
-          udf3,
-          udf4,
-          udf5,
-        },
-      });
-    } catch (err: any) {
-      console.error('[PayU Initiate Error]', err);
-      return errorResponse('Failed to initiate PayU payment: ' + (err?.message || 'Server error'), 500);
     }
   }
 

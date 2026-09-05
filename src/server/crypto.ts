@@ -39,6 +39,160 @@ export async function sha512Hex(str: string): Promise<string> {
   return bufToHex(digest);
 }
 
+export interface PayUForwardHashParams {
+  key: string;
+  txnid: string;
+  amount: string | number;
+  productinfo: string;
+  firstname: string;
+  email: string;
+  udf1?: string;
+  udf2?: string;
+  udf3?: string;
+  udf4?: string;
+  udf5?: string;
+  udf6?: string;
+  udf7?: string;
+  udf8?: string;
+  udf9?: string;
+  udf10?: string;
+  salt: string;
+}
+
+/**
+ * Generate PayU SHA-512 Hosted Checkout Forward Hash
+ * Sequence: sha512(key|txnid|amount|productinfo|firstname|email|udf1|udf2|udf3|udf4|udf5|udf6|udf7|udf8|udf9|udf10|salt)
+ */
+export async function generatePayUForwardHash(params: PayUForwardHashParams): Promise<{
+  hash: string;
+  hashString: string;
+}> {
+  const {
+    key,
+    txnid,
+    amount,
+    productinfo,
+    firstname,
+    email,
+    udf1 = '',
+    udf2 = '',
+    udf3 = '',
+    udf4 = '',
+    udf5 = '',
+    udf6 = '',
+    udf7 = '',
+    udf8 = '',
+    udf9 = '',
+    udf10 = '',
+    salt,
+  } = params;
+
+  // Format amount to string (e.g. "99.00" or raw string)
+  const formattedAmount = typeof amount === 'number' ? amount.toFixed(2) : String(amount);
+
+  const hashString = `${key}|${txnid}|${formattedAmount}|${productinfo}|${firstname}|${email}|${udf1}|${udf2}|${udf3}|${udf4}|${udf5}|${udf6}|${udf7}|${udf8}|${udf9}|${udf10}|${salt}`;
+  const hash = await sha512Hex(hashString);
+
+  return { hash, hashString };
+}
+
+export interface PayUReverseHashParams {
+  key: string;
+  txnid: string;
+  amount: string | number;
+  productinfo: string;
+  firstname: string;
+  email: string;
+  status: string;
+  hash: string;
+  udf1?: string;
+  udf2?: string;
+  udf3?: string;
+  udf4?: string;
+  udf5?: string;
+  udf6?: string;
+  udf7?: string;
+  udf8?: string;
+  udf9?: string;
+  udf10?: string;
+  additionalCharges?: string | number;
+}
+
+/**
+ * Verify PayU Webhook / IPN / Browser Return Reverse SHA-512 Hash
+ * Standard Sequence: sha512(salt|status|udf10|udf9|udf8|udf7|udf6|udf5|udf4|udf3|udf2|udf1|email|firstname|productinfo|amount|txnid|key)
+ * Additional Charges Sequence: sha512(additionalCharges|salt|status|udf10|udf9|udf8|udf7|udf6|udf5|udf4|udf3|udf2|udf1|email|firstname|productinfo|amount|txnid|key)
+ */
+export async function verifyPayUReverseHashPayload(
+  payload: Record<string, any>,
+  salt: string
+): Promise<{
+  isValid: boolean;
+  calculatedHash: string;
+  receivedHash: string;
+  usedAdditionalCharges: boolean;
+}> {
+  if (!salt) {
+    return { isValid: false, calculatedHash: '', receivedHash: '', usedAdditionalCharges: false };
+  }
+
+  const key = payload.key || '';
+  const txnid = payload.txnid || '';
+  const amount = payload.amount !== undefined ? String(payload.amount) : '';
+  const productinfo = payload.productinfo || '';
+  const firstname = payload.firstname || '';
+  const email = payload.email || '';
+  const status = payload.status || '';
+  const receivedHash = (payload.hash || '').toLowerCase();
+
+  const udf1 = payload.udf1 || '';
+  const udf2 = payload.udf2 || '';
+  const udf3 = payload.udf3 || '';
+  const udf4 = payload.udf4 || '';
+  const udf5 = payload.udf5 || '';
+  const udf6 = payload.udf6 || '';
+  const udf7 = payload.udf7 || '';
+  const udf8 = payload.udf8 || '';
+  const udf9 = payload.udf9 || '';
+  const udf10 = payload.udf10 || '';
+  const additionalCharges = payload.additionalCharges;
+
+  // 1. Standard reverse hash sequence (salt first, udf10 down to udf1 in reverse order)
+  const standardSequence = `${salt}|${status}|${udf10}|${udf9}|${udf8}|${udf7}|${udf6}|${udf5}|${udf4}|${udf3}|${udf2}|${udf1}|${email}|${firstname}|${productinfo}|${amount}|${txnid}|${key}`;
+  const calcStandardHash = await sha512Hex(standardSequence);
+
+  if (receivedHash && constantTimeCompare(calcStandardHash.toLowerCase(), receivedHash)) {
+    return {
+      isValid: true,
+      calculatedHash: calcStandardHash,
+      receivedHash,
+      usedAdditionalCharges: false,
+    };
+  }
+
+  // 2. Additional charges sequence if present
+  if (additionalCharges !== undefined && additionalCharges !== null && additionalCharges !== '') {
+    const chargesSequence = `${additionalCharges}|${salt}|${status}|${udf10}|${udf9}|${udf8}|${udf7}|${udf6}|${udf5}|${udf4}|${udf3}|${udf2}|${udf1}|${email}|${firstname}|${productinfo}|${amount}|${txnid}|${key}`;
+    const calcChargesHash = await sha512Hex(chargesSequence);
+
+    if (receivedHash && constantTimeCompare(calcChargesHash.toLowerCase(), receivedHash)) {
+      return {
+        isValid: true,
+        calculatedHash: calcChargesHash,
+        receivedHash,
+        usedAdditionalCharges: true,
+      };
+    }
+  }
+
+  return {
+    isValid: false,
+    calculatedHash: calcStandardHash,
+    receivedHash,
+    usedAdditionalCharges: false,
+  };
+}
+
 /**
  * Hash password using PBKDF2 with SHA-256 and a 16-byte random salt.
  * Output format: "pbkdf2:sha256:100000:saltHex:hashHex"

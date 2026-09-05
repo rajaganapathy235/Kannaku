@@ -18,6 +18,7 @@ import {
   HelpCircle,
   Save,
   CheckCircle,
+  Layers,
 } from 'lucide-react';
 import { SaaSAdminDB } from '../../utils/adminStorage';
 import { AuthService } from '../../utils/authService';
@@ -26,8 +27,10 @@ import {
   PaymentGatewayProvider,
   SaaSGatewayManagerConfig,
 } from '../../types/admin';
+import { PayUGatewaySettings } from './PayUGatewaySettings';
 
 export const PaymentGatewaysView: React.FC = () => {
+  const [activeTab, setActiveTab] = useState<'payu' | 'all'>('payu');
   const [managerConfig, setManagerConfig] = useState<SaaSGatewayManagerConfig>(
     SaaSAdminDB.getPaymentGatewaysConfig()
   );
@@ -226,21 +229,59 @@ export const PaymentGatewaysView: React.FC = () => {
         </div>
       </div>
 
-      {/* Info Notice */}
-      <div className="p-4 rounded-xl bg-slate-900/80 border border-slate-800 flex items-start gap-3">
-        <ShieldCheck className="w-5 h-5 text-brand-400 shrink-0 mt-0.5" />
-        <div className="text-xs text-slate-300 space-y-1">
-          <p className="font-semibold text-white">
-            Single Active Gateway Architecture
-          </p>
-          <p className="text-slate-400 leading-relaxed">
-            When tenants visit their Subscription & Upgrade page in the SaaS application, the system automatically uses whichever payment gateway is marked as <strong className="text-brand-300">Active</strong> below. You can seamlessly switch between <strong>PayU India</strong>, <strong>Dodo Payments</strong>, <strong>Stripe</strong>, or <strong>Direct UPI</strong> anytime without code changes.
-          </p>
-        </div>
+      {/* Tab Navigation */}
+      <div className="flex items-center gap-2 border-b border-slate-800 pb-3">
+        <button
+          type="button"
+          onClick={() => setActiveTab('payu')}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
+            activeTab === 'payu'
+              ? 'bg-emerald-600 text-white shadow-md shadow-emerald-900/30'
+              : 'bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-800'
+          }`}
+        >
+          <CreditCard className="w-3.5 h-3.5" />
+          PayU India Gateway (Production Ready)
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('all')}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
+            activeTab === 'all'
+              ? 'bg-brand-600 text-white shadow-md shadow-brand-900/30'
+              : 'bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-800'
+          }`}
+        >
+          <Layers className="w-3.5 h-3.5" />
+          All Gateway Providers
+        </button>
       </div>
 
-      {/* Gateway Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {activeTab === 'payu' ? (
+        <PayUGatewaySettings
+          onSaved={() => {
+            SaaSAdminDB.getPaymentGatewaysConfigAsync().then((cfg) => {
+              if (cfg) setManagerConfig(cfg);
+            });
+          }}
+        />
+      ) : (
+        <>
+          {/* Info Notice */}
+          <div className="p-4 rounded-xl bg-slate-900/80 border border-slate-800 flex items-start gap-3">
+            <ShieldCheck className="w-5 h-5 text-brand-400 shrink-0 mt-0.5" />
+            <div className="text-xs text-slate-300 space-y-1">
+              <p className="font-semibold text-white">
+                Single Active Gateway Architecture
+              </p>
+              <p className="text-slate-400 leading-relaxed">
+                When tenants visit their Subscription & Upgrade page in the SaaS application, the system automatically uses whichever payment gateway is marked as <strong className="text-brand-300">Active</strong> below. You can seamlessly switch between <strong>PayU India</strong>, <strong>Dodo Payments</strong>, <strong>Stripe</strong>, or <strong>Direct UPI</strong> anytime without code changes.
+              </p>
+            </div>
+          </div>
+
+          {/* Gateway Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* 1. DODO PAYMENTS */}
         {(() => {
           const gw = managerConfig.gateways.dodopayments;
@@ -871,27 +912,29 @@ export const PaymentGatewaysView: React.FC = () => {
         })()}
       </div>
 
-      {/* Test Connection Result Box */}
-      {testResult && (
-        <div
-          className={`p-4 rounded-xl border flex items-start gap-3 animate-in fade-in-50 duration-200 ${
-            testResult.success
-              ? 'bg-emerald-950/40 border-emerald-500/40 text-emerald-200'
-              : 'bg-rose-950/40 border-rose-500/40 text-rose-200'
-          }`}
-        >
-          {testResult.success ? (
-            <CheckCircle className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
-          ) : (
-            <AlertCircle className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
+          {/* Test Connection Result Box */}
+          {testResult && (
+            <div
+              className={`p-4 rounded-xl border flex items-start gap-3 animate-in fade-in-50 duration-200 ${
+                testResult.success
+                  ? 'bg-emerald-950/40 border-emerald-500/40 text-emerald-200'
+                  : 'bg-rose-950/40 border-rose-500/40 text-rose-200'
+              }`}
+            >
+              {testResult.success ? (
+                <CheckCircle className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
+              ) : (
+                <AlertCircle className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
+              )}
+              <div className="text-xs">
+                <p className="font-bold">
+                  {testResult.success ? 'Gateway Health Check Passed' : 'Connection Check Failed'}
+                </p>
+                <p className="opacity-90 mt-0.5">{testResult.message}</p>
+              </div>
+            </div>
           )}
-          <div className="text-xs">
-            <p className="font-bold">
-              {testResult.success ? 'Gateway Health Check Passed' : 'Connection Check Failed'}
-            </p>
-            <p className="opacity-90 mt-0.5">{testResult.message}</p>
-          </div>
-        </div>
+        </>
       )}
     </div>
   );
