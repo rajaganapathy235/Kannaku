@@ -1,0 +1,26 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "kannaku",
+  "main": "src/worker.ts",
+  "compatibility_date": "2026-08-26",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application"
+  },
+  "vars": {
+    "ENVIRONMENT": "production",
+    "APP_NAME": "JustGST Billing & Invoicing SaaS"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "kannaku_saas_prod",
+      "database_id": "ef2fed2d-0729-43ea-8a1c-aaa7f537aeb2",
+      "migrations_dir": "src/db"
+    }
+  ]
+}

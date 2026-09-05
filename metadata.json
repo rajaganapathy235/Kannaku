@@ -1,0 +1,8 @@
+{
+  "name": "JustGST - GST Billing & Invoicing Suite",
+  "description": "Fast GST billing & accounting web app with Tally-style invoicing, customer/supplier party ledgers, inventory stock, multi-copy A4 PDF printing, and GSTR-1 reports.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
