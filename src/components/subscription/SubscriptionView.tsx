@@ -20,6 +20,7 @@ import {
   X,
   Tag,
   RefreshCw,
+  Gift,
 } from 'lucide-react';
 import { CompanyProfile, SubscriptionPlan, SubscriptionState } from '../../types';
 import { SaaSAdminDB } from '../../utils/adminStorage';
@@ -36,7 +37,71 @@ interface SubscriptionViewProps {
   onUpgradeSuccess: (plan: SubscriptionPlan) => void;
 }
 
-export type SubscriptionDurationCycle = '1_MONTH';
+export type SubscriptionDurationCycle = '1_MONTH' | '6_MONTHS' | '12_MONTHS';
+
+export interface SubscriptionPlanTier {
+  id: string;
+  planId: string;
+  name: string;
+  tierLabel?: string;
+  billingCycle: SubscriptionDurationCycle;
+  durationDays: number;
+  monthlyPriceInr: number;
+  totalPriceInr: number;
+  periodText?: string;
+  description: string;
+  savingsBadge?: string | null;
+  isPopular?: boolean;
+  trialDurationDays?: number;
+}
+
+const DEFAULT_PLAN_TIERS: SubscriptionPlanTier[] = [
+  {
+    id: 'plan_1_month',
+    planId: 'plan_1_month',
+    name: '1 Month (Monthly)',
+    tierLabel: 'Standard',
+    billingCycle: '1_MONTH',
+    durationDays: 30,
+    monthlyPriceInr: 99,
+    totalPriceInr: 99,
+    periodText: '/ month',
+    description: 'Billed every 30 days. Perfect for new stores testing the software.',
+    savingsBadge: null,
+    isPopular: false,
+    trialDurationDays: 7,
+  },
+  {
+    id: 'plan_6_months',
+    planId: 'plan_6_months',
+    name: '6 Months (Half-Yearly)',
+    tierLabel: 'Save 20%',
+    billingCycle: '6_MONTHS',
+    durationDays: 180,
+    monthlyPriceInr: 79,
+    totalPriceInr: 474,
+    periodText: '/ month',
+    description: 'Billed semi-annually. Ideal for regular retail and GST traders.',
+    savingsBadge: 'Save 20%',
+    isPopular: false,
+    trialDurationDays: 7,
+  },
+  {
+    id: 'plan_12_months',
+    planId: 'plan_12_months',
+    name: '12 Months (Annual)',
+    tierLabel: 'Save 50% • Best Value',
+    billingCycle: '12_MONTHS',
+    durationDays: 365,
+    monthlyPriceInr: 49,
+    totalPriceInr: 588,
+    periodText: '/ month',
+    description: 'Billed ₹588 annually. Maximum savings with 1-year continuous access.',
+    savingsBadge: 'Save 50% • Best Value',
+    isPopular: true,
+    trialDurationDays: 7,
+  },
+];
 
 export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
   company,
@@ -44,7 +109,10 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
   onUpgradeSuccess,
 }) => {
   const [plans, setPlans] = useState<SaaSPlan[]>(() => SaaSAdminDB.getPlans());
+  const [planTiers, setPlanTiers] = useState<SubscriptionPlanTier[]>(DEFAULT_PLAN_TIERS);
+  const [selectedTier, setSelectedTier] = useState<SubscriptionPlanTier>(DEFAULT_PLAN_TIERS[2]);
   const [activeTab, setActiveTab] = useState<'plans' | 'history'>('plans');
+  const [isLoadingPlans, setIsLoadingPlans] = useState<boolean>(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [showCheckoutModal, setShowCheckoutModal] = useState(false);
   const [checkoutStep, setCheckoutStep] = useState<'idle' | 'initiating' | 'redirecting' | 'error'>('idle');
@@ -65,19 +133,89 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
     message?: string;
   } | null>(null);
 
-  // Fetch live plans from /api/plans endpoint
+  // Fetch live plans dynamically from /api/plans endpoint
   useEffect(() => {
     let isMounted = true;
+    setIsLoadingPlans(true);
     fetch('/api/plans')
       .then((res) => res.json())
       .then((data) => {
-        if (isMounted && data.success && Array.isArray(data.plans) && data.plans.length > 0) {
-          setPlans(data.plans);
+        if (!isMounted) return;
+        if (data.success) {
+          if (Array.isArray(data.plans) && data.plans.length > 0) {
+            setPlans(data.plans);
+          }
+
+          if (Array.isArray(data.tiers) && data.tiers.length > 0) {
+            setPlanTiers(data.tiers);
+            // Default select annual or 12 months tier
+            const popular = data.tiers.find((t: SubscriptionPlanTier) => t.isPopular) || data.tiers[data.tiers.length - 1];
+            setSelectedTier(popular);
+          } else if (data.flagshipPlan || (Array.isArray(data.plans) && data.plans.length > 0)) {
+            const p = data.flagshipPlan || data.plans[0];
+            const m = Number(p.monthlyPriceInr) || 99;
+            const s = Number(p.sixMonthPriceInr) || 474;
+            const y = Number(p.yearlyPriceInr) || 588;
+
+            const derived: SubscriptionPlanTier[] = [
+              {
+                id: 'plan_1_month',
+                planId: 'plan_1_month',
+                name: '1 Month (Monthly)',
+                tierLabel: 'Standard',
+                billingCycle: '1_MONTH',
+                durationDays: 30,
+                monthlyPriceInr: m,
+                totalPriceInr: m,
+                periodText: '/ month',
+                description: 'Billed every 30 days. Perfect for new stores testing the software.',
+                savingsBadge: null,
+                isPopular: false,
+                trialDurationDays: p.trialDurationDays || 7,
+              },
+              {
+                id: 'plan_6_months',
+                planId: 'plan_6_months',
+                name: '6 Months (Half-Yearly)',
+                tierLabel: 'Save 20%',
+                billingCycle: '6_MONTHS',
+                durationDays: 180,
+                monthlyPriceInr: Math.round(s / 6),
+                totalPriceInr: s,
+                periodText: '/ month',
+                description: 'Billed semi-annually. Ideal for regular retail and GST traders.',
+                savingsBadge: 'Save 20%',
+                isPopular: false,
+                trialDurationDays: p.trialDurationDays || 7,
+              },
+              {
+                id: 'plan_12_months',
+                planId: 'plan_12_months',
+                name: '12 Months (Annual)',
+                tierLabel: 'Save 50% • Best Value',
+                billingCycle: '12_MONTHS',
+                durationDays: 365,
+                monthlyPriceInr: Math.round(y / 12),
+                totalPriceInr: y,
+                periodText: '/ month',
+                description: 'Billed ₹588 annually. Maximum savings with 1-year continuous access.',
+                savingsBadge: 'Save 50% • Best Value',
+                isPopular: true,
+                trialDurationDays: p.trialDurationDays || 7,
+              },
+            ];
+            setPlanTiers(derived);
+            setSelectedTier(derived[2]);
+          }
         }
       })
       .catch((err) => {
         console.warn('Could not fetch live plans, using local cache:', err);
+      })
+      .finally(() => {
+        if (isMounted) setIsLoadingPlans(false);
       });
+
     return () => {
       isMounted = false;
     };
@@ -89,19 +227,18 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
   };
 
   const activeGateway = SaaSAdminDB.getActivePaymentGateway();
-  const plan =
+  const flagshipPlan =
     plans.find((p) => p.id === 'plan_all_in_one_pro') ||
     plans[0] ||
     SaaSAdminDB.getPlans()[0] || {
       id: 'plan_all_in_one_pro',
       name: 'All-in-One Growth Plan',
-      description: 'Complete GST Billing, Invoicing & Inventory Suite',
+      description: 'Single comprehensive plan with ALL GST invoicing, Tally multi-copy prints & compliance features unlocked',
       monthlyPriceInr: 99,
-      yearlyPriceInr: 99,
-      features: [],
+      sixMonthPriceInr: 474,
+      yearlyPriceInr: 588,
+      trialDurationDays: 7,
       isPopular: true,
-      maxUsers: 999,
-      maxInvoicesPerMonth: 999999,
     };
 
   // Identify tenant org in admin storage
@@ -112,17 +249,8 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
 
   const isTrialExpired = isSubscriptionTrialExpired(subscription, activeOrg);
 
-  // Monthly-Only Pricing Details
-  const monthlyAmount = plan.monthlyPriceInr || 99;
-  const currentDurationInfo = {
-    durationTitle: 'Monthly Plan (30 Days)',
-    amount: monthlyAmount,
-    perMonth: monthlyAmount,
-    durationDays: 30,
-    billingNote: `Billed monthly (₹${monthlyAmount}/mo)`,
-  };
-
-  const handleInitiatePayment = () => {
+  const handleOpenSubscribeModal = (tier: SubscriptionPlanTier) => {
+    setSelectedTier(tier);
     setShowCheckoutModal(true);
     setCheckoutStep('idle');
     setCheckoutError('');
@@ -142,7 +270,7 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
     setCouponError('');
 
     try {
-      const res = await ApiService.validateCoupon(code, currentDurationInfo.amount, plan.id);
+      const res = await ApiService.validateCoupon(code, selectedTier.totalPriceInr, selectedTier.id);
       const couponData = res.data;
       if (res.success && couponData && couponData.valid) {
         setAppliedCoupon(couponData);
@@ -180,8 +308,8 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({
-          billingCycle: '1_MONTH',
-          planId: plan.id,
+          planId: selectedTier.id,
+          billingCycle: selectedTier.billingCycle,
           couponCode: appliedCoupon ? appliedCoupon.code : undefined,
         }),
       });
@@ -240,12 +368,13 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
             <h2 className="text-base font-bold text-slate-900">
               Subscription & Plan Upgrades
             </h2>
-            <span className="px-2.5 py-0.5 rounded-full bg-brand-50 border border-brand-200 text-brand-700 text-xs font-bold">
-              All-in-One Growth Plan
+            <span className="px-2.5 py-0.5 rounded-full bg-brand-50 border border-brand-200 text-brand-700 text-xs font-bold flex items-center gap-1">
+              <Sparkles className="w-3 h-3 text-brand-600" />
+              <span>All-in-One Growth Plan</span>
             </span>
           </div>
           <p className="text-xs text-slate-500 mt-1">
-            Simple, affordable monthly billing with full access to GST billing, reports, inventory & UPI QR
+            Single all-inclusive plan with 1-Month, 6-Month, and 12-Month billing models
           </p>
         </div>
 
@@ -259,7 +388,7 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
                 : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
             }`}
           >
-            Subscription Plan
+            Subscription Plans
           </button>
           <button
             onClick={() => setActiveTab('history')}
@@ -286,15 +415,15 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
               <Lock className="w-5 h-5" />
             </div>
             <div>
-              <span className="font-bold text-sm block">14-Day Free Trial Expired — Read-Only Mode Active</span>
+              <span className="font-bold text-sm block">Free Trial Expired — Read-Only Mode Active</span>
               <span className="text-xs text-amber-800">
-                Your historical records are safe. Subscribe below to re-activate invoice creation and printing.
+                Your historical records are safe. Select a plan below to re-activate invoice creation and printing.
               </span>
             </div>
           </div>
           <button
             type="button"
-            onClick={handleInitiatePayment}
+            onClick={() => handleOpenSubscribeModal(planTiers[2] || planTiers[0])}
             className="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-xl shrink-0 flex items-center gap-1.5 cursor-pointer shadow-xs transition-all active:scale-98"
           >
             <Zap className="w-3.5 h-3.5 text-amber-300" />
@@ -303,16 +432,21 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
         </div>
       )}
 
+      {/* Flagship Plan Banner & Workspace Status */}
       <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-brand-50 border border-brand-200 flex items-center justify-center text-brand-600 shrink-0">
-            <Crown className="w-6 h-6" />
+          <div className="w-12 h-12 rounded-2xl bg-brand-50 border border-brand-200 flex items-center justify-center text-brand-600 shrink-0">
+            <Crown className="w-6 h-6 text-brand-600" />
           </div>
           <div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-slate-500 font-semibold">Active Plan:</span>
-              <span className="text-sm font-bold text-slate-900">
-                {plan.name}
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs text-slate-500 font-semibold">Active Flagship Plan:</span>
+              <span className="text-sm font-black text-slate-900">
+                {flagshipPlan.name}
+              </span>
+              <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold flex items-center gap-1">
+                <Check className="w-3 h-3 text-emerald-600" />
+                <span>All Features Included</span>
               </span>
               <span
                 className={`px-2 py-0.5 rounded-md text-[10px] font-bold border ${
@@ -327,7 +461,7 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
                   ? 'ACTIVE & VERIFIED'
                   : isTrialExpired
                   ? 'TRIAL EXPIRED (READ-ONLY)'
-                  : 'TRIAL PERIOD'}
+                  : `FREE TRIAL (${flagshipPlan.trialDurationDays || 7} DAYS)`}
               </span>
             </div>
             <p className="text-xs text-slate-500 mt-1">
@@ -335,9 +469,9 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
               <strong className="text-slate-800">
                 {company.name || 'My Business'}
               </strong>{' '}
-              • Expiry Date:{' '}
+              • Expiry / Renewal:{' '}
               <strong className="text-brand-600 font-mono">
-                {subscription.expiryDate || 'Continuous'}
+                {subscription.expiryDate || 'Continuous Active'}
               </strong>
             </p>
           </div>
@@ -353,8 +487,8 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
             </span>
           </div>
           <button
-            onClick={handleInitiatePayment}
-            className="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-xl text-xs shadow-xs transition-all cursor-pointer active:scale-98 flex items-center gap-1.5"
+            onClick={() => handleOpenSubscribeModal(planTiers[2] || planTiers[0])}
+            className="px-4 py-2.5 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-xl text-xs shadow-xs transition-all cursor-pointer active:scale-98 flex items-center gap-1.5"
           >
             <Zap className="w-3.5 h-3.5" />
             <span>Renew / Extend Access</span>
@@ -364,59 +498,119 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
 
       {activeTab === 'plans' && (
         <div className="space-y-6">
-          {/* Monthly Plan Focus Card */}
-          <div className="max-w-2xl mx-auto">
-            <div className="rounded-3xl p-6 sm:p-8 border-2 border-brand-600 bg-gradient-to-b from-white to-brand-50/20 shadow-xl relative overflow-hidden">
-              <div className="absolute top-0 right-0 bg-brand-600 text-white px-4 py-1.5 rounded-bl-2xl text-[11px] font-extrabold uppercase tracking-wider flex items-center gap-1 shadow-xs">
-                <Sparkles className="w-3.5 h-3.5 text-amber-300 fill-amber-300" />
-                <span>Monthly Subscription</span>
-              </div>
-
-              <div className="space-y-4">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-10 h-10 rounded-xl bg-brand-100 flex items-center justify-center text-brand-700">
-                    <Crown className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-black text-slate-900">{plan.name}</h3>
-                    <p className="text-xs text-slate-500">{plan.description || 'All-inclusive GST business suite'}</p>
-                  </div>
-                </div>
-
-                <div className="py-2 border-y border-slate-100 flex flex-wrap items-baseline gap-3">
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-4xl font-black text-slate-900 font-mono">
-                      ₹{monthlyAmount}
-                    </span>
-                    <span className="text-sm font-bold text-slate-500">/ month</span>
-                  </div>
-                  <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
-                    ⚡ 30 Days Full Access
-                  </span>
-                </div>
-
-                <p className="text-xs text-slate-600 leading-relaxed">
-                  Enjoy unlimited GST invoices, quotations, dynamic UPI QR generation, multi-copy Tally style printing, inventory tracking, and GSTR reports. Cancel or renew anytime.
-                </p>
-
-                <div className="pt-2">
-                  <button
-                    onClick={handleInitiatePayment}
-                    className="w-full py-3.5 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-2xl text-sm shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98"
-                  >
-                    <Zap className="w-4 h-4 text-amber-300 fill-amber-300" />
-                    <span>Proceed to Subscribe (₹{monthlyAmount}/mo)</span>
-                  </button>
-                </div>
-              </div>
-            </div>
+          {/* Section Header */}
+          <div className="text-center max-w-xl mx-auto pt-2">
+            <h3 className="text-lg font-black text-slate-900 tracking-tight">
+              Subscription Billing Durations &amp; Pricing
+            </h3>
+            <p className="text-xs text-slate-500 mt-1">
+              Single comprehensive plan with ALL GST invoicing, Tally multi-copy prints &amp; compliance features unlocked
+            </p>
           </div>
 
-          {/* Included Features Section */}
-          <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-xs">
-            <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider mb-4">
-              All Included Software Capabilities
-            </h3>
+          {/* Dynamic 3-Tier Plan Cards Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-stretch pt-2">
+            {planTiers.map((tier) => {
+              const isSelected = selectedTier.id === tier.id;
+              const isAnnual = tier.billingCycle === '12_MONTHS';
+
+              return (
+                <div
+                  key={tier.id}
+                  onClick={() => setSelectedTier(tier)}
+                  className={`rounded-2xl p-6 border transition-all cursor-pointer flex flex-col justify-between relative bg-white ${
+                    isAnnual
+                      ? 'border-2 border-brand-600 shadow-xl ring-2 ring-brand-500/20 md:-translate-y-2'
+                      : isSelected
+                      ? 'border-brand-600 shadow-md ring-2 ring-brand-500/20'
+                      : 'border-slate-200 hover:border-slate-300 shadow-xs'
+                  }`}
+                >
+                  {/* Highlight Ribbon / Badge */}
+                  {tier.savingsBadge && (
+                    <div
+                      className={`absolute -top-3 right-4 px-3 py-0.5 text-[10px] font-extrabold rounded-full uppercase tracking-wider shadow-xs flex items-center gap-1 ${
+                        isAnnual
+                          ? 'bg-gradient-to-r from-brand-600 to-emerald-600 text-white'
+                          : 'bg-emerald-600 text-white'
+                      }`}
+                    >
+                      {isAnnual && <Sparkles className="w-3 h-3 text-amber-300 fill-amber-300" />}
+                      <span>{tier.savingsBadge}</span>
+                    </div>
+                  )}
+
+                  {!tier.savingsBadge && tier.tierLabel && (
+                    <div className="absolute -top-3 right-4 px-2.5 py-0.5 bg-slate-100 text-slate-600 border border-slate-200 text-[10px] font-bold rounded-full uppercase tracking-wider">
+                      {tier.tierLabel}
+                    </div>
+                  )}
+
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                        {isAnnual && <Crown className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />}
+                        {tier.name}
+                      </span>
+                    </div>
+
+                    {/* Price Display */}
+                    <div className="flex items-baseline gap-1 my-3">
+                      <span className={`text-3xl font-black font-mono ${isAnnual ? 'text-brand-600' : 'text-slate-900'}`}>
+                        ₹{tier.monthlyPriceInr}
+                      </span>
+                      <span className="text-xs text-slate-500">{tier.periodText || '/ month'}</span>
+                    </div>
+
+                    {/* Description */}
+                    <p className="text-xs text-slate-600 leading-relaxed min-h-[36px]">
+                      {tier.description}
+                    </p>
+
+                    {/* Total Billed Summary Box */}
+                    <div className="mt-4 p-3 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between text-xs">
+                      <span className="text-slate-500 font-medium">Total Billed:</span>
+                      <span className="font-bold font-mono text-slate-900 text-sm">
+                        ₹{tier.totalPriceInr}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Card Action Button */}
+                  <div className="mt-5 pt-3 border-t border-slate-100">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleOpenSubscribeModal(tier);
+                      }}
+                      className={`w-full py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 active:scale-98 ${
+                        isAnnual
+                          ? 'bg-brand-600 hover:bg-brand-700 text-white shadow-md hover:shadow-lg'
+                          : isSelected
+                          ? 'bg-brand-600 hover:bg-brand-700 text-white shadow-xs'
+                          : 'bg-slate-100 hover:bg-brand-600 text-slate-700 hover:text-white'
+                      }`}
+                    >
+                      <Zap className={`w-3.5 h-3.5 ${isAnnual ? 'text-amber-300 fill-amber-300' : ''}`} />
+                      <span>Proceed to Subscribe (₹{tier.totalPriceInr})</span>
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Included Features Section (Intact Checklist Layout) */}
+          <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-xs mt-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+                All Included Software Capabilities
+              </h3>
+              <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-[10px] font-bold">
+                100% Full Access On All Tiers
+              </span>
+            </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-xs text-slate-700">
               {[
@@ -506,7 +700,7 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
         </div>
       )}
 
-      {/* Checkout Modal */}
+      {/* PayU Hosted Checkout Modal */}
       {showCheckoutModal && (
         <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white border border-slate-200 rounded-2xl w-full max-w-md p-6 space-y-5 shadow-2xl relative">
@@ -531,18 +725,18 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
                 <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2.5 text-xs">
                   <div className="flex justify-between text-slate-500">
                     <span>Plan:</span>
-                    <span className="font-bold text-slate-900">{plan.name}</span>
+                    <span className="font-bold text-slate-900">{flagshipPlan.name}</span>
                   </div>
                   <div className="flex justify-between text-slate-500">
-                    <span>Billing Duration:</span>
+                    <span>Selected Duration:</span>
                     <span className="font-bold text-brand-600">
-                      {currentDurationInfo.durationTitle}
+                      {selectedTier.name}
                     </span>
                   </div>
                   <div className="flex justify-between text-slate-500">
-                    <span>Plan Price:</span>
+                    <span>Base Price:</span>
                     <span className={`font-mono ${appliedCoupon ? 'line-through text-slate-400' : 'font-bold text-slate-900'}`}>
-                      ₹{currentDurationInfo.amount}
+                      ₹{selectedTier.totalPriceInr}
                     </span>
                   </div>
                   {appliedCoupon && (
@@ -561,7 +755,7 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
                   <div className="pt-2.5 border-t border-slate-200 flex justify-between items-baseline">
                     <span className="font-bold text-slate-900">Total Payable:</span>
                     <span className="text-xl font-black text-slate-900 font-mono">
-                      ₹{appliedCoupon ? appliedCoupon.finalAmount : currentDurationInfo.amount}
+                      ₹{appliedCoupon ? appliedCoupon.finalAmount : selectedTier.totalPriceInr}
                     </span>
                   </div>
                 </div>
@@ -638,7 +832,7 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
                   className="w-full py-3 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-2 shadow-xs transition-all cursor-pointer active:scale-98 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Lock className="w-3.5 h-3.5" />
-                  <span>Pay ₹{appliedCoupon ? appliedCoupon.finalAmount : currentDurationInfo.amount} via PayU</span>
+                  <span>Pay ₹{appliedCoupon ? appliedCoupon.finalAmount : selectedTier.totalPriceInr} via PayU</span>
                 </button>
 
                 {/* Statutory Compliance & Terms Acceptance */}

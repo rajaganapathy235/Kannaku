@@ -766,10 +766,77 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
         ];
       }
 
+      const flagship = parsedPlans[0] || {
+        id: 'plan_all_in_one_pro',
+        name: 'All-in-One Growth Plan',
+        tagline: 'Single comprehensive plan with ALL GST invoicing, Tally multi-copy prints & compliance features unlocked',
+        monthlyPriceInr: 99,
+        sixMonthPriceInr: 474,
+        yearlyPriceInr: 588,
+        trialDurationDays: 7,
+      };
+
+      const monthlyPrice = flagship.monthlyPriceInr || 99;
+      const sixMonthTotal = flagship.sixMonthPriceInr || 474;
+      const yearlyTotal = flagship.yearlyPriceInr || 588;
+
+      const dynamicTiers = [
+        {
+          id: 'plan_1_month',
+          planId: 'plan_1_month',
+          name: '1 Month (Monthly)',
+          tierLabel: 'Standard',
+          billingCycle: '1_MONTH',
+          durationDays: 30,
+          monthlyPriceInr: monthlyPrice,
+          totalPriceInr: monthlyPrice,
+          price: monthlyPrice,
+          periodText: '/ month',
+          description: 'Billed every 30 days. Perfect for new stores testing the software.',
+          savingsBadge: null,
+          isPopular: false,
+          trialDurationDays: flagship.trialDurationDays || 7,
+        },
+        {
+          id: 'plan_6_months',
+          planId: 'plan_6_months',
+          name: '6 Months (Half-Yearly)',
+          tierLabel: 'Save 20%',
+          billingCycle: '6_MONTHS',
+          durationDays: 180,
+          monthlyPriceInr: Math.round(sixMonthTotal / 6),
+          totalPriceInr: sixMonthTotal,
+          price: sixMonthTotal,
+          periodText: '/ month',
+          description: 'Billed semi-annually. Ideal for regular retail and GST traders.',
+          savingsBadge: 'Save 20%',
+          isPopular: false,
+          trialDurationDays: flagship.trialDurationDays || 7,
+        },
+        {
+          id: 'plan_12_months',
+          planId: 'plan_12_months',
+          name: '12 Months (Annual)',
+          tierLabel: 'Save 50% • Best Value',
+          billingCycle: '12_MONTHS',
+          durationDays: 365,
+          monthlyPriceInr: Math.round(yearlyTotal / 12),
+          totalPriceInr: yearlyTotal,
+          price: yearlyTotal,
+          periodText: '/ month',
+          description: 'Billed ₹588 annually. Maximum savings with 1-year continuous access.',
+          savingsBadge: 'Save 50% • Best Value',
+          isPopular: true,
+          trialDurationDays: flagship.trialDurationDays || 7,
+        },
+      ];
+
       return jsonResponse({
         success: true,
         data: parsedPlans,
         plans: parsedPlans,
+        tiers: dynamicTiers,
+        flagshipPlan: flagship,
       });
     } catch (err: any) {
       console.error('[Public Plans API Error]', err);
@@ -791,7 +858,8 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
       const requestedPlanId = body.planId || 'plan_all_in_one_pro';
       let planRecord = await queryFirst<any>(
         db,
-        `SELECT * FROM saas_plans WHERE id = ? AND is_archived = 0`,
+        `SELECT * FROM saas_plans WHERE (id = ? OR id = 'plan_all_in_one_pro') AND is_archived = 0 ORDER BY CASE WHEN id = ? THEN 0 ELSE 1 END LIMIT 1`,
+        requestedPlanId,
         requestedPlanId
       );
       if (!planRecord) {
@@ -804,11 +872,27 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
       const activePlanId = planRecord?.id || 'plan_all_in_one_pro';
       const activePlanName = planRecord?.name || 'All-in-One Growth Plan';
 
-      // Monthly-only billing: strictly 30 days single cycle
-      const billingCycle = '1_MONTH';
-      const durationDays = 30;
-      const durationTitle = '1 Month (Monthly Access)';
+      // Determine billing duration cycle & amount dynamically
+      const reqCycle = String(body.billingCycle || '').toUpperCase();
+      const isSixMonths = requestedPlanId === 'plan_6_months' || reqCycle === '6_MONTHS' || reqCycle === 'HALF_YEARLY' || reqCycle === '6_MONTH';
+      const isTwelveMonths = requestedPlanId === 'plan_12_months' || reqCycle === '12_MONTHS' || reqCycle === 'YEARLY' || reqCycle === 'ANNUAL' || reqCycle === '12_MONTH';
+
+      let billingCycle = '1_MONTH';
+      let durationDays = 30;
+      let durationTitle = '1 Month (Monthly Access)';
       let amount = Number(planRecord?.monthly_price_inr) || 99.00;
+
+      if (isTwelveMonths) {
+        billingCycle = '12_MONTHS';
+        durationDays = 365;
+        durationTitle = '12 Months (Annual Access)';
+        amount = Number(planRecord?.yearly_price_inr) || 588.00;
+      } else if (isSixMonths) {
+        billingCycle = '6_MONTHS';
+        durationDays = 180;
+        durationTitle = '6 Months (Half-Yearly Access)';
+        amount = Number(planRecord?.six_month_price_inr) || 474.00;
+      }
 
       const org = await queryFirst<any>(db, 'SELECT * FROM organizations WHERE id = ?', effectiveOrgId);
       
