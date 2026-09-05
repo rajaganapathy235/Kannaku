@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Check,
   CheckCircle2,
@@ -13,16 +13,13 @@ import {
   ArrowRight,
   Receipt,
   Download,
-  QrCode,
-  Smartphone,
-  ChevronDown,
-  ChevronUp,
   AlertCircle,
   Clock,
   Sparkles,
   ExternalLink,
   X,
   Tag,
+  RefreshCw,
 } from 'lucide-react';
 import { CompanyProfile, SubscriptionPlan, SubscriptionState } from '../../types';
 import { SaaSAdminDB } from '../../utils/adminStorage';
@@ -39,15 +36,14 @@ interface SubscriptionViewProps {
   onUpgradeSuccess: (plan: SubscriptionPlan) => void;
 }
 
-export type SubscriptionDurationCycle = '1_MONTH' | '3_MONTHS' | '12_MONTHS';
+export type SubscriptionDurationCycle = '1_MONTH';
 
 export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
   company,
   subscription,
   onUpgradeSuccess,
 }) => {
-  const [plans] = useState<SaaSPlan[]>(SaaSAdminDB.getPlans());
-  const [selectedDuration, setSelectedDuration] = useState<SubscriptionDurationCycle>('12_MONTHS');
+  const [plans, setPlans] = useState<SaaSPlan[]>(() => SaaSAdminDB.getPlans());
   const [activeTab, setActiveTab] = useState<'plans' | 'history'>('plans');
   const [isProcessing, setIsProcessing] = useState(false);
   const [showCheckoutModal, setShowCheckoutModal] = useState(false);
@@ -69,13 +65,44 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
     message?: string;
   } | null>(null);
 
+  // Fetch live plans from /api/plans endpoint
+  useEffect(() => {
+    let isMounted = true;
+    fetch('/api/plans')
+      .then((res) => res.json())
+      .then((data) => {
+        if (isMounted && data.success && Array.isArray(data.plans) && data.plans.length > 0) {
+          setPlans(data.plans);
+        }
+      })
+      .catch((err) => {
+        console.warn('Could not fetch live plans, using local cache:', err);
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   const openLegal = (doc: LegalDocType) => {
     setActiveLegalDoc(doc);
     setLegalModalOpen(true);
   };
 
   const activeGateway = SaaSAdminDB.getActivePaymentGateway();
-  const plan = plans[0] || SaaSAdminDB.getPlans()[0];
+  const plan =
+    plans.find((p) => p.id === 'plan_all_in_one_pro') ||
+    plans[0] ||
+    SaaSAdminDB.getPlans()[0] || {
+      id: 'plan_all_in_one_pro',
+      name: 'All-in-One Growth Plan',
+      description: 'Complete GST Billing, Invoicing & Inventory Suite',
+      monthlyPriceInr: 99,
+      yearlyPriceInr: 99,
+      features: [],
+      isPopular: true,
+      maxUsers: 999,
+      maxInvoicesPerMonth: 999999,
+    };
 
   // Identify tenant org in admin storage
   const activeTenantId = KannakuDB.getActiveTenantId();
@@ -85,45 +112,17 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
 
   const isTrialExpired = isSubscriptionTrialExpired(subscription, activeOrg);
 
-  // Calculate pricing based on duration (3-Tier Decoy Pricing Model)
-  const getDurationDetails = () => {
-    if (selectedDuration === '1_MONTH') {
-      const amount = plan.monthlyPriceInr || 99;
-      return {
-        durationTitle: '1 Month',
-        amount: amount,
-        perMonth: amount,
-        durationDays: 30,
-        billingNote: 'Billed monthly (₹99/mo)',
-        savingsBadge: null,
-      };
-    } else if (selectedDuration === '3_MONTHS') {
-      const amount = 267;
-      return {
-        durationTitle: '3 Months (Quarterly)',
-        amount: amount,
-        perMonth: 89,
-        durationDays: 90,
-        billingNote: 'Billed ₹267 quarterly (₹89/mo)',
-        savingsBadge: 'Save ₹30',
-      };
-    } else {
-      const amount = plan.yearlyPriceInr || 588;
-      return {
-        durationTitle: '12 Months (1 Year)',
-        amount: amount,
-        perMonth: 49,
-        durationDays: 365,
-        billingNote: 'Billed ₹588 annually (₹49/mo)',
-        savingsBadge: 'MOST POPULAR • 6 MONTHS FREE',
-      };
-    }
+  // Monthly-Only Pricing Details
+  const monthlyAmount = plan.monthlyPriceInr || 99;
+  const currentDurationInfo = {
+    durationTitle: 'Monthly Plan (30 Days)',
+    amount: monthlyAmount,
+    perMonth: monthlyAmount,
+    durationDays: 30,
+    billingNote: `Billed monthly (₹${monthlyAmount}/mo)`,
   };
 
-  const currentDurationInfo = getDurationDetails();
-
-  const handleInitiatePayment = (dur: SubscriptionDurationCycle) => {
-    setSelectedDuration(dur);
+  const handleInitiatePayment = () => {
     setShowCheckoutModal(true);
     setCheckoutStep('idle');
     setCheckoutError('');
@@ -181,7 +180,8 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({
-          billingCycle: selectedDuration,
+          billingCycle: '1_MONTH',
+          planId: plan.id,
           couponCode: appliedCoupon ? appliedCoupon.code : undefined,
         }),
       });
@@ -241,11 +241,11 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
               Subscription & Plan Upgrades
             </h2>
             <span className="px-2.5 py-0.5 rounded-full bg-brand-50 border border-brand-200 text-brand-700 text-xs font-bold">
-              All Features Included
+              All-in-One Growth Plan
             </span>
           </div>
           <p className="text-xs text-slate-500 mt-1">
-            Choose your billing duration: 1-Month, 3-Months, or 12-Months with zero limits
+            Simple, affordable monthly billing with full access to GST billing, reports, inventory & UPI QR
           </p>
         </div>
 
@@ -259,7 +259,7 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
                 : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
             }`}
           >
-            Upgrade Plans
+            Subscription Plan
           </button>
           <button
             onClick={() => setActiveTab('history')}
@@ -288,13 +288,13 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
             <div>
               <span className="font-bold text-sm block">14-Day Free Trial Expired — Read-Only Mode Active</span>
               <span className="text-xs text-amber-800">
-                Your historical records are safe. Select a plan below to re-activate invoice creation and printing.
+                Your historical records are safe. Subscribe below to re-activate invoice creation and printing.
               </span>
             </div>
           </div>
           <button
             type="button"
-            onClick={() => handleInitiatePayment(selectedDuration)}
+            onClick={handleInitiatePayment}
             className="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-xl shrink-0 flex items-center gap-1.5 cursor-pointer shadow-xs transition-all active:scale-98"
           >
             <Zap className="w-3.5 h-3.5 text-amber-300" />
@@ -349,11 +349,11 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
               Payment Gateway
             </span>
             <span className="text-xs font-bold text-slate-700">
-              {activeGateway.name}
+              {activeGateway.name || 'PayU India Hosted Gateway'}
             </span>
           </div>
           <button
-            onClick={() => handleInitiatePayment(selectedDuration)}
+            onClick={handleInitiatePayment}
             className="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-xl text-xs shadow-xs transition-all cursor-pointer active:scale-98 flex items-center gap-1.5"
           >
             <Zap className="w-3.5 h-3.5" />
@@ -364,172 +364,48 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
 
       {activeTab === 'plans' && (
         <div className="space-y-6">
-          {/* Duration Selector Cards - 3-Tier Decoy Pricing Model */}
-          <div>
-            <div className="text-center max-w-lg mx-auto mb-6">
-              <h3 className="text-base font-bold text-slate-900">
-                Select Your Subscription Period
-              </h3>
-              <p className="text-xs text-slate-500 mt-1">
-                All durations include 100% of GST invoicing, Tally print templates, stock alerts & UPI QR
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-stretch pt-3">
-              {/* Tier 1: 1 Month (Anchor) */}
-              <div
-                onClick={() => setSelectedDuration('1_MONTH')}
-                className={`rounded-2xl p-5 border transition-all cursor-pointer flex flex-col justify-between relative bg-white ${
-                  selectedDuration === '1_MONTH'
-                    ? 'border-brand-600 shadow-md ring-2 ring-brand-500/20'
-                    : 'border-slate-200 hover:border-slate-300'
-                }`}
-              >
-                <div>
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-xs font-bold text-slate-800">
-                      1 Month
-                    </span>
-                    <span className="text-[10px] font-semibold text-slate-600 px-2 py-0.5 rounded-full bg-slate-100 border border-slate-200">
-                      Standard
-                    </span>
-                  </div>
-
-                  <div className="flex items-baseline gap-1 my-3">
-                    <span className="text-3xl font-black text-slate-900 font-mono">
-                      ₹99
-                    </span>
-                    <span className="text-xs text-slate-500">/ mo</span>
-                  </div>
-
-                  <p className="text-xs text-slate-500 leading-relaxed">
-                    Total ₹99. Billed monthly. Full access with complete flexibility to cancel or renew anytime.
-                  </p>
-                </div>
-
-                <div className="mt-6 pt-4 border-t border-slate-100">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleInitiatePayment('1_MONTH');
-                    }}
-                    className={`w-full py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                      selectedDuration === '1_MONTH'
-                        ? 'bg-brand-600 text-white shadow-xs'
-                        : 'bg-slate-100 text-slate-700 hover:bg-brand-600 hover:text-white'
-                    }`}
-                  >
-                    Select 1-Month (₹99)
-                  </button>
-                </div>
+          {/* Monthly Plan Focus Card */}
+          <div className="max-w-2xl mx-auto">
+            <div className="rounded-3xl p-6 sm:p-8 border-2 border-brand-600 bg-gradient-to-b from-white to-brand-50/20 shadow-xl relative overflow-hidden">
+              <div className="absolute top-0 right-0 bg-brand-600 text-white px-4 py-1.5 rounded-bl-2xl text-[11px] font-extrabold uppercase tracking-wider flex items-center gap-1 shadow-xs">
+                <Sparkles className="w-3.5 h-3.5 text-amber-300 fill-amber-300" />
+                <span>Monthly Subscription</span>
               </div>
 
-              {/* Tier 2: 3 Months (Decoy) */}
-              <div
-                onClick={() => setSelectedDuration('3_MONTHS')}
-                className={`rounded-2xl p-5 border transition-all cursor-pointer flex flex-col justify-between relative bg-white ${
-                  selectedDuration === '3_MONTHS'
-                    ? 'border-brand-600 shadow-md ring-2 ring-brand-500/20'
-                    : 'border-slate-200 hover:border-slate-300'
-                }`}
-              >
-                <div className="absolute -top-3 right-4 px-2.5 py-0.5 bg-slate-800 text-white text-[10px] font-bold rounded-full uppercase tracking-wider shadow-xs">
-                  Save ₹30
+              <div className="space-y-4">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-10 h-10 rounded-xl bg-brand-100 flex items-center justify-center text-brand-700">
+                    <Crown className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-black text-slate-900">{plan.name}</h3>
+                    <p className="text-xs text-slate-500">{plan.description || 'All-inclusive GST business suite'}</p>
+                  </div>
                 </div>
 
-                <div>
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-xs font-bold text-slate-800">
-                      3 Months (Quarterly)
+                <div className="py-2 border-y border-slate-100 flex flex-wrap items-baseline gap-3">
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-4xl font-black text-slate-900 font-mono">
+                      ₹{monthlyAmount}
                     </span>
+                    <span className="text-sm font-bold text-slate-500">/ month</span>
                   </div>
-
-                  <div className="flex items-baseline gap-1 my-3">
-                    <span className="text-3xl font-black text-slate-900 font-mono">
-                      ₹89
-                    </span>
-                    <span className="text-xs text-slate-500">/ mo</span>
-                  </div>
-
-                  <p className="text-xs text-slate-500 leading-relaxed">
-                    Total ₹267 quarterly (billed ₹89/mo). Minimal discount to get started for a single quarter.
-                  </p>
+                  <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
+                    ⚡ 30 Days Full Access
+                  </span>
                 </div>
 
-                <div className="mt-6 pt-4 border-t border-slate-100">
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  Enjoy unlimited GST invoices, quotations, dynamic UPI QR generation, multi-copy Tally style printing, inventory tracking, and GSTR reports. Cancel or renew anytime.
+                </p>
+
+                <div className="pt-2">
                   <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleInitiatePayment('3_MONTHS');
-                    }}
-                    className={`w-full py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                      selectedDuration === '3_MONTHS'
-                        ? 'bg-brand-600 text-white shadow-xs'
-                        : 'bg-slate-100 text-slate-700 hover:bg-brand-600 hover:text-white'
-                    }`}
+                    onClick={handleInitiatePayment}
+                    className="w-full py-3.5 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-2xl text-sm shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98"
                   >
-                    Select 3-Months (₹267)
-                  </button>
-                </div>
-              </div>
-
-              {/* Tier 3: 12 Months (Target - High-Converting Hero Card) */}
-              <div
-                onClick={() => setSelectedDuration('12_MONTHS')}
-                className={`rounded-2xl p-5 border-2 transition-all cursor-pointer flex flex-col justify-between relative bg-white md:-translate-y-2 shadow-xl ${
-                  selectedDuration === '12_MONTHS'
-                    ? 'border-brand-600 ring-2 ring-brand-500/30'
-                    : 'border-brand-500/80 hover:border-brand-600'
-                }`}
-              >
-                <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-3 py-1 bg-gradient-to-r from-brand-600 to-brand-600 text-white text-[10px] font-extrabold rounded-full uppercase tracking-wider shadow-md whitespace-nowrap flex items-center gap-1">
-                  <Sparkles className="w-3 h-3 text-amber-300 fill-amber-300" />
-                  <span>MOST POPULAR • 6 MONTHS FREE</span>
-                </div>
-
-                <div>
-                  <div className="flex items-center justify-between mb-3 mt-1">
-                    <span className="text-xs font-bold text-brand-900 flex items-center gap-1.5">
-                      <Crown className="w-4 h-4 text-amber-500 fill-amber-500" />
-                      12 Months (Annual Plan)
-                    </span>
-                  </div>
-
-                  <div className="space-y-1.5 my-3">
-                    <div className="flex items-baseline gap-2 flex-wrap">
-                      <span className="text-3xl font-black text-brand-600 font-mono">
-                        ₹49
-                      </span>
-                      <span className="text-xs font-bold text-slate-600">/ mo</span>
-                      <span className="text-xs text-slate-400 font-semibold line-through">
-                        ₹1,188
-                      </span>
-                      <span className="text-xs font-bold text-emerald-600">
-                        (₹588 / year)
-                      </span>
-                    </div>
-
-                    {/* Daily Cost Framing */}
-                    <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md bg-emerald-50 border border-emerald-200 text-[11px] font-bold text-emerald-700">
-                      <span>⚡ Just ₹1.60 per day!</span>
-                    </div>
-                  </div>
-
-                  <p className="text-xs text-slate-500 leading-relaxed mt-2">
-                    Pay for 6 months and get 6 months completely free. Instant uninterrupted annual billing with zero renewal hassles.
-                  </p>
-                </div>
-
-                <div className="mt-6 pt-4 border-t border-brand-100">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleInitiatePayment('12_MONTHS');
-                    }}
-                    className="w-full py-3 rounded-xl text-xs font-bold transition-all cursor-pointer bg-brand-600 hover:bg-brand-700 text-white shadow-md hover:shadow-lg flex items-center justify-center gap-1.5 active:scale-98"
-                  >
-                    <Zap className="w-3.5 h-3.5 text-amber-300 fill-amber-300" />
-                    <span>Claim 6 Months Free (₹588)</span>
+                    <Zap className="w-4 h-4 text-amber-300 fill-amber-300" />
+                    <span>Proceed to Subscribe (₹{monthlyAmount}/mo)</span>
                   </button>
                 </div>
               </div>
@@ -680,7 +556,7 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
                   )}
                   <div className="flex justify-between text-slate-500">
                     <span>Active Gateway:</span>
-                    <span className="font-bold text-emerald-700">{activeGateway.name}</span>
+                    <span className="font-bold text-emerald-700">{activeGateway.name || 'PayU India Hosted Gateway'}</span>
                   </div>
                   <div className="pt-2.5 border-t border-slate-200 flex justify-between items-baseline">
                     <span className="font-bold text-slate-900">Total Payable:</span>
@@ -751,7 +627,7 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
                 <div className="p-3 rounded-xl bg-brand-50 border border-brand-200 text-xs text-brand-800 flex items-center gap-2.5">
                   <ShieldCheck className="w-4 h-4 text-brand-600 shrink-0" />
                   <span>
-                    Secured payment processing via <strong>{activeGateway.name}</strong> ({activeGateway.isTestMode ? 'Test Mode' : 'Live Gateway'})
+                    Secured payment processing via <strong>PayU Hosted Checkout</strong> ({activeGateway.isTestMode ? 'Test Sandbox' : 'Live Gateway'})
                   </span>
                 </div>
 

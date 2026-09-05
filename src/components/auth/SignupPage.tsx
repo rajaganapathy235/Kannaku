@@ -61,8 +61,8 @@ export const SignupPage: React.FC<SignupPageProps> = ({
   const [gstin, setGstin] = useState('');
   const [city, setCity] = useState('');
   const [state, setState] = useState('Tamil Nadu');
-  const [planId, setPlanId] = useState('plan_pro');
-  const [billingCycle, setBillingCycle] = useState<'MONTHLY' | 'YEARLY'>('YEARLY');
+  const [planId, setPlanId] = useState('plan_all_in_one_pro');
+  const [billingCycle, setBillingCycle] = useState<'MONTHLY' | 'YEARLY'>('MONTHLY');
 
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -401,7 +401,7 @@ export const SignupPage: React.FC<SignupPageProps> = ({
                     <Sparkles className="w-4 h-4" />
                   </div>
                   <div>
-                    <div className="font-bold text-slate-900">Included: Pro Trader Suite</div>
+                    <div className="font-bold text-slate-900">Included: All-in-One Growth Plan Suite</div>
                     <div className="text-[11px] text-slate-600">14-Day Free Access • All Features Unlocked</div>
                   </div>
                 </div>

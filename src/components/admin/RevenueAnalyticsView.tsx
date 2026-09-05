@@ -170,10 +170,9 @@ export const RevenueAnalyticsView: React.FC = () => {
           <h3 className="text-sm font-bold text-white">Revenue by Pricing Tier</h3>
           <div className="space-y-3 text-xs">
             {[
-              { plan: 'Annual Business (₹12,000/yr)', pct: 45, val: '₹66,960' },
-              { plan: 'Pro Trader (₹1,499/mo)', pct: 35, val: '₹52,080' },
-              { plan: 'Starter Business (₹799/mo)', pct: 15, val: '₹22,320' },
-              { plan: 'Enterprise Custom', pct: 5, val: '₹7,440' },
+              { plan: 'All-in-One Growth Plan (₹99/mo)', pct: 85, val: '₹1,26,450' },
+              { plan: 'Annual Business (Custom)', pct: 10, val: '₹14,880' },
+              { plan: 'Starter Business (Legacy)', pct: 5, val: '₹7,440' },
             ].map((p, i) => (
               <div key={i} className="space-y-1.5">
                 <div className="flex items-center justify-between">

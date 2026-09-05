@@ -491,8 +491,8 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
           organization: org || {
             id: user.organization_id,
             name: 'HYTEX COTTON MILLS',
-            planId: 'plan_pro',
-            planName: 'Pro Trader',
+            planId: 'plan_all_in_one_pro',
+            planName: 'All-in-One Growth Plan',
           },
         },
         200,
@@ -577,8 +577,8 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
           organization: org || {
             id: user.organization_id,
             name: 'My Business',
-            planId: 'plan_pro',
-            planName: 'Pro Trader',
+            planId: 'plan_all_in_one_pro',
+            planName: 'All-in-One Growth Plan',
           },
         },
         200,
@@ -618,7 +618,7 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
         db,
         `INSERT INTO organizations (
           id, name, slug, owner_name, admin_email, mobile, state, register_number, plan_id, plan_name, subscription_status, trial_end_date
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'plan_pro', 'Pro Trader', 'TRIAL', ?)`,
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'plan_all_in_one_pro', 'All-in-One Growth Plan', 'TRIAL', ?)`,
         orgId,
         companyName,
         slug,
@@ -665,8 +665,8 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
           organization: {
             id: orgId,
             name: companyName,
-            planId: 'plan_pro',
-            planName: 'Pro Trader',
+            planId: 'plan_all_in_one_pro',
+            planName: 'All-in-One Growth Plan',
             subscriptionStatus: 'TRIAL',
             trialEndDate,
           },
@@ -687,6 +687,97 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
   }
 
   // -------------------------------------------------------------
+  // 2.4.1 PUBLIC PLANS ENDPOINT (LIVE PRICING FROM D1 DATABASE)
+  // -------------------------------------------------------------
+  if ((path === '/api/plans' || path === '/api/public/plans') && method === 'GET') {
+    try {
+      const plans = await queryAll<any>(db, 'SELECT * FROM saas_plans WHERE is_archived = 0 ORDER BY monthly_price_inr ASC');
+      
+      let parsedPlans = plans.map((p) => ({
+        id: p.id,
+        name: p.name,
+        code: p.code,
+        tagline: p.tagline,
+        monthlyPriceInr: Number(p.monthly_price_inr) || 99,
+        sixMonthPriceInr: Number(p.six_month_price_inr) || 474,
+        threeMonthPriceInr: Number(p.three_month_price_inr) || 237,
+        yearlyPriceInr: Number(p.yearly_price_inr) || 588,
+        trialDurationDays: Number(p.trial_duration_days) || 14,
+        isPopular: !!p.is_popular,
+        isArchived: !!p.is_archived,
+        billingCycle: '1_MONTH',
+        durationDays: 30,
+        limits: p.limits_json ? JSON.parse(p.limits_json) : {
+          maxUsers: 999,
+          maxInvoicesPerMonth: 999999,
+          maxQuotationsPerMonth: 999999,
+          maxCustomers: 999999,
+          maxProducts: 999999,
+          pdfGenerationsLimit: 999999,
+          hasMultiUser: true,
+          hasGstReports: true,
+          hasCustomBranding: true,
+          hasDigitalStampSign: true,
+          hasInventoryAlerts: true,
+          hasTallyPrintFormats: true,
+          hasUpiQrPayment: true,
+          hasPurchaseLedger: true,
+        },
+        createdOn: p.created_at,
+        updatedOn: p.updated_at,
+      }));
+
+      // Fallback if table was empty
+      if (parsedPlans.length === 0) {
+        parsedPlans = [
+          {
+            id: 'plan_all_in_one_pro',
+            name: 'All-in-One Growth Plan',
+            code: 'ALL_IN_ONE',
+            tagline: 'Single comprehensive plan with ALL GST invoicing, Tally multi-copy prints & compliance features unlocked',
+            monthlyPriceInr: 99,
+            sixMonthPriceInr: 474,
+            threeMonthPriceInr: 237,
+            yearlyPriceInr: 588,
+            trialDurationDays: 14,
+            isPopular: true,
+            isArchived: false,
+            billingCycle: '1_MONTH',
+            durationDays: 30,
+            limits: {
+              maxUsers: 999,
+              maxInvoicesPerMonth: 999999,
+              maxQuotationsPerMonth: 999999,
+              maxCustomers: 999999,
+              maxProducts: 999999,
+              pdfGenerationsLimit: 999999,
+              hasMultiUser: true,
+              hasGstReports: true,
+              hasCustomBranding: true,
+              hasDigitalStampSign: true,
+              hasInventoryAlerts: true,
+              hasTallyPrintFormats: true,
+              hasUpiQrPayment: true,
+              hasPurchaseLedger: true,
+            },
+            createdOn: new Date().toISOString(),
+            updatedOn: new Date().toISOString(),
+          },
+        ];
+      }
+
+      return jsonResponse({
+        success: true,
+        data: parsedPlans,
+        plans: parsedPlans,
+      });
+    } catch (err: any) {
+      console.error('[Public Plans API Error]', err);
+      return errorResponse('Failed to fetch pricing plans: ' + (err?.message || 'Server error'), 500);
+    }
+  }
+
+  // -------------------------------------------------------------
   // 2.5 PAYU PAYMENT GATEWAY (INIT, WEBHOOK/VERIFY, BROWSER RETURN)
   // -------------------------------------------------------------
   if ((path === '/api/payu/init' || path === '/api/payments/payu/initiate') && method === 'POST') {
@@ -695,22 +786,29 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
       const body = await parseRequestBody(request);
 
       const effectiveOrgId = session?.organizationId || body.organizationId || body.orgId || 'org_demo_hytex';
-      const billingCycle = body.billingCycle === '1_MONTH' ? '1_MONTH' : body.billingCycle === '3_MONTHS' ? '3_MONTHS' : '12_MONTHS';
-
-      // Look up server-side plan pricing (NEVER trust client amounts)
-      let amount = 588.00;
-      let durationDays = 365;
-      let durationTitle = '12 Months (1 Year)';
-
-      if (billingCycle === '1_MONTH') {
-        amount = 99.00;
-        durationDays = 30;
-        durationTitle = '1 Month';
-      } else if (billingCycle === '3_MONTHS') {
-        amount = 267.00;
-        durationDays = 90;
-        durationTitle = '3 Months (Quarterly)';
+      
+      // Dynamic live pricing: fetch the active plan from D1 saas_plans table
+      const requestedPlanId = body.planId || 'plan_all_in_one_pro';
+      let planRecord = await queryFirst<any>(
+        db,
+        `SELECT * FROM saas_plans WHERE id = ? AND is_archived = 0`,
+        requestedPlanId
+      );
+      if (!planRecord) {
+        planRecord = await queryFirst<any>(
+          db,
+          `SELECT * FROM saas_plans WHERE is_archived = 0 ORDER BY monthly_price_inr ASC LIMIT 1`
+        );
       }
+
+      const activePlanId = planRecord?.id || 'plan_all_in_one_pro';
+      const activePlanName = planRecord?.name || 'All-in-One Growth Plan';
+
+      // Monthly-only billing: strictly 30 days single cycle
+      const billingCycle = '1_MONTH';
+      const durationDays = 30;
+      const durationTitle = '1 Month (Monthly Access)';
+      let amount = Number(planRecord?.monthly_price_inr) || 99.00;
 
       const org = await queryFirst<any>(db, 'SELECT * FROM organizations WHERE id = ?', effectiveOrgId);
       
@@ -758,7 +856,7 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
 
       const txnid = body.txnid || `txnid_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
       const amountStr = amount.toFixed(2);
-      const productinfo = body.productinfo || `JustGST Pro - ${durationTitle}${appliedCouponCode ? ` (Coupon: ${appliedCouponCode})` : ''}`;
+      const productinfo = body.productinfo || `JustGST - ${activePlanName} (${durationTitle})${appliedCouponCode ? ` [Coupon: ${appliedCouponCode}]` : ''}`;
       const firstname = (body.firstname || org?.owner_name || session?.name || 'Customer').substring(0, 50).trim();
       const email = (body.email || org?.admin_email || session?.email || 'customer@justgst.in').trim();
       const phone = (body.phone || org?.mobile || '9999999999').replace(/[^0-9]/g, '').slice(-10) || '9999999999';
@@ -767,7 +865,7 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
       const udf2 = session?.userId || body.userId || 'guest_user';
       const udf3 = billingCycle;
       const udf4 = durationDays.toString();
-      const udf5 = org?.plan_id || 'plan_pro';
+      const udf5 = activePlanId;
       const udf6 = body.udf6 || '';
       const udf7 = body.udf7 || '';
       const udf8 = body.udf8 || '';
@@ -810,8 +908,8 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
           effectiveOrgId,
           txnid,
           amount,
-          udf5,
-          org?.plan_name || 'Pro Trader',
+          activePlanId,
+          activePlanName,
           billingCycle,
           durationDays,
           email,
@@ -1024,12 +1122,12 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
               subscription_status = 'ACTIVE',
               renewal_date = ?,
               plan_id = ?,
-              plan_name = 'Pro Trader',
+              plan_name = 'All-in-One Growth Plan',
               payment_provider = 'payu',
               last_active = CURRENT_TIMESTAMP
             WHERE id = ?`,
             renewalDate,
-            udf5 || 'plan_pro',
+            udf5 || 'plan_all_in_one_pro',
             orgId
           );
         }
@@ -1069,7 +1167,7 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
           db,
           `INSERT INTO saas_transactions (
             id, organization_id, organization_name, amount, currency, payment_method, payment_provider, status, date, invoice_number, gateway_ref_id, customer_email, plan_name, billing_cycle
-          ) VALUES (?, ?, ?, ?, 'INR', 'PayU Hosted Checkout', 'PayU', 'SUCCESSFUL', CURRENT_TIMESTAMP, ?, ?, ?, 'Pro Trader', ?)`,
+          ) VALUES (?, ?, ?, ?, 'INR', 'PayU Hosted Checkout', 'PayU', 'SUCCESSFUL', CURRENT_TIMESTAMP, ?, ?, ?, 'All-in-One Growth Plan', ?)`,
           `txn_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
           orgId || 'unknown_org',
           org?.name || 'Customer Workspace',
@@ -1077,7 +1175,7 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
           `INV-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
           txnid || mihpayid,
           email || '',
-          udf3 || '12_MONTHS'
+          udf3 || '1_MONTH'
         );
 
         // 4.5 Record in audit_logs
@@ -1091,7 +1189,7 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
           udf2 || 'user_payu',
           firstname || 'Customer',
           txnid || mihpayid,
-          `Subscription Pro - ${udf3 || '12_MONTHS'}`,
+          `Subscription All-in-One Growth Plan - ${udf3 || '1_MONTH'}`,
           request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for') || '127.0.0.1'
         );
 
@@ -1174,7 +1272,7 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
       const body = (await request.json().catch(() => ({}))) as any;
       const code = (body.code || '').toUpperCase().trim();
       const amount = Number(body.amount) || 0;
-      const planId = body.planId || 'plan_pro';
+      const planId = body.planId || 'plan_all_in_one_pro';
 
       if (!code) {
         return errorResponse('Coupon code is required', 400);
@@ -3984,26 +4082,21 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
       const rows = await queryAll<any>(db, 'SELECT * FROM payment_gateway_config');
       const gatewaysMap: Record<string, any> = {};
 
-      const defaultProviders = ['PAYU', 'RAZORPAY', 'CASHFREE', 'PHONEPE', 'STRIPE', 'MANUAL_UPI'];
+      const defaultProviders = ['PAYU'];
       const defaultNames: Record<string, string> = {
-        PAYU: 'PayU Hosted Checkout',
-        RAZORPAY: 'Razorpay PG',
-        CASHFREE: 'Cashfree Payments',
-        PHONEPE: 'PhonePe PG',
-        STRIPE: 'Stripe Global',
-        MANUAL_UPI: 'Direct QR / Manual UPI',
+        PAYU: 'PayU India Hosted Gateway',
       };
 
       for (const p of defaultProviders) {
         gatewaysMap[p] = {
           provider: p,
           name: defaultNames[p] || p,
-          isEnabled: p === 'PAYU',
+          isEnabled: true,
           isTestMode: true,
           merchantKey: '',
           merchantSalt: '',
           webhookSecret: '',
-          endpoint: '',
+          endpoint: 'https://test.payu.in/_payment',
           supportedMethods: ['UPI', 'NET_BANKING', 'CARDS'],
           currency: 'INR',
         };
@@ -4020,7 +4113,7 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
         gatewaysMap[r.provider] = {
           provider: r.provider,
           name: r.name || defaultNames[r.provider] || r.provider,
-          isEnabled: !!r.is_enabled,
+          isEnabled: r.is_enabled !== undefined ? !!r.is_enabled : true,
           isTestMode: r.is_test_mode !== null && r.is_test_mode !== undefined ? !!r.is_test_mode : true,
           merchantKey: r.merchant_key || '',
           merchantSalt: r.merchant_salt || '',
@@ -4031,13 +4124,13 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
           ...extraConfig,
         };
 
-        if (r.is_active_default) {
+        if (r.is_active_default || r.provider === 'PAYU') {
           activeProvider = r.provider;
         }
       }
 
       return jsonResponse({
-        activeProvider,
+        activeProvider: 'PAYU',
         gateways: gatewaysMap,
       });
     }

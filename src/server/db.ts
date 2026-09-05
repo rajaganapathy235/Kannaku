@@ -125,11 +125,11 @@ export async function ensureTables(db: D1Database): Promise<void> {
         logo_url TEXT,
         stamp_url TEXT,
         signature_url TEXT,
-        plan_id TEXT DEFAULT 'plan_pro',
-        plan_name TEXT DEFAULT 'Pro Trader',
+        plan_id TEXT DEFAULT 'plan_all_in_one_pro',
+        plan_name TEXT DEFAULT 'All-in-One Growth Plan',
         subscription_status TEXT DEFAULT 'ACTIVE',
         account_status TEXT DEFAULT 'ACTIVE',
-        billing_cycle TEXT DEFAULT 'YEARLY',
+        billing_cycle TEXT DEFAULT 'MONTHLY',
         subscription_start_date TEXT DEFAULT CURRENT_TIMESTAMP,
         renewal_date TEXT,
         trial_end_date TEXT,
@@ -137,7 +137,7 @@ export async function ensureTables(db: D1Database): Promise<void> {
         users_count INTEGER DEFAULT 1,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP,
         last_active TEXT DEFAULT CURRENT_TIMESTAMP,
-        payment_provider TEXT DEFAULT 'cashfree',
+        payment_provider TEXT DEFAULT 'payu',
         custom_domain TEXT,
         notes TEXT
       );
@@ -458,11 +458,17 @@ export async function ensureTables(db: D1Database): Promise<void> {
 
       CREATE TABLE IF NOT EXISTS payment_gateway_config (
         provider TEXT PRIMARY KEY,
-        is_active INTEGER NOT NULL DEFAULT 0,
+        name TEXT,
+        is_enabled INTEGER NOT NULL DEFAULT 1,
+        is_active INTEGER NOT NULL DEFAULT 1,
+        is_active_default INTEGER NOT NULL DEFAULT 0,
         is_test_mode INTEGER NOT NULL DEFAULT 1,
         merchant_key TEXT,
         merchant_salt TEXT,
         header_auth_key TEXT,
+        webhook_secret TEXT,
+        endpoint TEXT,
+        config_json TEXT,
         extra_json TEXT,
         updated_by TEXT,
         updated_at TEXT DEFAULT CURRENT_TIMESTAMP
@@ -503,6 +509,49 @@ export async function ensureTables(db: D1Database): Promise<void> {
       CREATE INDEX IF NOT EXISTS idx_sub_txns_txnid ON subscription_transactions(txnid);
       CREATE INDEX IF NOT EXISTS idx_support_tickets_org ON support_tickets(organization_id);
     `);
+
+    // Self-healing migration: upgrade payment_gateway_config schema with missing columns
+    try {
+      const gwInfo = await db.prepare('PRAGMA table_info(payment_gateway_config)').all<{ name: string }>();
+      const gwCols = gwInfo.results || [];
+      if (Array.isArray(gwCols) && gwCols.length > 0) {
+        const colNames = new Set(gwCols.map((c) => c.name));
+        if (!colNames.has('name')) await db.prepare('ALTER TABLE payment_gateway_config ADD COLUMN name TEXT').run();
+        if (!colNames.has('is_enabled')) await db.prepare('ALTER TABLE payment_gateway_config ADD COLUMN is_enabled INTEGER DEFAULT 1').run();
+        if (!colNames.has('is_active_default')) await db.prepare('ALTER TABLE payment_gateway_config ADD COLUMN is_active_default INTEGER DEFAULT 0').run();
+        if (!colNames.has('webhook_secret')) await db.prepare('ALTER TABLE payment_gateway_config ADD COLUMN webhook_secret TEXT').run();
+        if (!colNames.has('endpoint')) await db.prepare('ALTER TABLE payment_gateway_config ADD COLUMN endpoint TEXT').run();
+        if (!colNames.has('config_json')) await db.prepare('ALTER TABLE payment_gateway_config ADD COLUMN config_json TEXT').run();
+        if (!colNames.has('header_auth_key')) await db.prepare('ALTER TABLE payment_gateway_config ADD COLUMN header_auth_key TEXT').run();
+      }
+    } catch {
+      // Ignored if already up to date
+    }
+
+    // Self-healing migration: Standardize legacy 'plan_pro' / 'Pro Trader' to 'plan_all_in_one_pro' / 'All-in-One Growth Plan'
+    try {
+      await db.prepare(`
+        UPDATE organizations
+        SET plan_id = 'plan_all_in_one_pro',
+            plan_name = 'All-in-One Growth Plan'
+        WHERE plan_id = 'plan_pro' OR plan_name = 'Pro Trader' OR plan_id IS NULL OR plan_id = ''
+      `).run();
+
+      await db.prepare(`
+        UPDATE subscription_transactions
+        SET plan_id = 'plan_all_in_one_pro',
+            plan_name = 'All-in-One Growth Plan'
+        WHERE plan_id = 'plan_pro' OR plan_name = 'Pro Trader'
+      `).run();
+
+      await db.prepare(`
+        UPDATE saas_transactions
+        SET plan_name = 'All-in-One Growth Plan'
+        WHERE plan_name = 'Pro Trader'
+      `).run();
+    } catch {
+      // Ignored if tables empty or not applicable
+    }
 
     // Migration: add items_json to existing invoices table if missing
     try {
@@ -657,8 +706,8 @@ export async function seedInitialTenants(db: D1Database, env: any = {}): Promise
         'INV/2026/',
         bankDetailsJson,
         '1. Digital cloud software service and tax invoicing.\n2. Subject to Tamil Nadu jurisdiction.',
-        'plan_pro',
-        'Pro Trader',
+        'plan_all_in_one_pro',
+        'All-in-One Growth Plan',
         'ACTIVE'
       );
 

@@ -25,11 +25,11 @@ CREATE TABLE IF NOT EXISTS organizations (
   logo_url TEXT,
   stamp_url TEXT,
   signature_url TEXT,
-  plan_id TEXT DEFAULT 'plan_pro',
-  plan_name TEXT DEFAULT 'Pro Trader',
+  plan_id TEXT DEFAULT 'plan_all_in_one_pro',
+  plan_name TEXT DEFAULT 'All-in-One Growth Plan',
   subscription_status TEXT DEFAULT 'ACTIVE',
   account_status TEXT DEFAULT 'ACTIVE',
-  billing_cycle TEXT DEFAULT 'YEARLY',
+  billing_cycle TEXT DEFAULT 'MONTHLY',
   subscription_start_date TEXT DEFAULT CURRENT_TIMESTAMP,
   renewal_date TEXT,
   trial_end_date TEXT,
@@ -37,7 +37,7 @@ CREATE TABLE IF NOT EXISTS organizations (
   users_count INTEGER DEFAULT 1,
   created_at TEXT DEFAULT CURRENT_TIMESTAMP,
   last_active TEXT DEFAULT CURRENT_TIMESTAMP,
-  payment_provider TEXT DEFAULT 'cashfree',
+  payment_provider TEXT DEFAULT 'payu',
   custom_domain TEXT,
   notes TEXT
 );

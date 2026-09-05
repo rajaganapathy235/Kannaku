@@ -296,9 +296,9 @@ export const OrganizationsListView: React.FC<OrganizationsListViewProps> = ({
             className="px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-slate-300 focus:outline-none font-medium cursor-pointer"
           >
             <option value="ALL">All Plans</option>
+            <option value="plan_all_in_one_pro">All-in-One Growth Plan</option>
             <option value="plan_free">Free Starter</option>
             <option value="plan_starter">Starter Business</option>
-            <option value="plan_pro">Pro Trader</option>
             <option value="plan_business">Annual Business</option>
             <option value="plan_enterprise">Enterprise Custom</option>
           </select>
