@@ -136,6 +136,7 @@ export async function authenticateRequest(
 }
 
 let currentOrigin = '*';
+let schemaEnsured = false;
 
 function jsonResponse(data: any, status: number = 200, headers: Record<string, string> = {}): Response {
   return new Response(JSON.stringify(data), {
@@ -393,8 +394,11 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
     );
   }
 
-  // Ensure tables and seed exist on first call
-  await ensureTables(db);
+  // Ensure tables and schema exist once per Worker isolate lifecycle (avoids redundant queries on warm requests)
+  if (!schemaEnsured) {
+    await ensureTables(db);
+    schemaEnsured = true;
+  }
 
   // -------------------------------------------------------------
   // 1. HEALTH & SYSTEM CHECKS
@@ -4391,7 +4395,7 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
       return jsonResponse({ success: true, key: configKey });
     }
 
-    // 10.20 D1 SCHEMA INTEGRITY & DRIFT CHECK (DEBUG ENDPOINT)
+    // 10.20 D1 SCHEMA & COLUMN INTEGRITY & DRIFT CHECK (DEBUG ENDPOINT)
     if (path === '/api/admin/system/schema-check' && method === 'GET') {
       try {
         const rows = await queryAll<{ name: string }>(
@@ -4427,7 +4431,116 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
 
         const missingTables = expectedTables.filter((t) => !existingSet.has(t));
         const presentTables = expectedTables.filter((t) => existingSet.has(t));
-        const isHealthy = missingTables.length === 0;
+
+        // Core table column definitions for deep drift inspection
+        const expectedTableSchemas: Record<string, string[]> = {
+          saas_plans: [
+            'id',
+            'name',
+            'code',
+            'tagline',
+            'monthly_price_inr',
+            'six_month_price_inr',
+            'three_month_price_inr',
+            'yearly_price_inr',
+            'trial_duration_days',
+            'is_popular',
+            'is_archived',
+            'limits_json',
+          ],
+          subscription_transactions: [
+            'id',
+            'organization_id',
+            'txnid',
+            'amount',
+            'currency',
+            'plan_id',
+            'billing_cycle',
+            'duration_days',
+            'payment_provider',
+            'payment_status',
+            'payu_payment_id',
+            'payu_response_json',
+            'user_email',
+            'user_phone',
+            'coupon_code',
+          ],
+          organizations: [
+            'id',
+            'name',
+            'slug',
+            'owner_name',
+            'admin_email',
+            'mobile',
+            'plan_id',
+            'plan_name',
+            'subscription_status',
+            'trial_end_date',
+            'renewal_date',
+          ],
+          audit_logs: [
+            'id',
+            'organization_id',
+            'admin_id',
+            'admin_name',
+            'admin_role',
+            'action',
+            'target_id',
+            'target_name',
+            'target_type',
+            'ip_address',
+          ],
+          payment_gateway_config: [
+            'provider',
+            'name',
+            'is_enabled',
+            'is_test_mode',
+            'merchant_key',
+            'merchant_salt',
+            'auth_header_key',
+            'endpoint_url',
+          ],
+          platform_users: [
+            'id',
+            'organization_id',
+            'name',
+            'email',
+            'phone',
+            'password_hash',
+            'role',
+            'status',
+          ],
+        };
+
+        const missingColumns: Record<string, string[]> = {};
+        const columnValidation: Record<string, { expectedCount: number; existingCount: number; missing: string[] }> = {};
+        let hasColumnDrift = false;
+
+        for (const [tblName, expectedCols] of Object.entries(expectedTableSchemas)) {
+          if (existingSet.has(tblName)) {
+            try {
+              const colRows = await queryAll<{ name: string }>(db, `PRAGMA table_info(${tblName})`);
+              const existingCols = colRows.map((c) => c.name);
+              const existingColSet = new Set(existingCols);
+              const missing = expectedCols.filter((col) => !existingColSet.has(col));
+
+              columnValidation[tblName] = {
+                expectedCount: expectedCols.length,
+                existingCount: existingCols.length,
+                missing,
+              };
+
+              if (missing.length > 0) {
+                missingColumns[tblName] = missing;
+                hasColumnDrift = true;
+              }
+            } catch (colErr: any) {
+              console.warn(`[schema-check] Failed to inspect PRAGMA table_info(${tblName}):`, colErr?.message || colErr);
+            }
+          }
+        }
+
+        const isHealthy = missingTables.length === 0 && !hasColumnDrift;
 
         return jsonResponse({
           success: true,
@@ -4438,6 +4551,8 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
           totalMissing: missingTables.length,
           missingTables,
           presentTables,
+          missingColumns,
+          columnValidation,
           allExistingTables: existingTables,
           checkedAt: new Date().toISOString(),
         });

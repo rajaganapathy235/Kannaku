@@ -159,6 +159,22 @@ export const SystemHealthView: React.FC = () => {
                 </div>
               </div>
             )}
+
+            {schemaStatus.data.missingColumns && Object.keys(schemaStatus.data.missingColumns).length > 0 && (
+              <div className="p-3 bg-amber-950/40 border border-amber-800/50 rounded-lg text-amber-300 text-xs flex items-start gap-2">
+                <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                <div>
+                  <div className="font-bold">Column-Level Schema Drift Detected:</div>
+                  <div className="mt-1.5 space-y-1">
+                    {Object.entries(schemaStatus.data.missingColumns).map(([tbl, cols]) => (
+                      <div key={tbl} className="font-mono text-[11px] text-amber-200">
+                        <span className="font-bold text-amber-100">{tbl}</span>: missing [{(cols as string[]).join(', ')}]
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>

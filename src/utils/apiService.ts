@@ -142,6 +142,8 @@ export class ApiService {
     totalMissing: number;
     missingTables: string[];
     presentTables: string[];
+    missingColumns?: Record<string, string[]>;
+    columnValidation?: Record<string, { expectedCount: number; existingCount: number; missing: string[] }>;
     allExistingTables: string[];
     checkedAt: string;
   }>> {
