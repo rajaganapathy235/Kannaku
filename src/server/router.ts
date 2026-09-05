@@ -1160,10 +1160,15 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
         const orgId = udf1;
         const durationDays = parseInt(udf4, 10) || 365;
 
-        // Query existing transaction record for idempotency check
-        const existingTxn = txnid
-          ? await queryFirst<any>(db, 'SELECT * FROM subscription_transactions WHERE txnid = ?', txnid)
-          : null;
+        // Query existing transaction record for idempotency check (wrapped in try/catch to never block fulfillment)
+        let existingTxn: any = null;
+        if (txnid) {
+          try {
+            existingTxn = await queryFirst<any>(db, 'SELECT * FROM subscription_transactions WHERE txnid = ?', txnid);
+          } catch (lookupErr: any) {
+            console.error('[PayU Return] Error looking up subscription_transactions for txnid:', txnid, lookupErr?.message || lookupErr);
+          }
+        }
 
         if (existingTxn && existingTxn.payment_status === 'SUCCESS') {
           // Idempotent no-op: already verified and fulfilled
@@ -1188,51 +1193,63 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
         // Calculate renewal date extending existing subscription if still active in future
         let baseDate = Date.now();
         if (orgId) {
-          const org = await queryFirst<any>(db, 'SELECT * FROM organizations WHERE id = ?', orgId);
-          if (org?.renewal_date) {
-            const existingRenewalTime = new Date(org.renewal_date).getTime();
-            if (!isNaN(existingRenewalTime) && existingRenewalTime > baseDate) {
-              baseDate = existingRenewalTime;
+          try {
+            const org = await queryFirst<any>(db, 'SELECT * FROM organizations WHERE id = ?', orgId);
+            if (org?.renewal_date) {
+              const existingRenewalTime = new Date(org.renewal_date).getTime();
+              if (!isNaN(existingRenewalTime) && existingRenewalTime > baseDate) {
+                baseDate = existingRenewalTime;
+              }
             }
+          } catch (orgQueryErr: any) {
+            console.error('[PayU Return] Error querying organization for renewal extension:', orgQueryErr?.message || orgQueryErr);
           }
         }
         const renewalDate = new Date(baseDate + durationDays * 24 * 60 * 60 * 1000).toISOString();
 
-        // 4.1 Activate organization subscription in D1
+        // 4.1 Activate organization subscription in D1 (Primary Core Business Logic)
         if (orgId) {
-          await execute(
-            db,
-            `UPDATE organizations SET
-              subscription_status = 'ACTIVE',
-              renewal_date = ?,
-              plan_id = ?,
-              plan_name = 'All-in-One Growth Plan',
-              payment_provider = 'payu',
-              last_active = CURRENT_TIMESTAMP
-            WHERE id = ?`,
-            renewalDate,
-            udf5 || 'plan_all_in_one_pro',
-            orgId
-          );
+          try {
+            await execute(
+              db,
+              `UPDATE organizations SET
+                subscription_status = 'ACTIVE',
+                renewal_date = ?,
+                plan_id = ?,
+                plan_name = 'All-in-One Growth Plan',
+                payment_provider = 'payu',
+                last_active = CURRENT_TIMESTAMP
+              WHERE id = ?`,
+              renewalDate,
+              udf5 || 'plan_all_in_one_pro',
+              orgId
+            );
+          } catch (orgUpdateErr: any) {
+            console.error('[PayU Return] Critical error updating organization subscription_status:', orgUpdateErr?.message || orgUpdateErr);
+          }
         }
 
-        // 4.2 Update subscription_transactions record in D1
+        // 4.2 Update subscription_transactions record in D1 (Non-blocking)
         if (txnid) {
-          await execute(
-            db,
-            `UPDATE subscription_transactions SET
-              payment_status = 'SUCCESS',
-              payu_payment_id = ?,
-              payu_response_json = ?,
-              updated_at = CURRENT_TIMESTAMP
-            WHERE txnid = ?`,
-            mihpayid || txnid,
-            JSON.stringify(body),
-            txnid
-          );
+          try {
+            await execute(
+              db,
+              `UPDATE subscription_transactions SET
+                payment_status = 'SUCCESS',
+                payu_payment_id = ?,
+                payu_response_json = ?,
+                updated_at = CURRENT_TIMESTAMP
+              WHERE txnid = ?`,
+              mihpayid || txnid,
+              JSON.stringify(body),
+              txnid
+            );
+          } catch (subTxnErr: any) {
+            console.error('[PayU Return] Error updating subscription_transactions record:', subTxnErr?.message || subTxnErr);
+          }
         }
 
-        // 4.3 Increment coupon usage count if coupon was applied
+        // 4.3 Increment coupon usage count if coupon was applied (Non-blocking)
         if (existingTxn && existingTxn.coupon_code) {
           try {
             await execute(
@@ -1240,42 +1257,50 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
               `UPDATE coupons SET used_count = used_count + 1 WHERE UPPER(code) = ?`,
               existingTxn.coupon_code.toUpperCase().trim()
             );
-          } catch (couponErr) {
-            console.error('[PayU Return] Failed to increment coupon usage:', couponErr);
+          } catch (couponErr: any) {
+            console.error('[PayU Return] Failed to increment coupon usage:', couponErr?.message || couponErr);
           }
         }
 
-        // 4.4 Record transaction in saas_transactions audit ledger
-        const org = orgId ? await queryFirst<any>(db, 'SELECT name FROM organizations WHERE id = ?', orgId) : null;
-        await execute(
-          db,
-          `INSERT INTO saas_transactions (
-            id, organization_id, organization_name, amount, currency, payment_method, payment_provider, status, date, invoice_number, gateway_ref_id, customer_email, plan_name, billing_cycle
-          ) VALUES (?, ?, ?, ?, 'INR', 'PayU Hosted Checkout', 'PayU', 'SUCCESSFUL', CURRENT_TIMESTAMP, ?, ?, ?, 'All-in-One Growth Plan', ?)`,
-          `txn_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
-          orgId || 'unknown_org',
-          org?.name || 'Customer Workspace',
-          Number(amount) || 0,
-          `INV-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
-          txnid || mihpayid,
-          email || '',
-          udf3 || '1_MONTH'
-        );
+        // 4.4 Record transaction in saas_transactions audit ledger (Non-blocking)
+        try {
+          const org = orgId ? await queryFirst<any>(db, 'SELECT name FROM organizations WHERE id = ?', orgId) : null;
+          await execute(
+            db,
+            `INSERT INTO saas_transactions (
+              id, organization_id, organization_name, amount, currency, payment_method, payment_provider, status, date, invoice_number, gateway_ref_id, customer_email, plan_name, billing_cycle
+            ) VALUES (?, ?, ?, ?, 'INR', 'PayU Hosted Checkout', 'PayU', 'SUCCESSFUL', CURRENT_TIMESTAMP, ?, ?, ?, 'All-in-One Growth Plan', ?)`,
+            `txn_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+            orgId || 'unknown_org',
+            org?.name || 'Customer Workspace',
+            Number(amount) || 0,
+            `INV-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
+            txnid || mihpayid,
+            email || '',
+            udf3 || '1_MONTH'
+          );
+        } catch (saasTxnErr: any) {
+          console.error('[PayU Return] Error recording saas_transactions audit entry:', saasTxnErr?.message || saasTxnErr);
+        }
 
-        // 4.5 Record in audit_logs
-        await execute(
-          db,
-          `INSERT INTO audit_logs (
-            id, organization_id, admin_id, admin_name, admin_role, action, target_id, target_name, target_type, ip_address
-          ) VALUES (?, ?, ?, ?, 'SYSTEM', 'PAYMENT_SUCCESS', ?, ?, 'SUBSCRIPTION', ?)`,
-          `audit_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
-          orgId || 'org_system',
-          udf2 || 'user_payu',
-          firstname || 'Customer',
-          txnid || mihpayid,
-          `Subscription All-in-One Growth Plan - ${udf3 || '1_MONTH'}`,
-          request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for') || '127.0.0.1'
-        );
+        // 4.5 Record in audit_logs (Non-blocking)
+        try {
+          await execute(
+            db,
+            `INSERT INTO audit_logs (
+              id, organization_id, admin_id, admin_name, admin_role, action, target_id, target_name, target_type, ip_address
+            ) VALUES (?, ?, ?, ?, 'SYSTEM', 'PAYMENT_SUCCESS', ?, ?, 'SUBSCRIPTION', ?)`,
+            `audit_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+            orgId || 'org_system',
+            udf2 || 'user_payu',
+            firstname || 'Customer',
+            txnid || mihpayid,
+            `Subscription All-in-One Growth Plan - ${udf3 || '1_MONTH'}`,
+            request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for') || '127.0.0.1'
+          );
+        } catch (auditErr: any) {
+          console.error('[PayU Return] Error inserting audit log for payment success:', auditErr?.message || auditErr);
+        }
 
         // 5. Success Browser Redirection or Webhook Response
         if (isWebhookOrJsonApi) {
@@ -1299,18 +1324,22 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
       } else {
         // Payment failed, cancelled, or pending
         if (txnid) {
-          await execute(
-            db,
-            `UPDATE subscription_transactions SET
-              payment_status = 'FAILED',
-              payu_payment_id = ?,
-              payu_response_json = ?,
-              updated_at = CURRENT_TIMESTAMP
-            WHERE txnid = ?`,
-            mihpayid,
-            JSON.stringify(body),
-            txnid
-          );
+          try {
+            await execute(
+              db,
+              `UPDATE subscription_transactions SET
+                payment_status = 'FAILED',
+                payu_payment_id = ?,
+                payu_response_json = ?,
+                updated_at = CURRENT_TIMESTAMP
+              WHERE txnid = ?`,
+              mihpayid,
+              JSON.stringify(body),
+              txnid
+            );
+          } catch (failTxnErr: any) {
+            console.error('[PayU Return] Error updating failed status in subscription_transactions:', failTxnErr?.message || failTxnErr);
+          }
         }
 
         if (isWebhookOrJsonApi) {
@@ -1495,20 +1524,25 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
         session.userId
       );
 
-      // Audit log password rotation
-      await execute(
-        db,
-        `INSERT INTO audit_logs (
-          id, organization_id, user_id, action, entity_type, entity_id, metadata_json
-        ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-        `audit_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
-        session.organizationId,
-        session.userId,
-        'PASSWORD_CHANGED',
-        'platform_users',
-        session.userId,
-        JSON.stringify({ ip: request.headers.get('cf-connecting-ip') || 'unknown', timestamp: new Date().toISOString() })
-      );
+      // Audit log password rotation (isolated in try/catch so audit issues never block success)
+      try {
+        await execute(
+          db,
+          `INSERT INTO audit_logs (
+            id, organization_id, admin_id, admin_name, admin_role, action, target_id, target_name, target_type, ip_address
+          ) VALUES (?, ?, ?, ?, ?, 'PASSWORD_CHANGED', ?, ?, 'platform_users', ?)`,
+          `audit_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+          session.organizationId,
+          session.userId,
+          session.name || user.name || 'User',
+          session.role || 'USER',
+          session.userId,
+          user.name || session.name || 'User Profile',
+          request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for') || '127.0.0.1'
+        );
+      } catch (auditErr: any) {
+        console.warn('[change-password] Failed to insert audit log:', auditErr?.message || auditErr);
+      }
 
       return jsonResponse({
         success: true,
@@ -4355,6 +4389,61 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
       );
 
       return jsonResponse({ success: true, key: configKey });
+    }
+
+    // 10.20 D1 SCHEMA INTEGRITY & DRIFT CHECK (DEBUG ENDPOINT)
+    if (path === '/api/admin/system/schema-check' && method === 'GET') {
+      try {
+        const rows = await queryAll<{ name: string }>(
+          db,
+          "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name ASC"
+        );
+        const existingTables = rows.map((r) => r.name);
+        const existingSet = new Set(existingTables);
+
+        const expectedTables = [
+          'organizations',
+          'platform_users',
+          'clients',
+          'products',
+          'invoices',
+          'invoice_items',
+          'payment_ledgers',
+          'audit_logs',
+          'impersonation_sessions',
+          'saas_plans',
+          'saas_transactions',
+          'coupons',
+          'feature_flags',
+          'support_tickets',
+          'announcements',
+          'email_templates',
+          'system_error_logs',
+          'app_settings',
+          'platform_settings',
+          'payment_gateway_config',
+          'subscription_transactions',
+        ];
+
+        const missingTables = expectedTables.filter((t) => !existingSet.has(t));
+        const presentTables = expectedTables.filter((t) => existingSet.has(t));
+        const isHealthy = missingTables.length === 0;
+
+        return jsonResponse({
+          success: true,
+          healthy: isHealthy,
+          status: isHealthy ? 'HEALTHY' : 'DRIFT_DETECTED',
+          totalExpected: expectedTables.length,
+          totalPresent: presentTables.length,
+          totalMissing: missingTables.length,
+          missingTables,
+          presentTables,
+          allExistingTables: existingTables,
+          checkedAt: new Date().toISOString(),
+        });
+      } catch (err: any) {
+        return errorResponse('Failed to check database schema: ' + (err?.message || 'DB error'), 500);
+      }
     }
   }
 

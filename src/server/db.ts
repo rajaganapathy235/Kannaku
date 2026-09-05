@@ -99,12 +99,121 @@ export async function executeRaw(
 
 /**
  * Ensure all required tables and indexes exist in D1.
- * Automatically runs CREATE TABLE IF NOT EXISTS.
+ * Automatically runs CREATE TABLE IF NOT EXISTS and CREATE INDEX IF NOT EXISTS
+ * as separate, isolated statements with individual error isolation.
  */
 export async function ensureTables(db: D1Database): Promise<void> {
+  // 0. Safe Schema-Verification Check for Core Reference Tables (Detect & Resolve Schema Drift)
+  // If an existing table in production has an outdated column layout that CREATE TABLE IF NOT EXISTS cannot fix,
+  // we safely rename it to <table>_schema_mismatch_<timestamp> (preserving all data) and create a fresh table.
   try {
-    await db.exec(`
-      CREATE TABLE IF NOT EXISTS organizations (
+    const planTableInfo = await db.prepare('PRAGMA table_info(saas_plans)').all<{ name: string }>();
+    const planCols = planTableInfo.results || [];
+    if (Array.isArray(planCols) && planCols.length > 0) {
+      const existingColNames = new Set(planCols.map((c) => c.name));
+      const expectedPlanColumns = [
+        'id',
+        'name',
+        'code',
+        'tagline',
+        'monthly_price_inr',
+        'six_month_price_inr',
+        'three_month_price_inr',
+        'yearly_price_inr',
+        'trial_duration_days',
+        'is_popular',
+        'is_archived',
+        'limits_json',
+      ];
+      const missingPlanCols = expectedPlanColumns.filter((col) => !existingColNames.has(col));
+
+      if (missingPlanCols.length > 0) {
+        const timestamp = Date.now();
+        const backupTable = `saas_plans_schema_mismatch_${timestamp}`;
+        console.warn(
+          `[SCHEMA DRIFT WARNING] Table 'saas_plans' has an incompatible older schema! Found columns: [${Array.from(
+            existingColNames
+          ).join(', ')}]. Missing expected columns: [${missingPlanCols.join(
+            ', '
+          )}]. Safely renaming legacy table to '${backupTable}' and re-creating fresh 'saas_plans' schema...`
+        );
+
+        // Safely rename old table without data loss
+        await db.prepare(`ALTER TABLE saas_plans RENAME TO ${backupTable}`).run();
+
+        // Create fresh correctly-shaped saas_plans table
+        await db
+          .prepare(
+            `CREATE TABLE saas_plans (
+              id TEXT PRIMARY KEY,
+              name TEXT NOT NULL,
+              code TEXT NOT NULL,
+              tagline TEXT,
+              monthly_price_inr REAL NOT NULL,
+              six_month_price_inr REAL,
+              three_month_price_inr REAL,
+              yearly_price_inr REAL NOT NULL,
+              trial_duration_days INTEGER DEFAULT 7,
+              is_popular INTEGER DEFAULT 0,
+              is_archived INTEGER DEFAULT 0,
+              limits_json TEXT,
+              created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+              updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+            )`
+          )
+          .run();
+
+        // Immediately re-seed with standard flagship plan row
+        const defaultLimits = JSON.stringify({
+          maxUsers: 999,
+          maxInvoicesPerMonth: 999999,
+          maxQuotationsPerMonth: 999999,
+          maxCustomers: 999999,
+          maxProducts: 999999,
+          pdfGenerationsLimit: 999999,
+          hasMultiUser: true,
+          hasGstReports: true,
+          hasCustomBranding: true,
+          hasDigitalStampSign: true,
+          hasInventoryAlerts: true,
+          hasTallyPrintFormats: true,
+          hasUpiQrPayment: true,
+          hasPurchaseLedger: true,
+        });
+
+        await db
+          .prepare(
+            `INSERT INTO saas_plans (
+              id, name, code, tagline, monthly_price_inr, six_month_price_inr, three_month_price_inr, yearly_price_inr, trial_duration_days, is_popular, is_archived, limits_json
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+          )
+          .bind(
+            'plan_all_in_one_pro',
+            'All-in-One Growth Plan',
+            'ALL_IN_ONE',
+            'Single comprehensive plan with ALL GST invoicing, Tally multi-copy prints & compliance features unlocked',
+            99,
+            474,
+            237,
+            588,
+            7,
+            1,
+            0,
+            defaultLimits
+          )
+          .run();
+
+        console.warn(`[SCHEMA DRIFT RESOLVED] Fresh 'saas_plans' table created and seeded with 'plan_all_in_one_pro'.`);
+      }
+    }
+  } catch (err: any) {
+    console.error('[ensureTables] Schema verification error on saas_plans:', err?.message || err);
+  }
+
+  const tableDefinitions: { name: string; sql: string }[] = [
+    {
+      name: 'organizations',
+      sql: `CREATE TABLE IF NOT EXISTS organizations (
         id TEXT PRIMARY KEY,
         name TEXT NOT NULL,
         slug TEXT UNIQUE NOT NULL,
@@ -140,9 +249,11 @@ export async function ensureTables(db: D1Database): Promise<void> {
         payment_provider TEXT DEFAULT 'payu',
         custom_domain TEXT,
         notes TEXT
-      );
-
-      CREATE TABLE IF NOT EXISTS platform_users (
+      )`,
+    },
+    {
+      name: 'platform_users',
+      sql: `CREATE TABLE IF NOT EXISTS platform_users (
         id TEXT PRIMARY KEY,
         organization_id TEXT NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
         name TEXT NOT NULL,
@@ -154,9 +265,11 @@ export async function ensureTables(db: D1Database): Promise<void> {
         avatar_url TEXT,
         last_login TEXT,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP
-      );
-
-      CREATE TABLE IF NOT EXISTS clients (
+      )`,
+    },
+    {
+      name: 'clients',
+      sql: `CREATE TABLE IF NOT EXISTS clients (
         id TEXT PRIMARY KEY,
         organization_id TEXT NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
         name TEXT NOT NULL,
@@ -176,9 +289,11 @@ export async function ensureTables(db: D1Database): Promise<void> {
         is_active INTEGER DEFAULT 1,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP,
         updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-      );
-
-      CREATE TABLE IF NOT EXISTS products (
+      )`,
+    },
+    {
+      name: 'products',
+      sql: `CREATE TABLE IF NOT EXISTS products (
         id TEXT PRIMARY KEY,
         organization_id TEXT NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
         name TEXT NOT NULL,
@@ -200,9 +315,11 @@ export async function ensureTables(db: D1Database): Promise<void> {
         is_active INTEGER DEFAULT 1,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP,
         updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-      );
-
-      CREATE TABLE IF NOT EXISTS invoices (
+      )`,
+    },
+    {
+      name: 'invoices',
+      sql: `CREATE TABLE IF NOT EXISTS invoices (
         id TEXT PRIMARY KEY,
         organization_id TEXT NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
         invoice_number TEXT NOT NULL,
@@ -242,9 +359,11 @@ export async function ensureTables(db: D1Database): Promise<void> {
         calc_json TEXT,
         created_by TEXT,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP
-      );
-
-      CREATE TABLE IF NOT EXISTS invoice_items (
+      )`,
+    },
+    {
+      name: 'invoice_items',
+      sql: `CREATE TABLE IF NOT EXISTS invoice_items (
         id TEXT PRIMARY KEY,
         invoice_id TEXT NOT NULL REFERENCES invoices(id) ON DELETE CASCADE,
         product_id TEXT REFERENCES products(id),
@@ -269,9 +388,11 @@ export async function ensureTables(db: D1Database): Promise<void> {
         subline1 TEXT,
         subline2 TEXT,
         subline3 TEXT
-      );
-
-      CREATE TABLE IF NOT EXISTS payment_ledgers (
+      )`,
+    },
+    {
+      name: 'payment_ledgers',
+      sql: `CREATE TABLE IF NOT EXISTS payment_ledgers (
         id TEXT PRIMARY KEY,
         organization_id TEXT NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
         client_id TEXT REFERENCES clients(id),
@@ -284,9 +405,11 @@ export async function ensureTables(db: D1Database): Promise<void> {
         bank_account TEXT,
         notes TEXT,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP
-      );
-
-      CREATE TABLE IF NOT EXISTS audit_logs (
+      )`,
+    },
+    {
+      name: 'audit_logs',
+      sql: `CREATE TABLE IF NOT EXISTS audit_logs (
         id TEXT PRIMARY KEY,
         organization_id TEXT,
         admin_id TEXT NOT NULL,
@@ -300,9 +423,11 @@ export async function ensureTables(db: D1Database): Promise<void> {
         new_value TEXT,
         ip_address TEXT,
         timestamp TEXT DEFAULT CURRENT_TIMESTAMP
-      );
-
-      CREATE TABLE IF NOT EXISTS impersonation_sessions (
+      )`,
+    },
+    {
+      name: 'impersonation_sessions',
+      sql: `CREATE TABLE IF NOT EXISTS impersonation_sessions (
         id TEXT PRIMARY KEY,
         organization_id TEXT NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
         organization_name TEXT NOT NULL,
@@ -313,9 +438,11 @@ export async function ensureTables(db: D1Database): Promise<void> {
         started_at TEXT DEFAULT CURRENT_TIMESTAMP,
         ended_at TEXT,
         reason TEXT
-      );
-
-      CREATE TABLE IF NOT EXISTS saas_plans (
+      )`,
+    },
+    {
+      name: 'saas_plans',
+      sql: `CREATE TABLE IF NOT EXISTS saas_plans (
         id TEXT PRIMARY KEY,
         name TEXT NOT NULL,
         code TEXT NOT NULL,
@@ -330,9 +457,11 @@ export async function ensureTables(db: D1Database): Promise<void> {
         limits_json TEXT,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP,
         updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-      );
-
-      CREATE TABLE IF NOT EXISTS saas_transactions (
+      )`,
+    },
+    {
+      name: 'saas_transactions',
+      sql: `CREATE TABLE IF NOT EXISTS saas_transactions (
         id TEXT PRIMARY KEY,
         organization_id TEXT NOT NULL,
         organization_name TEXT NOT NULL,
@@ -352,9 +481,11 @@ export async function ensureTables(db: D1Database): Promise<void> {
         refund_amount REAL DEFAULT 0,
         refund_date TEXT,
         customer_email TEXT
-      );
-
-      CREATE TABLE IF NOT EXISTS coupons (
+      )`,
+    },
+    {
+      name: 'coupons',
+      sql: `CREATE TABLE IF NOT EXISTS coupons (
         id TEXT PRIMARY KEY,
         code TEXT UNIQUE NOT NULL,
         discount_type TEXT NOT NULL,
@@ -367,9 +498,11 @@ export async function ensureTables(db: D1Database): Promise<void> {
         plan_restrictions_json TEXT,
         status TEXT DEFAULT 'ACTIVE',
         created_at TEXT DEFAULT CURRENT_TIMESTAMP
-      );
-
-      CREATE TABLE IF NOT EXISTS feature_flags (
+      )`,
+    },
+    {
+      name: 'feature_flags',
+      sql: `CREATE TABLE IF NOT EXISTS feature_flags (
         id TEXT PRIMARY KEY,
         key TEXT UNIQUE NOT NULL,
         name TEXT NOT NULL,
@@ -381,9 +514,11 @@ export async function ensureTables(db: D1Database): Promise<void> {
         targeted_org_ids_json TEXT,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP,
         updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-      );
-
-      CREATE TABLE IF NOT EXISTS support_tickets (
+      )`,
+    },
+    {
+      name: 'support_tickets',
+      sql: `CREATE TABLE IF NOT EXISTS support_tickets (
         id TEXT PRIMARY KEY,
         organization_id TEXT NOT NULL,
         organization_name TEXT NOT NULL,
@@ -398,9 +533,11 @@ export async function ensureTables(db: D1Database): Promise<void> {
         messages_json TEXT,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP,
         updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-      );
-
-      CREATE TABLE IF NOT EXISTS announcements (
+      )`,
+    },
+    {
+      name: 'announcements',
+      sql: `CREATE TABLE IF NOT EXISTS announcements (
         id TEXT PRIMARY KEY,
         title TEXT NOT NULL,
         message TEXT NOT NULL,
@@ -413,9 +550,11 @@ export async function ensureTables(db: D1Database): Promise<void> {
         is_active INTEGER DEFAULT 1,
         is_dismissible INTEGER DEFAULT 1,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP
-      );
-
-      CREATE TABLE IF NOT EXISTS email_templates (
+      )`,
+    },
+    {
+      name: 'email_templates',
+      sql: `CREATE TABLE IF NOT EXISTS email_templates (
         id TEXT PRIMARY KEY,
         key TEXT UNIQUE NOT NULL,
         name TEXT NOT NULL,
@@ -425,9 +564,11 @@ export async function ensureTables(db: D1Database): Promise<void> {
         body_html TEXT NOT NULL,
         is_enabled INTEGER DEFAULT 1,
         updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-      );
-
-      CREATE TABLE IF NOT EXISTS system_error_logs (
+      )`,
+    },
+    {
+      name: 'system_error_logs',
+      sql: `CREATE TABLE IF NOT EXISTS system_error_logs (
         id TEXT PRIMARY KEY,
         error_type TEXT NOT NULL,
         message TEXT NOT NULL,
@@ -441,22 +582,28 @@ export async function ensureTables(db: D1Database): Promise<void> {
         occurrences INTEGER DEFAULT 1,
         status TEXT DEFAULT 'UNRESOLVED',
         stack_trace TEXT
-      );
-
-      CREATE TABLE IF NOT EXISTS app_settings (
+      )`,
+    },
+    {
+      name: 'app_settings',
+      sql: `CREATE TABLE IF NOT EXISTS app_settings (
         config_key TEXT PRIMARY KEY,
         config_value TEXT NOT NULL,
         updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-      );
-
-      CREATE TABLE IF NOT EXISTS platform_settings (
+      )`,
+    },
+    {
+      name: 'platform_settings',
+      sql: `CREATE TABLE IF NOT EXISTS platform_settings (
         id INTEGER PRIMARY KEY CHECK (id = 1),
         settings_json TEXT NOT NULL,
         updated_by TEXT,
         updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-      );
-
-      CREATE TABLE IF NOT EXISTS payment_gateway_config (
+      )`,
+    },
+    {
+      name: 'payment_gateway_config',
+      sql: `CREATE TABLE IF NOT EXISTS payment_gateway_config (
         provider TEXT PRIMARY KEY,
         name TEXT,
         is_enabled INTEGER NOT NULL DEFAULT 1,
@@ -472,9 +619,11 @@ export async function ensureTables(db: D1Database): Promise<void> {
         extra_json TEXT,
         updated_by TEXT,
         updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-      );
-
-      CREATE TABLE IF NOT EXISTS subscription_transactions (
+      )`,
+    },
+    {
+      name: 'subscription_transactions',
+      sql: `CREATE TABLE IF NOT EXISTS subscription_transactions (
         id TEXT PRIMARY KEY,
         organization_id TEXT NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
         txnid TEXT UNIQUE NOT NULL,
@@ -493,22 +642,82 @@ export async function ensureTables(db: D1Database): Promise<void> {
         coupon_code TEXT,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP,
         updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-      );
+      )`,
+    },
+  ];
 
-      CREATE INDEX IF NOT EXISTS idx_platform_users_email ON platform_users(email);
-      CREATE INDEX IF NOT EXISTS idx_platform_users_org ON platform_users(organization_id);
-      CREATE INDEX IF NOT EXISTS idx_clients_org ON clients(organization_id);
-      CREATE INDEX IF NOT EXISTS idx_products_org ON products(organization_id);
-      CREATE INDEX IF NOT EXISTS idx_invoices_org ON invoices(organization_id);
-      CREATE INDEX IF NOT EXISTS idx_invoices_num ON invoices(organization_id, invoice_number);
-      CREATE INDEX IF NOT EXISTS idx_invoice_items_inv ON invoice_items(invoice_id);
-      CREATE INDEX IF NOT EXISTS idx_payment_ledgers_org ON payment_ledgers(organization_id);
-      CREATE INDEX IF NOT EXISTS idx_audit_logs_org ON audit_logs(organization_id);
-      CREATE INDEX IF NOT EXISTS idx_saas_transactions_org ON saas_transactions(organization_id);
-      CREATE INDEX IF NOT EXISTS idx_sub_txns_org ON subscription_transactions(organization_id);
-      CREATE INDEX IF NOT EXISTS idx_sub_txns_txnid ON subscription_transactions(txnid);
-      CREATE INDEX IF NOT EXISTS idx_support_tickets_org ON support_tickets(organization_id);
-    `);
+  // 1. Create each table individually with isolated error handling
+  for (const table of tableDefinitions) {
+    try {
+      await db.prepare(table.sql).run();
+    } catch (err: any) {
+      console.error(`[ensureTables] Failed to create table '${table.name}':`, err?.message || err);
+    }
+  }
+
+  // 2. Create each index individually with isolated error handling
+  const indexDefinitions: { name: string; sql: string }[] = [
+    {
+      name: 'idx_platform_users_email',
+      sql: `CREATE INDEX IF NOT EXISTS idx_platform_users_email ON platform_users(email)`,
+    },
+    {
+      name: 'idx_platform_users_org',
+      sql: `CREATE INDEX IF NOT EXISTS idx_platform_users_org ON platform_users(organization_id)`,
+    },
+    {
+      name: 'idx_clients_org',
+      sql: `CREATE INDEX IF NOT EXISTS idx_clients_org ON clients(organization_id)`,
+    },
+    {
+      name: 'idx_products_org',
+      sql: `CREATE INDEX IF NOT EXISTS idx_products_org ON products(organization_id)`,
+    },
+    {
+      name: 'idx_invoices_org',
+      sql: `CREATE INDEX IF NOT EXISTS idx_invoices_org ON invoices(organization_id)`,
+    },
+    {
+      name: 'idx_invoices_num',
+      sql: `CREATE INDEX IF NOT EXISTS idx_invoices_num ON invoices(organization_id, invoice_number)`,
+    },
+    {
+      name: 'idx_invoice_items_inv',
+      sql: `CREATE INDEX IF NOT EXISTS idx_invoice_items_inv ON invoice_items(invoice_id)`,
+    },
+    {
+      name: 'idx_payment_ledgers_org',
+      sql: `CREATE INDEX IF NOT EXISTS idx_payment_ledgers_org ON payment_ledgers(organization_id)`,
+    },
+    {
+      name: 'idx_audit_logs_org',
+      sql: `CREATE INDEX IF NOT EXISTS idx_audit_logs_org ON audit_logs(organization_id)`,
+    },
+    {
+      name: 'idx_saas_transactions_org',
+      sql: `CREATE INDEX IF NOT EXISTS idx_saas_transactions_org ON saas_transactions(organization_id)`,
+    },
+    {
+      name: 'idx_sub_txns_org',
+      sql: `CREATE INDEX IF NOT EXISTS idx_sub_txns_org ON subscription_transactions(organization_id)`,
+    },
+    {
+      name: 'idx_sub_txns_txnid',
+      sql: `CREATE INDEX IF NOT EXISTS idx_sub_txns_txnid ON subscription_transactions(txnid)`,
+    },
+    {
+      name: 'idx_support_tickets_org',
+      sql: `CREATE INDEX IF NOT EXISTS idx_support_tickets_org ON support_tickets(organization_id)`,
+    },
+  ];
+
+  for (const idx of indexDefinitions) {
+    try {
+      await db.prepare(idx.sql).run();
+    } catch (err: any) {
+      console.error(`[ensureTables] Failed to create index '${idx.name}':`, err?.message || err);
+    }
+  }
 
     // Self-healing migration: upgrade payment_gateway_config schema with missing columns
     try {
@@ -609,10 +818,7 @@ export async function ensureTables(db: D1Database): Promise<void> {
     } catch {
       // Ignored if already existing
     }
-  } catch (err) {
-    console.error('ensureTables warning:', err);
   }
-}
 
 /**
  * Bootstrap default organizations and default super admin / tenant owners if D1 is empty.

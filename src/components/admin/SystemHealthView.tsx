@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Activity,
   CheckCircle2,
@@ -10,19 +10,49 @@ import {
   RefreshCw,
   Clock,
   HardDrive,
+  Table,
 } from 'lucide-react';
 import { SaaSAdminDB } from '../../utils/adminStorage';
 import { SubsystemStatus } from '../../types/admin';
 import { DiagnosticPanel } from '../common/DiagnosticPanel';
+import { ApiService } from '../../utils/apiService';
 
 export const SystemHealthView: React.FC = () => {
   const [subsystems, setSubsystems] = useState<SubsystemStatus[]>(
     SaaSAdminDB.getSystemHealth()
   );
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [schemaStatus, setSchemaStatus] = useState<{
+    loading: boolean;
+    data: any | null;
+    error: string | null;
+  }>({
+    loading: true,
+    data: null,
+    error: null,
+  });
+
+  const loadSchemaCheck = async () => {
+    setSchemaStatus((prev) => ({ ...prev, loading: true }));
+    try {
+      const res = await ApiService.checkSchemaIntegrity();
+      if (res.success && res.data) {
+        setSchemaStatus({ loading: false, data: res.data, error: null });
+      } else {
+        setSchemaStatus({ loading: false, data: null, error: res.error || 'Failed to inspect schema' });
+      }
+    } catch (err: any) {
+      setSchemaStatus({ loading: false, data: null, error: err?.message || 'Error checking schema' });
+    }
+  };
+
+  useEffect(() => {
+    loadSchemaCheck();
+  }, []);
 
   const handleRefresh = () => {
     setIsRefreshing(true);
+    loadSchemaCheck();
     setTimeout(() => {
       setSubsystems(SaaSAdminDB.getSystemHealth());
       setIsRefreshing(false);
@@ -38,7 +68,7 @@ export const SystemHealthView: React.FC = () => {
             <span>Infrastructure & Microservice System Health</span>
           </h1>
           <p className="text-xs text-slate-400 mt-0.5">
-            Real-time latency telemetry, uptime SLOs, and service health across cloud nodes
+            Real-time latency telemetry, uptime SLOs, and D1 database schema drift verification
           </p>
         </div>
 
@@ -54,6 +84,84 @@ export const SystemHealthView: React.FC = () => {
 
       {/* Cloudflare D1 & Auth Diagnostic Report */}
       <DiagnosticPanel inline />
+
+      {/* D1 SQLite Schema Integrity Check */}
+      <div className="p-5 rounded-2xl bg-slate-950 border border-slate-800 space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-blue-500/20 text-blue-400 flex items-center justify-center">
+              <Database className="w-4 h-4" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-bold text-white">D1 Schema Drift & Table Integrity Monitor</h3>
+                {schemaStatus.data && (
+                  <span
+                    className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-md border ${
+                      schemaStatus.data.healthy
+                        ? 'bg-emerald-950 text-emerald-400 border-emerald-800'
+                        : 'bg-rose-950 text-rose-400 border-rose-800'
+                    }`}
+                  >
+                    {schemaStatus.data.status}
+                  </span>
+                )}
+              </div>
+              <p className="text-[11px] text-slate-400">
+                Audits sqlite_master tables against expected schema (21 tables) to prevent silent D1 multi-statement creation failures.
+              </p>
+            </div>
+          </div>
+
+          <button
+            onClick={loadSchemaCheck}
+            disabled={schemaStatus.loading}
+            className="px-2.5 py-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 rounded-lg text-xs font-medium flex items-center gap-1 cursor-pointer"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${schemaStatus.loading ? 'animate-spin' : ''}`} />
+            <span>Check Schema</span>
+          </button>
+        </div>
+
+        {schemaStatus.data && (
+          <div className="mt-3 p-4 bg-slate-900/80 rounded-xl border border-slate-800 space-y-3">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+              <div className="bg-slate-950 p-2.5 rounded-lg border border-slate-800">
+                <div className="text-[10px] text-slate-500 uppercase font-bold">Expected Tables</div>
+                <div className="text-sm font-mono font-bold text-white mt-0.5">{schemaStatus.data.totalExpected}</div>
+              </div>
+              <div className="bg-slate-950 p-2.5 rounded-lg border border-slate-800">
+                <div className="text-[10px] text-slate-500 uppercase font-bold">Present in D1</div>
+                <div className="text-sm font-mono font-bold text-emerald-400 mt-0.5">{schemaStatus.data.totalPresent}</div>
+              </div>
+              <div className="bg-slate-950 p-2.5 rounded-lg border border-slate-800">
+                <div className="text-[10px] text-slate-500 uppercase font-bold">Missing Tables</div>
+                <div className={`text-sm font-mono font-bold mt-0.5 ${schemaStatus.data.totalMissing > 0 ? 'text-rose-400' : 'text-slate-400'}`}>
+                  {schemaStatus.data.totalMissing}
+                </div>
+              </div>
+              <div className="bg-slate-950 p-2.5 rounded-lg border border-slate-800">
+                <div className="text-[10px] text-slate-500 uppercase font-bold">Schema Health</div>
+                <div className={`text-sm font-mono font-bold mt-0.5 ${schemaStatus.data.healthy ? 'text-emerald-400' : 'text-rose-400'}`}>
+                  {schemaStatus.data.healthy ? '100% COMPLETE' : 'INCOMPLETE'}
+                </div>
+              </div>
+            </div>
+
+            {schemaStatus.data.missingTables?.length > 0 && (
+              <div className="p-3 bg-rose-950/40 border border-rose-800/50 rounded-lg text-rose-300 text-xs flex items-start gap-2">
+                <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+                <div>
+                  <div className="font-bold">Missing Schema Tables Detected:</div>
+                  <div className="mt-1 font-mono text-[11px] text-rose-200">
+                    {schemaStatus.data.missingTables.join(', ')}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
 
       {/* Grid of Subsystems */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">

@@ -133,6 +133,21 @@ export class ApiService {
     return this.request<{ success: boolean; database: string; binding?: string; counts?: any }>('/api/health/db');
   }
 
+  static async checkSchemaIntegrity(): Promise<ApiResult<{
+    success: boolean;
+    healthy: boolean;
+    status: string;
+    totalExpected: number;
+    totalPresent: number;
+    totalMissing: number;
+    missingTables: string[];
+    presentTables: string[];
+    allExistingTables: string[];
+    checkedAt: string;
+  }>> {
+    return this.request('/api/admin/system/schema-check');
+  }
+
   static async runFullDiagnostics(): Promise<SystemDiagnostics> {
     let isTokenValid = false;
     let tokenDetails: SystemDiagnostics['tokenDetails'] = { format: 'NONE' };
