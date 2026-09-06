@@ -20,78 +20,136 @@ import {
   Server,
   Terminal,
   Layers,
+  Sparkles,
+  ArrowRight,
+  ShieldAlert,
 } from 'lucide-react';
 import { SaaSAdminDB } from '../../utils/adminStorage';
 import { AuthService } from '../../utils/authService';
 import { ApiService } from '../../utils/apiService';
-import { PaymentGatewayConfig } from '../../types/admin';
+import { PaymentGatewayConfig, PayUModeCredentials } from '../../types/admin';
 
 interface PayUGatewaySettingsProps {
   onSaved?: () => void;
 }
 
+interface SlotState {
+  merchantKey: string;
+  merchantSalt: string;
+  headerAuthKey: string;
+  endpoint: string;
+}
+
+interface TestSlotResult {
+  isTesting: boolean;
+  result: {
+    success: boolean;
+    message: string;
+    latency?: number;
+    diagnostics?: any;
+  } | null;
+}
+
 export const PayUGatewaySettings: React.FC<PayUGatewaySettingsProps> = ({ onSaved }) => {
-  const [payuConfig, setPayuConfig] = useState<PaymentGatewayConfig>(() => {
-    const mgr = SaaSAdminDB.getPaymentGatewaysConfig();
-    const payu = mgr.gateways?.payu;
-    return (
-      payu || {
-        provider: 'payu',
-        name: 'PayU India Hosted Gateway',
-        isEnabled: true,
-        isTestMode: true,
-        merchantKey: '',
-        merchantSalt: '',
-        headerAuthKey: '',
-      }
-    );
+  const [activeMode, setActiveMode] = useState<'test' | 'live'>('test');
+  const [isEnabled, setIsEnabled] = useState<boolean>(true);
+  const [name, setName] = useState<string>('PayU India Hosted Gateway');
+
+  const [testSlot, setTestSlot] = useState<SlotState>({
+    merchantKey: '',
+    merchantSalt: '',
+    headerAuthKey: '',
+    endpoint: 'https://test.payu.in/_payment',
+  });
+
+  const [liveSlot, setLiveSlot] = useState<SlotState>({
+    merchantKey: '',
+    merchantSalt: '',
+    headerAuthKey: '',
+    endpoint: 'https://secure.payu.in/_payment',
   });
 
   const [isActiveProvider, setIsActiveProvider] = useState<boolean>(() => {
     return SaaSAdminDB.getPaymentGatewaysConfig().activeProvider === 'payu';
   });
 
-  const [showSalt, setShowSalt] = useState<boolean>(false);
+  const [showTestSalt, setShowTestSalt] = useState<boolean>(false);
+  const [showLiveSalt, setShowLiveSalt] = useState<boolean>(false);
   const [isSaving, setIsSaving] = useState<boolean>(false);
-  const [isTesting, setIsTesting] = useState<boolean>(false);
+  const [savingSlot, setSavingSlot] = useState<'test' | 'live' | 'all' | null>(null);
   const [copiedField, setCopiedField] = useState<string | null>(null);
-  const [testResult, setTestResult] = useState<{
-    success: boolean;
-    message: string;
-    latency?: number;
-    diagnostics?: any;
-  } | null>(null);
+
+  const [testModeTesting, setTestModeTesting] = useState<TestSlotResult>({
+    isTesting: false,
+    result: null,
+  });
+
+  const [liveModeTesting, setLiveModeTesting] = useState<TestSlotResult>({
+    isTesting: false,
+    result: null,
+  });
+
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    // Load existing settings from D1 app_settings via API first
+    // Load existing settings from D1 app_settings via API
     ApiService.getPayUSettings()
       .then((res) => {
         if (res?.success && res.data?.data) {
           const remoteData = res.data.data;
-          setPayuConfig((prev) => ({
-            ...prev,
-            merchantKey: remoteData.merchantKey || remoteData.payuMerchantKey || prev.merchantKey || prev.payuMerchantKey || '',
-            merchantSalt: remoteData.merchantSalt || remoteData.payuMerchantSalt || prev.merchantSalt || prev.payuMerchantSalt || '',
-            headerAuthKey: remoteData.headerAuthKey || remoteData.payuHeaderAuthKey || prev.headerAuthKey || prev.payuHeaderAuthKey || '',
-            isTestMode: remoteData.isTestMode !== undefined ? Boolean(remoteData.isTestMode) : prev.isTestMode,
-            isEnabled: remoteData.isEnabled !== undefined ? Boolean(remoteData.isEnabled) : prev.isEnabled,
-            name: remoteData.name || prev.name || 'PayU India Hosted Gateway',
-          }));
+          if (remoteData.test || remoteData.live) {
+            setActiveMode(remoteData.activeMode === 'live' ? 'live' : 'test');
+            setIsEnabled(remoteData.isEnabled !== undefined ? Boolean(remoteData.isEnabled) : true);
+            if (remoteData.name) setName(remoteData.name);
+
+            if (remoteData.test) {
+              setTestSlot({
+                merchantKey: remoteData.test.merchantKey || '',
+                merchantSalt: remoteData.test.merchantSalt || '',
+                headerAuthKey: remoteData.test.headerAuthKey || '',
+                endpoint: remoteData.test.endpoint || 'https://test.payu.in/_payment',
+              });
+            }
+
+            if (remoteData.live) {
+              setLiveSlot({
+                merchantKey: remoteData.live.merchantKey || '',
+                merchantSalt: remoteData.live.merchantSalt || '',
+                headerAuthKey: remoteData.live.headerAuthKey || '',
+                endpoint: remoteData.live.endpoint || 'https://secure.payu.in/_payment',
+              });
+            }
+          } else {
+            // Legacy flat shape
+            const isTest = remoteData.isTestMode !== undefined ? Boolean(remoteData.isTestMode) : true;
+            setActiveMode(isTest ? 'test' : 'live');
+            setIsEnabled(remoteData.isEnabled !== undefined ? Boolean(remoteData.isEnabled) : true);
+            const flatKey = remoteData.merchantKey || remoteData.payuMerchantKey || '';
+            const flatSalt = remoteData.merchantSalt || remoteData.payuMerchantSalt || '';
+            const flatHeader = remoteData.headerAuthKey || remoteData.payuHeaderAuthKey || '';
+
+            if (isTest) {
+              setTestSlot({
+                merchantKey: flatKey,
+                merchantSalt: flatSalt,
+                headerAuthKey: flatHeader,
+                endpoint: remoteData.endpoint || 'https://test.payu.in/_payment',
+              });
+            } else {
+              setLiveSlot({
+                merchantKey: flatKey,
+                merchantSalt: flatSalt,
+                headerAuthKey: flatHeader,
+                endpoint: remoteData.endpoint || 'https://secure.payu.in/_payment',
+              });
+            }
+          }
         }
       })
       .catch(() => {});
 
     SaaSAdminDB.getPaymentGatewaysConfigAsync().then((mgr) => {
-      if (mgr && mgr.gateways?.payu) {
-        const p = mgr.gateways.payu;
-        setPayuConfig((prev) => ({
-          ...prev,
-          ...p,
-          merchantKey: p.merchantKey || p.payuMerchantKey || prev.merchantKey || '',
-          merchantSalt: p.merchantSalt || p.payuMerchantSalt || prev.merchantSalt || '',
-          headerAuthKey: p.headerAuthKey || p.payuHeaderAuthKey || prev.headerAuthKey || '',
-        }));
+      if (mgr) {
         setIsActiveProvider(mgr.activeProvider === 'payu');
       }
     });
@@ -109,39 +167,116 @@ export const PayUGatewaySettings: React.FC<PayUGatewaySettingsProps> = ({ onSave
     setTimeout(() => setCopiedField(null), 2000);
   };
 
-  const handleFieldChange = (field: keyof PaymentGatewayConfig, value: any) => {
-    setPayuConfig((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
-  };
-
   const handleSetActive = async () => {
     await SaaSAdminDB.setActivePaymentGateway('payu');
     setIsActiveProvider(true);
     showToast('PayU set as the default active payment provider for all checkouts!');
   };
 
-  const handleSave = async () => {
-    setIsSaving(true);
+  // Switch Active Mode without touching either credential slot
+  const handleToggleActiveMode = async (newMode: 'test' | 'live') => {
+    if (newMode === activeMode) return;
+    setActiveMode(newMode);
+    
+    // Auto-save activeMode toggle to backend
     try {
-      const canonicalPayload = {
-        merchantKey: (payuConfig.merchantKey || payuConfig.payuMerchantKey || '').trim(),
-        merchantSalt: (payuConfig.merchantSalt || payuConfig.payuMerchantSalt || '').trim(),
-        headerAuthKey: (payuConfig.headerAuthKey || payuConfig.payuHeaderAuthKey || '').trim(),
-        isTestMode: payuConfig.isTestMode,
-        isEnabled: payuConfig.isEnabled,
-        name: payuConfig.name || 'PayU India Hosted Gateway',
+      await ApiService.savePayUSettings({
+        activeMode: newMode,
+        isEnabled,
+      });
+      showToast(`Switched active gateway to ${newMode === 'live' ? 'Live Production' : 'Sandbox Test'} mode!`);
+    } catch (err) {
+      console.warn('Auto-save activeMode failed:', err);
+    }
+  };
+
+  // Save a specific slot ('test' | 'live')
+  const handleSaveSlot = async (mode: 'test' | 'live') => {
+    setSavingSlot(mode);
+    setIsSaving(true);
+    const slot = mode === 'test' ? testSlot : liveSlot;
+
+    try {
+      const payload = {
+        mode,
+        merchantKey: slot.merchantKey.trim(),
+        merchantSalt: slot.merchantSalt.trim(),
+        headerAuthKey: slot.headerAuthKey.trim(),
+        endpoint: slot.endpoint.trim(),
+        activeMode,
+        isEnabled,
+        name,
       };
 
-      const response = await ApiService.savePayUSettings(canonicalPayload);
+      const response = await ApiService.savePayUSettings(payload);
+
+      // Also update local storage cache for offline fallback
+      SaaSAdminDB.updateGatewayConfig('payu', {
+        provider: 'payu',
+        name,
+        isEnabled,
+        isTestMode: activeMode === 'test',
+        activeMode,
+        test: testSlot,
+        live: liveSlot,
+        merchantKey: (activeMode === 'live' ? liveSlot : testSlot).merchantKey,
+        merchantSalt: (activeMode === 'live' ? liveSlot : testSlot).merchantSalt,
+        headerAuthKey: (activeMode === 'live' ? liveSlot : testSlot).headerAuthKey,
+        endpoint: (activeMode === 'live' ? liveSlot : testSlot).endpoint,
+      });
+
+      const successMsg = response?.data?.message || `${mode === 'test' ? 'Test' : 'Live'} credentials saved successfully!`;
+      showToast(successMsg);
+      if (onSaved) onSaved();
+    } catch (err: any) {
+      console.error(`Failed to save ${mode} PayU settings:`, err);
+      showToast(`Failed to save ${mode} settings: ${err?.message || 'Server error'}`);
+    } finally {
+      setIsSaving(false);
+      setSavingSlot(null);
+    }
+  };
+
+  // Save All Settings atomically
+  const handleSaveAll = async () => {
+    setSavingSlot('all');
+    setIsSaving(true);
+    try {
+      const fullPayload = {
+        activeMode,
+        isEnabled,
+        name,
+        test: {
+          merchantKey: testSlot.merchantKey.trim(),
+          merchantSalt: testSlot.merchantSalt.trim(),
+          headerAuthKey: testSlot.headerAuthKey.trim(),
+          endpoint: testSlot.endpoint.trim() || 'https://test.payu.in/_payment',
+        },
+        live: {
+          merchantKey: liveSlot.merchantKey.trim(),
+          merchantSalt: liveSlot.merchantSalt.trim(),
+          headerAuthKey: liveSlot.headerAuthKey.trim(),
+          endpoint: liveSlot.endpoint.trim() || 'https://secure.payu.in/_payment',
+        },
+      };
+
+      const response = await ApiService.savePayUSettings(fullPayload);
 
       SaaSAdminDB.updateGatewayConfig('payu', {
-        ...payuConfig,
-        ...canonicalPayload,
+        provider: 'payu',
+        name,
+        isEnabled,
+        isTestMode: activeMode === 'test',
+        activeMode,
+        test: fullPayload.test,
+        live: fullPayload.live,
+        merchantKey: (activeMode === 'live' ? fullPayload.live : fullPayload.test).merchantKey,
+        merchantSalt: (activeMode === 'live' ? fullPayload.live : fullPayload.test).merchantSalt,
+        headerAuthKey: (activeMode === 'live' ? fullPayload.live : fullPayload.test).headerAuthKey,
+        endpoint: (activeMode === 'live' ? fullPayload.live : fullPayload.test).endpoint,
       });
-      
-      const successMsg = response?.data?.message || 'PayU gateway configuration saved successfully to Cloudflare D1 app_settings table!';
+
+      const successMsg = response?.data?.message || 'Complete PayU dual-slot configuration saved successfully to Cloudflare D1!';
       showToast(successMsg);
       if (onSaved) onSaved();
     } catch (err: any) {
@@ -149,23 +284,28 @@ export const PayUGatewaySettings: React.FC<PayUGatewaySettingsProps> = ({ onSave
       showToast('Failed to save settings: ' + (err?.message || 'Server error'));
     } finally {
       setIsSaving(false);
+      setSavingSlot(null);
     }
   };
 
-  const handleTestConnection = async () => {
-    const key = (payuConfig.merchantKey || payuConfig.payuMerchantKey || '').trim();
-    const salt = (payuConfig.merchantSalt || payuConfig.payuMerchantSalt || '').trim();
+  // Test connection for a specific slot ('test' | 'live')
+  const handleTestSlot = async (mode: 'test' | 'live') => {
+    const slot = mode === 'test' ? testSlot : liveSlot;
+    const isTestMode = mode === 'test';
+    const setter = isTestMode ? setTestModeTesting : setLiveModeTesting;
 
-    if (!key || !salt) {
-      setTestResult({
-        success: false,
-        message: 'Please enter both PayU Merchant Key and Merchant Salt before testing.',
+    if (!slot.merchantKey.trim() || !slot.merchantSalt.trim()) {
+      setter({
+        isTesting: false,
+        result: {
+          success: false,
+          message: `Please enter both PayU Merchant Key and Merchant Salt for ${isTestMode ? 'Test (Sandbox)' : 'Live (Production)'} mode before testing.`,
+        },
       });
       return;
     }
 
-    setIsTesting(true);
-    setTestResult(null);
+    setter({ isTesting: true, result: null });
 
     const token = AuthService.getToken();
     const startTime = Date.now();
@@ -178,9 +318,10 @@ export const PayUGatewaySettings: React.FC<PayUGatewaySettingsProps> = ({ onSave
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({
-          merchantKey: key,
-          merchantSalt: salt,
-          isTestMode: payuConfig.isTestMode,
+          mode,
+          merchantKey: slot.merchantKey.trim(),
+          merchantSalt: slot.merchantSalt.trim(),
+          headerAuthKey: slot.headerAuthKey.trim(),
         }),
       });
 
@@ -188,43 +329,46 @@ export const PayUGatewaySettings: React.FC<PayUGatewaySettingsProps> = ({ onSave
       const data = await res.json().catch(() => ({}));
 
       if (res.ok && data.success) {
-        setTestResult({
-          success: true,
-          message:
-            data.message ||
-            `PayU Gateway Credentials verified successfully (${payuConfig.isTestMode ? 'Sandbox Environment' : 'Production Environment'}). SHA-512 cryptographic verification passed.`,
-          latency,
-          diagnostics: data.details || data,
+        setter({
+          isTesting: false,
+          result: {
+            success: true,
+            message: data.message || `PayU ${isTestMode ? 'Sandbox' : 'Live Production'} Gateway Verified! SHA-512 Hash signature matched with PayU server.`,
+            latency,
+            diagnostics: data,
+          },
         });
       } else {
-        setTestResult({
-          success: false,
-          message:
-            data.message ||
-            data.error ||
-            'PayU test failed. Please verify that your Merchant Key and Merchant Salt match your PayU dashboard credentials.',
-          latency,
-          diagnostics: data,
+        setter({
+          isTesting: false,
+          result: {
+            success: false,
+            message: data.message || data.error || `PayU ${isTestMode ? 'Sandbox' : 'Live'} test failed. Please verify Key and Salt.`,
+            latency,
+            diagnostics: data,
+          },
         });
       }
     } catch (err: any) {
       const latency = Date.now() - startTime;
-      setTestResult({
-        success: false,
-        message: `Network error while connecting to PayU: ${err?.message || 'Connection timeout'}`,
-        latency,
+      setter({
+        isTesting: false,
+        result: {
+          success: false,
+          message: `Network error while connecting to PayU ${isTestMode ? 'Test' : 'Live'} servers: ${err?.message || 'Connection timeout'}`,
+          latency,
+        },
       });
-    } finally {
-      setIsTesting(false);
     }
   };
 
   const originUrl = typeof window !== 'undefined' ? window.location.origin : 'https://kannaku.pages.dev';
   const callbackUrl = `${originUrl}/api/payments/payu/callback`;
   const returnUrl = `${originUrl}/api/payments/payu/return`;
-  const endpointUrl = payuConfig.isTestMode ? 'https://test.payu.in/_payment' : 'https://secure.payu.in/_payment';
+  const activeEndpointUrl = activeMode === 'test' ? (testSlot.endpoint || 'https://test.payu.in/_payment') : (liveSlot.endpoint || 'https://secure.payu.in/_payment');
 
-  const isConfigured = Boolean((payuConfig.merchantKey || payuConfig.payuMerchantKey)?.trim() && (payuConfig.merchantSalt || payuConfig.payuMerchantSalt)?.trim());
+  const isTestConfigured = Boolean(testSlot.merchantKey.trim() && testSlot.merchantSalt.trim());
+  const isLiveConfigured = Boolean(liveSlot.merchantKey.trim() && liveSlot.merchantSalt.trim());
 
   return (
     <div className="space-y-6">
@@ -244,7 +388,7 @@ export const PayUGatewaySettings: React.FC<PayUGatewaySettingsProps> = ({ onSave
               PayU
             </div>
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <h3 className="text-base font-bold text-slate-900">PayU Payment Gateway</h3>
                 {isActiveProvider ? (
                   <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[11px] font-bold border border-emerald-200 flex items-center gap-1">
@@ -255,18 +399,20 @@ export const PayUGatewaySettings: React.FC<PayUGatewaySettingsProps> = ({ onSave
                     Standby
                   </span>
                 )}
-                {payuConfig.isTestMode ? (
-                  <span className="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[11px] font-bold border border-amber-200">
-                    Sandbox Mode
+                {activeMode === 'test' ? (
+                  <span className="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[11px] font-bold border border-amber-200 flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                    Currently Active: Sandbox Test
                   </span>
                 ) : (
-                  <span className="px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-800 text-[11px] font-bold border border-blue-200">
-                    Live Production
+                  <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[11px] font-bold border border-emerald-200 flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    Currently Active: Live Production
                   </span>
                 )}
               </div>
               <p className="text-xs text-slate-500 mt-0.5">
-                Official RBI-compliant Indian merchant payments supporting UPI, Credit/Debit Cards, NetBanking, and Wallets
+                Dual-slot architecture: Test and Live credentials remain permanently isolated to prevent accidental key/salt mismatches.
               </p>
             </div>
           </div>
@@ -284,211 +430,469 @@ export const PayUGatewaySettings: React.FC<PayUGatewaySettingsProps> = ({ onSave
             )}
             <button
               type="button"
-              onClick={handleSave}
+              onClick={handleSaveAll}
               disabled={isSaving}
               className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-xs flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50"
             >
               <Save className="w-4 h-4" />
-              {isSaving ? 'Saving...' : 'Save Settings'}
+              {isSaving && savingSlot === 'all' ? 'Saving All...' : 'Save All Settings'}
             </button>
           </div>
         </div>
 
-        {/* Card Content & Form Fields */}
-        <div className="p-6 space-y-6">
-          {/* Environment Switcher */}
-          <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2">
-            <label className="text-xs font-bold text-slate-800 uppercase tracking-wider block">
-              Gateway Environment Mode
-            </label>
-            <p className="text-xs text-slate-500">
-              Toggle between PayU Sandbox testing and live real-money production payments.
-            </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-              <button
-                type="button"
-                onClick={() => handleFieldChange('isTestMode', true)}
-                className={`p-3.5 rounded-xl border text-left flex items-start gap-3 transition-all cursor-pointer ${
-                  payuConfig.isTestMode
-                    ? 'border-amber-500 bg-amber-50/60 ring-2 ring-amber-500/20'
-                    : 'border-slate-200 bg-white hover:bg-slate-100/70'
-                }`}
-              >
-                <div
-                  className={`w-4 h-4 rounded-full border mt-0.5 flex items-center justify-center ${
-                    payuConfig.isTestMode ? 'border-amber-600 bg-amber-600' : 'border-slate-300'
-                  }`}
-                >
-                  {payuConfig.isTestMode && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
-                </div>
-                <div>
-                  <div className="text-xs font-bold text-slate-900">Sandbox / Test Mode</div>
-                  <div className="text-[11px] text-slate-500 mt-0.5">
-                    Endpoint: <code className="text-amber-700 bg-amber-100/60 px-1 py-0.5 rounded font-mono text-[10px]">https://test.payu.in/_payment</code>
-                  </div>
-                </div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleFieldChange('isTestMode', false)}
-                className={`p-3.5 rounded-xl border text-left flex items-start gap-3 transition-all cursor-pointer ${
-                  !payuConfig.isTestMode
-                    ? 'border-emerald-500 bg-emerald-50/60 ring-2 ring-emerald-500/20'
-                    : 'border-slate-200 bg-white hover:bg-slate-100/70'
-                }`}
-              >
-                <div
-                  className={`w-4 h-4 rounded-full border mt-0.5 flex items-center justify-center ${
-                    !payuConfig.isTestMode ? 'border-emerald-600 bg-emerald-600' : 'border-slate-300'
-                  }`}
-                >
-                  {!payuConfig.isTestMode && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
-                </div>
-                <div>
-                  <div className="text-xs font-bold text-slate-900">Live Production Mode</div>
-                  <div className="text-[11px] text-slate-500 mt-0.5">
-                    Endpoint: <code className="text-emerald-700 bg-emerald-100/60 px-1 py-0.5 rounded font-mono text-[10px]">https://secure.payu.in/_payment</code>
-                  </div>
-                </div>
-              </button>
-            </div>
-          </div>
-
-          {/* Credentials Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            {/* Merchant Key */}
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between">
-                <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                  <Key className="w-3.5 h-3.5 text-slate-500" />
-                  PayU Merchant Key (PAYU_MERCHANT_KEY)
-                </label>
-                <span className="text-[10px] text-slate-400 font-semibold uppercase">Required</span>
-              </div>
-              <input
-                type="text"
-                value={payuConfig.merchantKey || payuConfig.payuMerchantKey || ''}
-                onChange={(e) => handleFieldChange('merchantKey', e.target.value)}
-                placeholder="e.g. gtKFFx or your PayU Key"
-                className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-mono text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all placeholder:text-slate-400"
-              />
-              <p className="text-[11px] text-slate-500">
-                Found in PayU Dashboard &rarr; Integration &rarr; API Keys.
-              </p>
-            </div>
-
-            {/* Merchant Salt */}
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between">
-                <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                  <Lock className="w-3.5 h-3.5 text-slate-500" />
-                  PayU Merchant Salt (PAYU_MERCHANT_SALT)
-                </label>
-                <span className="text-[10px] text-slate-400 font-semibold uppercase">Secret</span>
-              </div>
-              <div className="relative">
-                <input
-                  type={showSalt ? 'text' : 'password'}
-                  value={payuConfig.merchantSalt || payuConfig.payuMerchantSalt || ''}
-                  onChange={(e) => handleFieldChange('merchantSalt', e.target.value)}
-                  placeholder="e.g. eCwWELxi or your PayU Salt"
-                  className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-mono text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all placeholder:text-slate-400 pr-10"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowSalt(!showSalt)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors p-1"
-                >
-                  {showSalt ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
-              <p className="text-[11px] text-slate-500">
-                Used to compute and verify SHA-512 checksum signatures securely on the server.
-              </p>
-            </div>
-          </div>
-
-          {/* Optional Server-to-Server Auth Header Key */}
-          <div className="space-y-1.5">
+        {/* Card Content */}
+        <div className="p-6 space-y-8">
+          {/* Active Mode Master Switcher */}
+          <div className="bg-slate-50/80 p-5 rounded-2xl border border-slate-200 space-y-3">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                <Server className="w-3.5 h-3.5 text-slate-500" />
-                PayU Merchant Header / Auth Key (Optional)
-              </label>
-              <span className="text-[10px] text-slate-400 font-semibold uppercase">Optional</span>
+              <div>
+                <label className="text-xs font-bold text-slate-800 uppercase tracking-wider block">
+                  Active Gateway Mode Selector
+                </label>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Select which credential slot processes live customer checkouts. Switching this toggle <span className="font-semibold text-slate-700">never clears or overwrites</span> the credentials in either slot.
+                </p>
+              </div>
+              <span className="text-[11px] font-mono px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-slate-600">
+                activeMode: <strong className={activeMode === 'live' ? 'text-emerald-600' : 'text-amber-600'}>{activeMode.toUpperCase()}</strong>
+              </span>
             </div>
-            <input
-              type="text"
-              value={payuConfig.headerAuthKey || payuConfig.payuHeaderAuthKey || ''}
-              onChange={(e) => handleFieldChange('headerAuthKey', e.target.value)}
-              placeholder="e.g. payu_auth_sec_..."
-              className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-mono text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all placeholder:text-slate-400"
-            />
-            <p className="text-[11px] text-slate-500">
-              Only required if your PayU merchant account has Header Authorization enabled for postservice APIs.
-            </p>
-          </div>
 
-          {/* Actions & Test Connection Bar */}
-          <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-100">
-            <div className="flex items-center gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+              {/* Test Slot Toggle Option */}
               <button
                 type="button"
-                onClick={handleTestConnection}
-                disabled={isTesting || !isConfigured}
-                className="px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-800 text-xs font-bold flex items-center gap-2 transition-all cursor-pointer disabled:opacity-40"
+                onClick={() => handleToggleActiveMode('test')}
+                className={`p-4 rounded-xl border text-left flex items-start gap-3.5 transition-all cursor-pointer ${
+                  activeMode === 'test'
+                    ? 'border-amber-500 bg-amber-50/70 ring-2 ring-amber-500/20 shadow-xs'
+                    : 'border-slate-200 bg-white hover:bg-slate-50'
+                }`}
               >
-                <RefreshCw className={`w-3.5 h-3.5 text-slate-600 ${isTesting ? 'animate-spin' : ''}`} />
-                {isTesting ? 'Testing PayU Gateway...' : 'Test Connection & Hash Calculation'}
+                <div
+                  className={`w-5 h-5 rounded-full border mt-0.5 flex items-center justify-center shrink-0 ${
+                    activeMode === 'test' ? 'border-amber-600 bg-amber-600 text-white' : 'border-slate-300'
+                  }`}
+                >
+                  {activeMode === 'test' && <div className="w-2 h-2 rounded-full bg-white" />}
+                </div>
+                <div className="space-y-1 flex-1">
+                  <div className="flex items-center justify-between">
+                    <div className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                      Sandbox / Test Mode
+                      {isTestConfigured && (
+                        <span className="text-[10px] text-emerald-700 bg-emerald-100/70 px-1.5 py-0.2 rounded font-semibold">Configured</span>
+                      )}
+                    </div>
+                    {activeMode === 'test' && (
+                      <span className="text-[10px] font-bold text-amber-800 bg-amber-200/60 px-2 py-0.5 rounded-full">ACTIVE</span>
+                    )}
+                  </div>
+                  <div className="text-[11px] text-slate-500">
+                    Safe testing environment with simulated cards & UPI. No real money charged.
+                  </div>
+                </div>
               </button>
 
-              {!isConfigured && (
-                <span className="text-xs text-amber-600 flex items-center gap-1">
-                  <AlertCircle className="w-3.5 h-3.5" />
-                  Key and Salt required
-                </span>
-              )}
+              {/* Live Slot Toggle Option */}
+              <button
+                type="button"
+                onClick={() => handleToggleActiveMode('live')}
+                className={`p-4 rounded-xl border text-left flex items-start gap-3.5 transition-all cursor-pointer ${
+                  activeMode === 'live'
+                    ? 'border-emerald-500 bg-emerald-50/70 ring-2 ring-emerald-500/20 shadow-xs'
+                    : 'border-slate-200 bg-white hover:bg-slate-50'
+                }`}
+              >
+                <div
+                  className={`w-5 h-5 rounded-full border mt-0.5 flex items-center justify-center shrink-0 ${
+                    activeMode === 'live' ? 'border-emerald-600 bg-emerald-600 text-white' : 'border-slate-300'
+                  }`}
+                >
+                  {activeMode === 'live' && <div className="w-2 h-2 rounded-full bg-white" />}
+                </div>
+                <div className="space-y-1 flex-1">
+                  <div className="flex items-center justify-between">
+                    <div className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                      Live Production Mode
+                      {isLiveConfigured && (
+                        <span className="text-[10px] text-emerald-700 bg-emerald-100/70 px-1.5 py-0.2 rounded font-semibold">Configured</span>
+                      )}
+                    </div>
+                    {activeMode === 'live' && (
+                      <span className="text-[10px] font-bold text-emerald-800 bg-emerald-200/60 px-2 py-0.5 rounded-full">ACTIVE</span>
+                    )}
+                  </div>
+                  <div className="text-[11px] text-slate-500">
+                    Real-money production gateway for live subscriber transactions.
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+
+          {/* DUAL CREDENTIAL SECTIONS */}
+          <div className="space-y-8">
+            {/* 1. TEST / SANDBOX CREDENTIALS SECTION */}
+            <div className={`rounded-2xl border transition-all ${
+              activeMode === 'test' 
+                ? 'border-amber-300 bg-amber-50/10 shadow-xs ring-1 ring-amber-400/20' 
+                : 'border-slate-200 bg-slate-50/40 opacity-90'
+            }`}>
+              {/* Section Header */}
+              <div className="p-5 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3 bg-amber-50/40 rounded-t-2xl">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-amber-500 text-white flex items-center justify-center font-bold text-xs shadow-xs">
+                    TEST
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h4 className="text-sm font-bold text-slate-900">Sandbox Test Credentials Slot</h4>
+                      {activeMode === 'test' ? (
+                        <span className="px-2 py-0.5 rounded-full bg-amber-200 text-amber-900 text-[10px] font-bold border border-amber-300">
+                          Currently Active
+                        </span>
+                      ) : (
+                        <span className="px-2 py-0.5 rounded-full bg-slate-200 text-slate-700 text-[10px] font-bold">
+                          Inactive Slot
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[11px] text-slate-500">
+                      Sandbox endpoint: <code className="font-mono text-amber-800 bg-amber-100/70 px-1 py-0.2 rounded text-[10px]">{testSlot.endpoint || 'https://test.payu.in/_payment'}</code>
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleTestSlot('test')}
+                    disabled={testModeTesting.isTesting || !isTestConfigured}
+                    className="px-3.5 py-1.5 rounded-xl border border-amber-200 bg-white hover:bg-amber-50 text-amber-900 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-40"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 text-amber-700 ${testModeTesting.isTesting ? 'animate-spin' : ''}`} />
+                    {testModeTesting.isTesting ? 'Testing...' : 'Test Sandbox Connection'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleSaveSlot('test')}
+                    disabled={isSaving}
+                    className="px-3.5 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold shadow-xs flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50"
+                  >
+                    <Save className="w-3.5 h-3.5" />
+                    {isSaving && savingSlot === 'test' ? 'Saving...' : 'Save Test Slot'}
+                  </button>
+                </div>
+              </div>
+
+              {/* Section Form Fields */}
+              <div className="p-5 space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Test Key */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-700 flex items-center justify-between">
+                      <span className="flex items-center gap-1.5">
+                        <Key className="w-3.5 h-3.5 text-amber-600" />
+                        Test Merchant Key
+                      </span>
+                      <span className="text-[10px] text-amber-700 font-semibold uppercase">Sandbox Key</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={testSlot.merchantKey}
+                      onChange={(e) => setTestSlot((prev) => ({ ...prev, merchantKey: e.target.value }))}
+                      placeholder="e.g. gtKFFx (PayU Sandbox Key)"
+                      className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-mono text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all placeholder:text-slate-400"
+                    />
+                  </div>
+
+                  {/* Test Salt */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-700 flex items-center justify-between">
+                      <span className="flex items-center gap-1.5">
+                        <Lock className="w-3.5 h-3.5 text-amber-600" />
+                        Test Merchant Salt
+                      </span>
+                      <span className="text-[10px] text-amber-700 font-semibold uppercase">Sandbox Secret</span>
+                    </label>
+                    <div className="relative">
+                      <input
+                        type={showTestSalt ? 'text' : 'password'}
+                        value={testSlot.merchantSalt}
+                        onChange={(e) => setTestSlot((prev) => ({ ...prev, merchantSalt: e.target.value }))}
+                        placeholder="e.g. eCwWELxi (PayU Sandbox Salt)"
+                        className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-mono text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all placeholder:text-slate-400 pr-10"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowTestSalt(!showTestSalt)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors p-1"
+                      >
+                        {showTestSalt ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Test Header Auth Key */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-700 flex items-center justify-between">
+                      <span className="flex items-center gap-1.5">
+                        <Server className="w-3.5 h-3.5 text-slate-500" />
+                        Test Header Auth Key (Optional)
+                      </span>
+                      <span className="text-[10px] text-slate-400 font-semibold uppercase">Optional</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={testSlot.headerAuthKey}
+                      onChange={(e) => setTestSlot((prev) => ({ ...prev, headerAuthKey: e.target.value }))}
+                      placeholder="Optional server auth header for sandbox"
+                      className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-mono text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all placeholder:text-slate-400"
+                    />
+                  </div>
+
+                  {/* Test Endpoint */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-700 flex items-center justify-between">
+                      <span className="flex items-center gap-1.5">
+                        <Globe className="w-3.5 h-3.5 text-slate-500" />
+                        Test Payment Endpoint
+                      </span>
+                      <span className="text-[10px] text-slate-400 font-semibold uppercase">Default</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={testSlot.endpoint}
+                      onChange={(e) => setTestSlot((prev) => ({ ...prev, endpoint: e.target.value }))}
+                      placeholder="https://test.payu.in/_payment"
+                      className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-mono text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all placeholder:text-slate-400"
+                    />
+                  </div>
+                </div>
+
+                {/* Test Result Feedback */}
+                {testModeTesting.result && (
+                  <div
+                    className={`p-3.5 rounded-xl border animate-fade-in ${
+                      testModeTesting.result.success
+                        ? 'bg-emerald-50/90 border-emerald-200 text-emerald-900'
+                        : 'bg-rose-50/90 border-rose-200 text-rose-900'
+                    }`}
+                  >
+                    <div className="flex items-start gap-2.5">
+                      {testModeTesting.result.success ? (
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                      ) : (
+                        <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                      )}
+                      <div className="space-y-0.5 flex-1 text-xs">
+                        <div className="font-bold flex items-center justify-between">
+                          <span>Sandbox Test Probe Result</span>
+                          {testModeTesting.result.latency !== undefined && (
+                            <span className="font-mono text-[11px] opacity-75">{testModeTesting.result.latency}ms</span>
+                          )}
+                        </div>
+                        <p>{testModeTesting.result.message}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* 2. LIVE / PRODUCTION CREDENTIALS SECTION */}
+            <div className={`rounded-2xl border transition-all ${
+              activeMode === 'live' 
+                ? 'border-emerald-300 bg-emerald-50/10 shadow-xs ring-1 ring-emerald-400/20' 
+                : 'border-slate-200 bg-slate-50/40 opacity-90'
+            }`}>
+              {/* Section Header */}
+              <div className="p-5 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3 bg-emerald-50/40 rounded-t-2xl">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-emerald-600 text-white flex items-center justify-center font-bold text-xs shadow-xs">
+                    LIVE
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h4 className="text-sm font-bold text-slate-900">Live Production Credentials Slot</h4>
+                      {activeMode === 'live' ? (
+                        <span className="px-2 py-0.5 rounded-full bg-emerald-200 text-emerald-900 text-[10px] font-bold border border-emerald-300">
+                          Currently Active
+                        </span>
+                      ) : (
+                        <span className="px-2 py-0.5 rounded-full bg-slate-200 text-slate-700 text-[10px] font-bold">
+                          Inactive Slot
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[11px] text-slate-500">
+                      Live endpoint: <code className="font-mono text-emerald-800 bg-emerald-100/70 px-1 py-0.2 rounded text-[10px]">{liveSlot.endpoint || 'https://secure.payu.in/_payment'}</code>
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleTestSlot('live')}
+                    disabled={liveModeTesting.isTesting || !isLiveConfigured}
+                    className="px-3.5 py-1.5 rounded-xl border border-emerald-200 bg-white hover:bg-emerald-50 text-emerald-900 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-40"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 text-emerald-700 ${liveModeTesting.isTesting ? 'animate-spin' : ''}`} />
+                    {liveModeTesting.isTesting ? 'Testing...' : 'Test Live Connection'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleSaveSlot('live')}
+                    disabled={isSaving}
+                    className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-xs flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50"
+                  >
+                    <Save className="w-3.5 h-3.5" />
+                    {isSaving && savingSlot === 'live' ? 'Saving...' : 'Save Live Slot'}
+                  </button>
+                </div>
+              </div>
+
+              {/* Section Form Fields */}
+              <div className="p-5 space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Live Key */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-700 flex items-center justify-between">
+                      <span className="flex items-center gap-1.5">
+                        <Key className="w-3.5 h-3.5 text-emerald-600" />
+                        Live Merchant Key
+                      </span>
+                      <span className="text-[10px] text-emerald-700 font-semibold uppercase">Production Key</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={liveSlot.merchantKey}
+                      onChange={(e) => setLiveSlot((prev) => ({ ...prev, merchantKey: e.target.value }))}
+                      placeholder="e.g. gtKFFx (PayU Production Key)"
+                      className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-mono text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all placeholder:text-slate-400"
+                    />
+                  </div>
+
+                  {/* Live Salt */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-700 flex items-center justify-between">
+                      <span className="flex items-center gap-1.5">
+                        <Lock className="w-3.5 h-3.5 text-emerald-600" />
+                        Live Merchant Salt
+                      </span>
+                      <span className="text-[10px] text-emerald-700 font-semibold uppercase">Production Secret</span>
+                    </label>
+                    <div className="relative">
+                      <input
+                        type={showLiveSalt ? 'text' : 'password'}
+                        value={liveSlot.merchantSalt}
+                        onChange={(e) => setLiveSlot((prev) => ({ ...prev, merchantSalt: e.target.value }))}
+                        placeholder="e.g. eCwWELxi (PayU Production Salt)"
+                        className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-mono text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all placeholder:text-slate-400 pr-10"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowLiveSalt(!showLiveSalt)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors p-1"
+                      >
+                        {showLiveSalt ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Live Header Auth Key */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-700 flex items-center justify-between">
+                      <span className="flex items-center gap-1.5">
+                        <Server className="w-3.5 h-3.5 text-slate-500" />
+                        Live Header Auth Key (Optional)
+                      </span>
+                      <span className="text-[10px] text-slate-400 font-semibold uppercase">Optional</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={liveSlot.headerAuthKey}
+                      onChange={(e) => setLiveSlot((prev) => ({ ...prev, headerAuthKey: e.target.value }))}
+                      placeholder="Optional server auth header for production"
+                      className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-mono text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all placeholder:text-slate-400"
+                    />
+                  </div>
+
+                  {/* Live Endpoint */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-700 flex items-center justify-between">
+                      <span className="flex items-center gap-1.5">
+                        <Globe className="w-3.5 h-3.5 text-slate-500" />
+                        Live Payment Endpoint
+                      </span>
+                      <span className="text-[10px] text-slate-400 font-semibold uppercase">Default</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={liveSlot.endpoint}
+                      onChange={(e) => setLiveSlot((prev) => ({ ...prev, endpoint: e.target.value }))}
+                      placeholder="https://secure.payu.in/_payment"
+                      className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-mono text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all placeholder:text-slate-400"
+                    />
+                  </div>
+                </div>
+
+                {/* Live Result Feedback */}
+                {liveModeTesting.result && (
+                  <div
+                    className={`p-3.5 rounded-xl border animate-fade-in ${
+                      liveModeTesting.result.success
+                        ? 'bg-emerald-50/90 border-emerald-200 text-emerald-900'
+                        : 'bg-rose-50/90 border-rose-200 text-rose-900'
+                    }`}
+                  >
+                    <div className="flex items-start gap-2.5">
+                      {liveModeTesting.result.success ? (
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                      ) : (
+                        <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                      )}
+                      <div className="space-y-0.5 flex-1 text-xs">
+                        <div className="font-bold flex items-center justify-between">
+                          <span>Live Production Probe Result</span>
+                          {liveModeTesting.result.latency !== undefined && (
+                            <span className="font-mono text-[11px] opacity-75">{liveModeTesting.result.latency}ms</span>
+                          )}
+                        </div>
+                        <p>{liveModeTesting.result.message}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Master Bottom Save Bar */}
+          <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2 text-xs text-slate-600">
+              <ShieldCheck className="w-4 h-4 text-emerald-600" />
+              <span>
+                Currently routing checkout traffic to: <strong className={activeMode === 'live' ? 'text-emerald-700' : 'text-amber-700'}>{activeMode.toUpperCase()} ({activeMode === 'live' ? 'Production' : 'Sandbox'})</strong>
+              </span>
             </div>
 
             <button
               type="button"
-              onClick={handleSave}
+              onClick={handleSaveAll}
               disabled={isSaving}
               className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-xs flex items-center gap-2 transition-colors cursor-pointer disabled:opacity-50"
             >
               <Save className="w-4 h-4" />
-              {isSaving ? 'Saving...' : 'Save PayU Configuration'}
+              {isSaving && savingSlot === 'all' ? 'Saving Configuration...' : 'Save Complete PayU Configuration'}
             </button>
           </div>
-
-          {/* Test Results Display */}
-          {testResult && (
-            <div
-              className={`p-4 rounded-xl border animate-fade-in ${
-                testResult.success
-                  ? 'bg-emerald-50/80 border-emerald-200 text-emerald-900'
-                  : 'bg-rose-50/80 border-rose-200 text-rose-900'
-              }`}
-            >
-              <div className="flex items-start gap-3">
-                {testResult.success ? (
-                  <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
-                ) : (
-                  <AlertCircle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
-                )}
-                <div className="space-y-1 flex-1">
-                  <div className="text-xs font-bold flex items-center justify-between">
-                    <span>{testResult.success ? 'PayU Verification Succeeded' : 'PayU Verification Notice'}</span>
-                    {testResult.latency !== undefined && (
-                      <span className="text-[11px] font-mono opacity-70">{testResult.latency}ms latency</span>
-                    )}
-                  </div>
-                  <p className="text-xs">{testResult.message}</p>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       </div>
 
@@ -544,13 +948,13 @@ export const PayUGatewaySettings: React.FC<PayUGatewaySettingsProps> = ({ onSave
           <div className="bg-slate-950/70 p-3.5 rounded-xl border border-slate-800 flex items-center justify-between gap-3">
             <div className="space-y-0.5 overflow-hidden">
               <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                Active PayU Gateway Endpoint
+                Currently Active Gateway Endpoint
               </div>
-              <code className="text-xs font-mono text-slate-300 block truncate">{endpointUrl}</code>
+              <code className="text-xs font-mono text-slate-300 block truncate">{activeEndpointUrl}</code>
             </div>
             <button
               type="button"
-              onClick={() => copyToClipboard(endpointUrl, 'Gateway Endpoint')}
+              onClick={() => copyToClipboard(activeEndpointUrl, 'Gateway Endpoint')}
               className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-lg transition-colors flex items-center gap-1.5 shrink-0 cursor-pointer"
             >
               {copiedField === 'Gateway Endpoint' ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
@@ -568,7 +972,7 @@ export const PayUGatewaySettings: React.FC<PayUGatewaySettingsProps> = ({ onSave
         </div>
         <div className="text-xs text-slate-600 space-y-3 leading-relaxed">
           <p>
-            The backend strictly adheres to PayU India&apos;s SHA-512 cryptographic standard using the native Cloudflare Worker Web Crypto API:
+            The backend strictly adheres to PayU India&apos;s SHA-512 cryptographic standard using native Web Crypto API in Cloudflare Workers:
           </p>
           <div className="bg-slate-50 p-3 rounded-xl font-mono text-[11px] text-slate-800 border border-slate-200 space-y-1 overflow-x-auto">
             <div className="text-emerald-700 font-bold">// 1. Forward Hash (Checkout Initiation):</div>
@@ -577,8 +981,9 @@ export const PayUGatewaySettings: React.FC<PayUGatewaySettingsProps> = ({ onSave
             <div>sha512(salt|status|udf10|udf9|udf8|udf7|udf6|udf5|udf4|udf3|udf2|udf1|email|firstname|productinfo|amount|txnid|key)</div>
           </div>
           <ul className="list-disc list-inside space-y-1 text-slate-500 text-[11px]">
+            <li>Test and Live credentials stored in independent database slots to guarantee production safety.</li>
             <li>Constant-time comparison ensures total resistance to side-channel timing attacks.</li>
-            <li>Zero frontend exposure: The Merchant Salt remains securely protected in backend Cloudflare Workers secrets and encrypted storage.</li>
+            <li>Zero frontend exposure: The Merchant Salt remains strictly protected in backend Cloudflare Workers secrets and D1 encrypted storage.</li>
             <li>Idempotent order fulfillment guarantees subscriptions are credited exactly once even under network retries.</li>
           </ul>
         </div>

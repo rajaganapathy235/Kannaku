@@ -32,11 +32,33 @@ export type PaymentGatewayProvider =
   | 'stripe'
   | 'manual_upi';
 
+export interface PayUModeCredentials {
+  merchantKey: string;
+  merchantSalt: string;
+  headerAuthKey?: string;
+  endpoint: string;
+}
+
+export interface PayUConfigStructure {
+  activeMode: 'test' | 'live';
+  isEnabled: boolean;
+  test: PayUModeCredentials;
+  live: PayUModeCredentials;
+  name: string;
+  currency?: string;
+  supportedMethods?: string[];
+  updatedAt?: string;
+}
+
 export interface PaymentGatewayConfig {
   provider: PaymentGatewayProvider;
   name: string;
   isEnabled: boolean;
   isTestMode: boolean;
+  // Dual-slot PayU configuration
+  activeMode?: 'test' | 'live';
+  test?: PayUModeCredentials;
+  live?: PayUModeCredentials;
   // Canonical fields for PayU & generic gateways
   merchantKey?: string;
   merchantSalt?: string;
