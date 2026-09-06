@@ -96,6 +96,7 @@ export interface SaaSPlan {
   threeMonthPriceInr?: number; // e.g. 237 (79/mo)
   yearlyPriceInr: number; // e.g. 588 (49/mo)
   trialDurationDays: number;
+  billingType?: 'ONE_TIME' | 'RECURRING' | string;
   isPopular?: boolean;
   isArchived?: boolean;
   limits: PlanLimits;

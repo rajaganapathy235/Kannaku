@@ -121,6 +121,7 @@ export async function ensureTables(db: D1Database): Promise<void> {
         'three_month_price_inr',
         'yearly_price_inr',
         'trial_duration_days',
+        'billing_type',
         'is_popular',
         'is_archived',
         'limits_json',
@@ -153,7 +154,8 @@ export async function ensureTables(db: D1Database): Promise<void> {
               six_month_price_inr REAL,
               three_month_price_inr REAL,
               yearly_price_inr REAL NOT NULL,
-              trial_duration_days INTEGER DEFAULT 7,
+              trial_duration_days INTEGER DEFAULT 15,
+              billing_type TEXT DEFAULT 'ONE_TIME',
               is_popular INTEGER DEFAULT 0,
               is_archived INTEGER DEFAULT 0,
               limits_json TEXT,
@@ -184,8 +186,8 @@ export async function ensureTables(db: D1Database): Promise<void> {
         await db
           .prepare(
             `INSERT INTO saas_plans (
-              id, name, code, tagline, monthly_price_inr, six_month_price_inr, three_month_price_inr, yearly_price_inr, trial_duration_days, is_popular, is_archived, limits_json
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+              id, name, code, tagline, monthly_price_inr, six_month_price_inr, three_month_price_inr, yearly_price_inr, trial_duration_days, billing_type, is_popular, is_archived, limits_json
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
           )
           .bind(
             'plan_all_in_one_pro',
@@ -196,7 +198,8 @@ export async function ensureTables(db: D1Database): Promise<void> {
             474,
             237,
             588,
-            7,
+            15,
+            'ONE_TIME',
             1,
             0,
             defaultLimits
@@ -239,6 +242,7 @@ export async function ensureTables(db: D1Database): Promise<void> {
         subscription_status TEXT DEFAULT 'ACTIVE',
         account_status TEXT DEFAULT 'ACTIVE',
         billing_cycle TEXT DEFAULT 'MONTHLY',
+        billing_type TEXT DEFAULT 'ONE_TIME',
         subscription_start_date TEXT DEFAULT CURRENT_TIMESTAMP,
         renewal_date TEXT,
         trial_end_date TEXT,
@@ -451,7 +455,8 @@ export async function ensureTables(db: D1Database): Promise<void> {
         six_month_price_inr REAL DEFAULT 0,
         three_month_price_inr REAL DEFAULT 0,
         yearly_price_inr REAL DEFAULT 0,
-        trial_duration_days INTEGER DEFAULT 7,
+        trial_duration_days INTEGER DEFAULT 15,
+        billing_type TEXT DEFAULT 'ONE_TIME',
         is_popular INTEGER DEFAULT 0,
         is_archived INTEGER DEFAULT 0,
         limits_json TEXT,
@@ -773,7 +778,7 @@ export async function ensureTables(db: D1Database): Promise<void> {
       // Ignored for dev in-memory shims or if already upgraded
     }
 
-    // Migration: add trial_end_date and renewal_date to organizations if missing
+    // Migration: add trial_end_date, renewal_date, and billing_type to organizations if missing
     try {
       const orgInfo = await db.prepare('PRAGMA table_info(organizations)').all<{ name: string }>();
       const orgCols = orgInfo.results || [];
@@ -783,6 +788,22 @@ export async function ensureTables(db: D1Database): Promise<void> {
         }
         if (!orgCols.some((c) => c.name === 'renewal_date')) {
           await db.prepare('ALTER TABLE organizations ADD COLUMN renewal_date TEXT').run();
+        }
+        if (!orgCols.some((c) => c.name === 'billing_type')) {
+          await db.prepare("ALTER TABLE organizations ADD COLUMN billing_type TEXT DEFAULT 'ONE_TIME'").run();
+        }
+      }
+    } catch {
+      // Ignored if already existing
+    }
+
+    // Migration: add billing_type to saas_plans if missing
+    try {
+      const planInfo = await db.prepare('PRAGMA table_info(saas_plans)').all<{ name: string }>();
+      const planCols = planInfo.results || [];
+      if (Array.isArray(planCols) && planCols.length > 0) {
+        if (!planCols.some((c) => c.name === 'billing_type')) {
+          await db.prepare("ALTER TABLE saas_plans ADD COLUMN billing_type TEXT DEFAULT 'ONE_TIME'").run();
         }
       }
     } catch {
@@ -956,8 +977,8 @@ export async function seedInitialTenants(db: D1Database, env: any = {}): Promise
       await execute(
         db,
         `INSERT OR IGNORE INTO saas_plans (
-          id, name, code, tagline, monthly_price_inr, six_month_price_inr, three_month_price_inr, yearly_price_inr, trial_duration_days, is_popular, is_archived, limits_json
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          id, name, code, tagline, monthly_price_inr, six_month_price_inr, three_month_price_inr, yearly_price_inr, trial_duration_days, billing_type, is_popular, is_archived, limits_json
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         'plan_all_in_one_pro',
         'All-in-One Growth Plan',
         'ALL_IN_ONE',
@@ -966,7 +987,8 @@ export async function seedInitialTenants(db: D1Database, env: any = {}): Promise
         474,
         237,
         588,
-        7,
+        15,
+        'ONE_TIME',
         1,
         0,
         defaultLimits

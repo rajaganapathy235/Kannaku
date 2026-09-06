@@ -112,7 +112,8 @@ export const DEFAULT_PLANS: SaaSPlan[] = [
     sixMonthPriceInr: 474,
     threeMonthPriceInr: 237,
     yearlyPriceInr: 588,
-    trialDurationDays: 7,
+    trialDurationDays: 15,
+    billingType: 'ONE_TIME',
     isPopular: true,
     limits: {
       maxUsers: 999,

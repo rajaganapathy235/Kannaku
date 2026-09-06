@@ -40,7 +40,8 @@ export const PlansManagementView: React.FC = () => {
     monthly: number,
     sixMonth: number,
     yearly: number,
-    trialDays: number
+    trialDays: number,
+    billingType: string = 'ONE_TIME'
   ) => {
     if (!activePlan) return;
     const updated: SaaSPlan = {
@@ -49,11 +50,12 @@ export const PlansManagementView: React.FC = () => {
       sixMonthPriceInr: sixMonth,
       yearlyPriceInr: yearly,
       trialDurationDays: trialDays,
+      billingType,
       updatedOn: new Date().toISOString(),
     };
     SaaSAdminDB.savePlan(updated);
     SaaSAdminDB.logAction('UPDATE_PLAN_PRICING', 'PLAN', updated.id, updated.name, {
-      newVal: `Updated pricing: ₹${monthly}/mo, ₹${Math.round(sixMonth / 6)}/mo (6mo), ₹${Math.round(yearly / 12)}/mo (12mo)`,
+      newVal: `Updated pricing: ₹${monthly}/mo, ₹${Math.round(sixMonth / 6)}/mo (6mo), ₹${Math.round(yearly / 12)}/mo (12mo), Billing: ${billingType}`,
     });
     reloadPlans();
     showToast('Plan subscription pricing updated successfully!');
@@ -225,9 +227,10 @@ export const PlansManagementView: React.FC = () => {
                 const sixMonth = Number((form.elements.namedItem('sixMonthPrice') as HTMLInputElement).value);
                 const yearly = Number((form.elements.namedItem('yearlyPrice') as HTMLInputElement).value);
                 const trial = Number((form.elements.namedItem('trialDuration') as HTMLInputElement).value);
-                handleSaveQuickPricing(monthly, sixMonth, yearly, trial);
+                const billingType = (form.elements.namedItem('billingType') as HTMLSelectElement).value;
+                handleSaveQuickPricing(monthly, sixMonth, yearly, trial, billingType);
               }}
-              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 items-end"
+              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3 items-end"
             >
               <div>
                 <label className="block text-[11px] text-slate-400 mb-1">1 Month Price (₹)</label>
@@ -264,9 +267,21 @@ export const PlansManagementView: React.FC = () => {
                 <input
                   name="trialDuration"
                   type="number"
-                  defaultValue={activePlan.trialDurationDays || 7}
+                  defaultValue={activePlan.trialDurationDays || 15}
                   className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white font-bold text-xs"
                 />
+              </div>
+
+              <div>
+                <label className="block text-[11px] text-slate-400 mb-1">Billing Type</label>
+                <select
+                  name="billingType"
+                  defaultValue={activePlan.billingType || 'ONE_TIME'}
+                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white font-bold text-xs"
+                >
+                  <option value="ONE_TIME">One-Time (Prepaid)</option>
+                  <option value="RECURRING">Recurring (Auto-debit)</option>
+                </select>
               </div>
 
               <button
@@ -348,7 +363,7 @@ export const PlansManagementView: React.FC = () => {
                 />
               </div>
 
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div>
                   <label className="block font-semibold text-slate-300 mb-1">1 Month (₹)</label>
                   <input
@@ -382,6 +397,31 @@ export const PlansManagementView: React.FC = () => {
                     className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white"
                   />
                 </div>
+                <div>
+                  <label className="block font-semibold text-slate-300 mb-1">Trial Days</label>
+                  <input
+                    type="number"
+                    value={editingPlan.trialDurationDays ?? 15}
+                    onChange={(e) =>
+                      setEditingPlan({ ...editingPlan, trialDurationDays: Number(e.target.value) })
+                    }
+                    className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-300 mb-1">Billing Type</label>
+                <select
+                  value={editingPlan.billingType || 'ONE_TIME'}
+                  onChange={(e) =>
+                    setEditingPlan({ ...editingPlan, billingType: e.target.value })
+                  }
+                  className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white"
+                >
+                  <option value="ONE_TIME">One-Time (Prepaid Fixed Duration)</option>
+                  <option value="RECURRING">Recurring (Auto-debit Subscription)</option>
+                </select>
               </div>
             </div>
 

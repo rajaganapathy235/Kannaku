@@ -39,6 +39,9 @@ export interface RequestContext {
  */
 export function isOrgAccessAllowed(org: any): boolean {
   if (!org) return false;
+  if ((org.account_status || org.accountStatus || '').toUpperCase() === 'SUSPENDED') {
+    return false;
+  }
   const status = (org.subscription_status || org.subscriptionStatus || '').toUpperCase();
   const now = Date.now();
 
@@ -178,7 +181,7 @@ export async function getPlatformSettingsFromDB(db: D1Database): Promise<any> {
     },
     billing: {
       defaultCurrency: 'INR (₹)',
-      trialDurationDays: 14,
+      trialDurationDays: 15,
       gstTaxPercentage: 18,
       gracePeriodDays: 3,
       invoicePrefix: 'INV-2026-',
@@ -586,6 +589,11 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
         user.organization_id
       );
 
+      // Enforce account pause/suspension check
+      if (user.role !== 'SUPER_ADMIN' && org && (org.account_status || '').toUpperCase() === 'SUSPENDED') {
+        return errorResponse('This account has been paused by the administrator. Please contact support.', 403);
+      }
+
       const token = await createSessionToken(
         {
           userId: user.id,
@@ -651,14 +659,25 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
       const userId = `usr_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
       const slug = companyName.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').substring(0, 30);
       const passHash = await hashPassword(password);
-      const trialEndDate = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
 
-      // Create Organization with 14-day Free Trial status
+      // Look up configurable trial_duration_days and billing_type from saas_plans
+      const assignedPlan = await queryFirst<any>(
+        db,
+        "SELECT trial_duration_days, billing_type FROM saas_plans WHERE id = 'plan_all_in_one_pro'"
+      );
+      const trialDays =
+        assignedPlan && assignedPlan.trial_duration_days != null && Number(assignedPlan.trial_duration_days) > 0
+          ? Number(assignedPlan.trial_duration_days)
+          : 15;
+      const trialEndDate = new Date(Date.now() + trialDays * 24 * 60 * 60 * 1000).toISOString();
+      const planBillingType = assignedPlan?.billing_type || 'ONE_TIME';
+
+      // Create Organization with Free Trial status
       await execute(
         db,
         `INSERT INTO organizations (
-          id, name, slug, owner_name, admin_email, mobile, state, register_number, plan_id, plan_name, subscription_status, trial_end_date
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'plan_all_in_one_pro', 'All-in-One Growth Plan', 'TRIAL', ?)`,
+          id, name, slug, owner_name, admin_email, mobile, state, register_number, plan_id, plan_name, subscription_status, trial_end_date, billing_type
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'plan_all_in_one_pro', 'All-in-One Growth Plan', 'TRIAL', ?, ?)`,
         orgId,
         companyName,
         slug,
@@ -667,7 +686,8 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
         mobile,
         state || 'Tamil Nadu',
         gstin || null,
-        trialEndDate
+        trialEndDate,
+        planBillingType
       );
 
       // Create Platform User
@@ -742,7 +762,11 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
         sixMonthPriceInr: Number(p.six_month_price_inr) || 474,
         threeMonthPriceInr: Number(p.three_month_price_inr) || 237,
         yearlyPriceInr: Number(p.yearly_price_inr) || 588,
-        trialDurationDays: Number(p.trial_duration_days) || 14,
+        trialDurationDays:
+          p.trial_duration_days !== null && p.trial_duration_days !== undefined && Number(p.trial_duration_days) > 0
+            ? Number(p.trial_duration_days)
+            : 15,
+        billingType: p.billing_type || 'ONE_TIME',
         isPopular: !!p.is_popular,
         isArchived: !!p.is_archived,
         billingCycle: '1_MONTH',
@@ -779,7 +803,8 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
             sixMonthPriceInr: 474,
             threeMonthPriceInr: 237,
             yearlyPriceInr: 588,
-            trialDurationDays: 14,
+            trialDurationDays: 15,
+            billingType: 'ONE_TIME',
             isPopular: true,
             isArchived: false,
             billingCycle: '1_MONTH',
@@ -813,7 +838,8 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
         monthlyPriceInr: 99,
         sixMonthPriceInr: 474,
         yearlyPriceInr: 588,
-        trialDurationDays: 7,
+        trialDurationDays: 15,
+        billingType: 'ONE_TIME',
       };
 
       const monthlyPrice = flagship.monthlyPriceInr || 99;
@@ -835,7 +861,8 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
           description: 'Billed every 30 days. Perfect for new stores testing the software.',
           savingsBadge: null,
           isPopular: false,
-          trialDurationDays: flagship.trialDurationDays || 7,
+          trialDurationDays: flagship.trialDurationDays || 15,
+          billingType: flagship.billingType || 'ONE_TIME',
         },
         {
           id: 'plan_6_months',
@@ -851,7 +878,8 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
           description: 'Billed semi-annually. Ideal for regular retail and GST traders.',
           savingsBadge: 'Save 20%',
           isPopular: false,
-          trialDurationDays: flagship.trialDurationDays || 7,
+          trialDurationDays: flagship.trialDurationDays || 15,
+          billingType: flagship.billingType || 'ONE_TIME',
         },
         {
           id: 'plan_12_months',
@@ -867,7 +895,8 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
           description: 'Billed ₹588 annually. Maximum savings with 1-year continuous access.',
           savingsBadge: 'Save 50% • Best Value',
           isPopular: true,
-          trialDurationDays: flagship.trialDurationDays || 7,
+          trialDurationDays: flagship.trialDurationDays || 15,
+          billingType: flagship.billingType || 'ONE_TIME',
         },
       ];
 
@@ -911,6 +940,17 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
 
       const activePlanId = planRecord?.id || 'plan_all_in_one_pro';
       const activePlanName = planRecord?.name || 'All-in-One Growth Plan';
+
+      const planBillingType = (planRecord?.billing_type || planRecord?.billingType || 'ONE_TIME').toUpperCase();
+      if (planBillingType === 'RECURRING') {
+        return jsonResponse(
+          {
+            success: false,
+            error: 'Recurring billing is not yet available — pending PayU Subscription Payments activation.',
+          },
+          501
+        );
+      }
 
       // Determine billing duration cycle & amount dynamically
       const reqCycle = String(body.billingCycle || '').toUpperCase();
@@ -1515,6 +1555,9 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
   if (path === '/api/auth/me' && method === 'GET') {
     const user = await queryFirst<any>(db, 'SELECT * FROM platform_users WHERE id = ?', session.userId);
     const org = await queryFirst<any>(db, 'SELECT * FROM organizations WHERE id = ?', effectiveOrgId);
+    if (session.role !== 'SUPER_ADMIN' && org && (org.account_status || '').toUpperCase() === 'SUSPENDED') {
+      return errorResponse('This account has been paused by the administrator. Please contact support.', 403);
+    }
     return jsonResponse({
       user: {
         id: user?.id || session.userId,
@@ -1600,6 +1643,9 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
     const org = await queryFirst<any>(db, 'SELECT * FROM organizations WHERE id = ?', effectiveOrgId);
     if (!org) {
       return errorResponse('Organization not found', 404);
+    }
+    if (session.role !== 'SUPER_ADMIN' && (org.account_status || '').toUpperCase() === 'SUSPENDED') {
+      return errorResponse('This account has been paused by the administrator. Please contact support.', 403);
     }
 
     let bankDetail = null;
@@ -3301,7 +3347,11 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
         sixMonthPriceInr: p.six_month_price_inr,
         threeMonthPriceInr: p.three_month_price_inr,
         yearlyPriceInr: p.yearly_price_inr,
-        trialDurationDays: p.trial_duration_days,
+        trialDurationDays:
+          p.trial_duration_days !== null && p.trial_duration_days !== undefined && Number(p.trial_duration_days) > 0
+            ? Number(p.trial_duration_days)
+            : 15,
+        billingType: p.billing_type || 'ONE_TIME',
         isPopular: !!p.is_popular,
         isArchived: !!p.is_archived,
         limits: p.limits_json ? JSON.parse(p.limits_json) : {},
@@ -3315,12 +3365,17 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
       try {
         const body = (await request.json().catch(() => ({}))) as any;
         const planId = body.id || `plan_${Date.now()}`;
+        const trialDays =
+          body.trialDurationDays !== undefined && body.trialDurationDays !== null
+            ? Number(body.trialDurationDays)
+            : 15;
+        const billingType = body.billingType || body.billing_type || 'ONE_TIME';
         await execute(
           db,
           `INSERT INTO saas_plans (
             id, name, code, tagline, monthly_price_inr, six_month_price_inr, three_month_price_inr, yearly_price_inr,
-            trial_duration_days, is_popular, is_archived, limits_json
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            trial_duration_days, billing_type, is_popular, is_archived, limits_json
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           planId,
           body.name,
           body.code || 'CUSTOM',
@@ -3329,7 +3384,8 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
           body.sixMonthPriceInr || 0,
           body.threeMonthPriceInr || 0,
           body.yearlyPriceInr || 0,
-          body.trialDurationDays || 7,
+          trialDays,
+          billingType,
           body.isPopular ? 1 : 0,
           body.isArchived ? 1 : 0,
           JSON.stringify(body.limits || {})
@@ -3354,6 +3410,7 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
             three_month_price_inr = COALESCE(?, three_month_price_inr),
             yearly_price_inr = COALESCE(?, yearly_price_inr),
             trial_duration_days = COALESCE(?, trial_duration_days),
+            billing_type = COALESCE(?, billing_type),
             is_popular = COALESCE(?, is_popular),
             is_archived = COALESCE(?, is_archived),
             limits_json = COALESCE(?, limits_json),
@@ -3366,6 +3423,7 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
           body.threeMonthPriceInr,
           body.yearlyPriceInr,
           body.trialDurationDays,
+          body.billingType || body.billing_type || null,
           body.isPopular !== undefined ? (body.isPopular ? 1 : 0) : null,
           body.isArchived !== undefined ? (body.isArchived ? 1 : 0) : null,
           body.limits ? JSON.stringify(body.limits) : null,
@@ -4504,6 +4562,7 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
             'three_month_price_inr',
             'yearly_price_inr',
             'trial_duration_days',
+            'billing_type',
             'is_popular',
             'is_archived',
             'limits_json',
@@ -4521,8 +4580,8 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
             'payment_status',
             'payu_payment_id',
             'payu_response_json',
-            'user_email',
-            'user_phone',
+            'customer_email',
+            'customer_phone',
             'coupon_code',
           ],
           organizations: [
@@ -4535,6 +4594,7 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
             'plan_id',
             'plan_name',
             'subscription_status',
+            'billing_type',
             'trial_end_date',
             'renewal_date',
           ],
@@ -4557,8 +4617,8 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
             'is_test_mode',
             'merchant_key',
             'merchant_salt',
-            'auth_header_key',
-            'endpoint_url',
+            'header_auth_key',
+            'endpoint',
           ],
           platform_users: [
             'id',
