@@ -37,7 +37,12 @@ export interface PaymentGatewayConfig {
   name: string;
   isEnabled: boolean;
   isTestMode: boolean;
-  // PayU specific (India Merchant Gateway)
+  // Canonical fields for PayU & generic gateways
+  merchantKey?: string;
+  merchantSalt?: string;
+  headerAuthKey?: string;
+  endpoint?: string;
+  // Legacy aliases
   payuMerchantKey?: string;
   payuMerchantSalt?: string;
   payuHeaderAuthKey?: string;

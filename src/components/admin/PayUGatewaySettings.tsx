@@ -33,15 +33,16 @@ interface PayUGatewaySettingsProps {
 export const PayUGatewaySettings: React.FC<PayUGatewaySettingsProps> = ({ onSaved }) => {
   const [payuConfig, setPayuConfig] = useState<PaymentGatewayConfig>(() => {
     const mgr = SaaSAdminDB.getPaymentGatewaysConfig();
+    const payu = mgr.gateways?.payu;
     return (
-      mgr.gateways.payu || {
+      payu || {
         provider: 'payu',
         name: 'PayU India Hosted Gateway',
         isEnabled: true,
         isTestMode: true,
-        payuMerchantKey: '',
-        payuMerchantSalt: '',
-        payuHeaderAuthKey: '',
+        merchantKey: '',
+        merchantSalt: '',
+        headerAuthKey: '',
       }
     );
   });
@@ -70,11 +71,12 @@ export const PayUGatewaySettings: React.FC<PayUGatewaySettingsProps> = ({ onSave
           const remoteData = res.data.data;
           setPayuConfig((prev) => ({
             ...prev,
-            payuMerchantKey: remoteData.merchantKey || remoteData.payuMerchantKey || prev.payuMerchantKey || '',
-            payuMerchantSalt: remoteData.merchantSalt || remoteData.payuMerchantSalt || prev.payuMerchantSalt || '',
-            payuHeaderAuthKey: remoteData.headerAuthKey || remoteData.payuHeaderAuthKey || prev.payuHeaderAuthKey || '',
+            merchantKey: remoteData.merchantKey || remoteData.payuMerchantKey || prev.merchantKey || prev.payuMerchantKey || '',
+            merchantSalt: remoteData.merchantSalt || remoteData.payuMerchantSalt || prev.merchantSalt || prev.payuMerchantSalt || '',
+            headerAuthKey: remoteData.headerAuthKey || remoteData.payuHeaderAuthKey || prev.headerAuthKey || prev.payuHeaderAuthKey || '',
             isTestMode: remoteData.isTestMode !== undefined ? Boolean(remoteData.isTestMode) : prev.isTestMode,
             isEnabled: remoteData.isEnabled !== undefined ? Boolean(remoteData.isEnabled) : prev.isEnabled,
+            name: remoteData.name || prev.name || 'PayU India Hosted Gateway',
           }));
         }
       })
@@ -82,9 +84,13 @@ export const PayUGatewaySettings: React.FC<PayUGatewaySettingsProps> = ({ onSave
 
     SaaSAdminDB.getPaymentGatewaysConfigAsync().then((mgr) => {
       if (mgr && mgr.gateways?.payu) {
+        const p = mgr.gateways.payu;
         setPayuConfig((prev) => ({
           ...prev,
-          ...mgr.gateways.payu,
+          ...p,
+          merchantKey: p.merchantKey || p.payuMerchantKey || prev.merchantKey || '',
+          merchantSalt: p.merchantSalt || p.payuMerchantSalt || prev.merchantSalt || '',
+          headerAuthKey: p.headerAuthKey || p.payuHeaderAuthKey || prev.headerAuthKey || '',
         }));
         setIsActiveProvider(mgr.activeProvider === 'payu');
       }
@@ -119,19 +125,21 @@ export const PayUGatewaySettings: React.FC<PayUGatewaySettingsProps> = ({ onSave
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      const response = await ApiService.savePayUSettings({
-        merchantKey: (payuConfig.payuMerchantKey || '').trim(),
-        merchantSalt: (payuConfig.payuMerchantSalt || '').trim(),
-        payuMerchantKey: (payuConfig.payuMerchantKey || '').trim(),
-        payuMerchantSalt: (payuConfig.payuMerchantSalt || '').trim(),
-        headerAuthKey: (payuConfig.payuHeaderAuthKey || '').trim(),
-        payuHeaderAuthKey: (payuConfig.payuHeaderAuthKey || '').trim(),
+      const canonicalPayload = {
+        merchantKey: (payuConfig.merchantKey || payuConfig.payuMerchantKey || '').trim(),
+        merchantSalt: (payuConfig.merchantSalt || payuConfig.payuMerchantSalt || '').trim(),
+        headerAuthKey: (payuConfig.headerAuthKey || payuConfig.payuHeaderAuthKey || '').trim(),
         isTestMode: payuConfig.isTestMode,
         isEnabled: payuConfig.isEnabled,
         name: payuConfig.name || 'PayU India Hosted Gateway',
-      });
+      };
 
-      SaaSAdminDB.updateGatewayConfig('payu', payuConfig);
+      const response = await ApiService.savePayUSettings(canonicalPayload);
+
+      SaaSAdminDB.updateGatewayConfig('payu', {
+        ...payuConfig,
+        ...canonicalPayload,
+      });
       
       const successMsg = response?.data?.message || 'PayU gateway configuration saved successfully to Cloudflare D1 app_settings table!';
       showToast(successMsg);
@@ -145,7 +153,10 @@ export const PayUGatewaySettings: React.FC<PayUGatewaySettingsProps> = ({ onSave
   };
 
   const handleTestConnection = async () => {
-    if (!payuConfig.payuMerchantKey || !payuConfig.payuMerchantSalt) {
+    const key = (payuConfig.merchantKey || payuConfig.payuMerchantKey || '').trim();
+    const salt = (payuConfig.merchantSalt || payuConfig.payuMerchantSalt || '').trim();
+
+    if (!key || !salt) {
       setTestResult({
         success: false,
         message: 'Please enter both PayU Merchant Key and Merchant Salt before testing.',
@@ -167,8 +178,8 @@ export const PayUGatewaySettings: React.FC<PayUGatewaySettingsProps> = ({ onSave
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({
-          merchantKey: payuConfig.payuMerchantKey.trim(),
-          merchantSalt: payuConfig.payuMerchantSalt.trim(),
+          merchantKey: key,
+          merchantSalt: salt,
           isTestMode: payuConfig.isTestMode,
         }),
       });
@@ -213,7 +224,7 @@ export const PayUGatewaySettings: React.FC<PayUGatewaySettingsProps> = ({ onSave
   const returnUrl = `${originUrl}/api/payments/payu/return`;
   const endpointUrl = payuConfig.isTestMode ? 'https://test.payu.in/_payment' : 'https://secure.payu.in/_payment';
 
-  const isConfigured = Boolean(payuConfig.payuMerchantKey?.trim() && payuConfig.payuMerchantSalt?.trim());
+  const isConfigured = Boolean((payuConfig.merchantKey || payuConfig.payuMerchantKey)?.trim() && (payuConfig.merchantSalt || payuConfig.payuMerchantSalt)?.trim());
 
   return (
     <div className="space-y-6">
@@ -357,8 +368,8 @@ export const PayUGatewaySettings: React.FC<PayUGatewaySettingsProps> = ({ onSave
               </div>
               <input
                 type="text"
-                value={payuConfig.payuMerchantKey || ''}
-                onChange={(e) => handleFieldChange('payuMerchantKey', e.target.value)}
+                value={payuConfig.merchantKey || payuConfig.payuMerchantKey || ''}
+                onChange={(e) => handleFieldChange('merchantKey', e.target.value)}
                 placeholder="e.g. gtKFFx or your PayU Key"
                 className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-mono text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all placeholder:text-slate-400"
               />
@@ -379,8 +390,8 @@ export const PayUGatewaySettings: React.FC<PayUGatewaySettingsProps> = ({ onSave
               <div className="relative">
                 <input
                   type={showSalt ? 'text' : 'password'}
-                  value={payuConfig.payuMerchantSalt || ''}
-                  onChange={(e) => handleFieldChange('payuMerchantSalt', e.target.value)}
+                  value={payuConfig.merchantSalt || payuConfig.payuMerchantSalt || ''}
+                  onChange={(e) => handleFieldChange('merchantSalt', e.target.value)}
                   placeholder="e.g. eCwWELxi or your PayU Salt"
                   className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-mono text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all placeholder:text-slate-400 pr-10"
                 />
@@ -409,8 +420,8 @@ export const PayUGatewaySettings: React.FC<PayUGatewaySettingsProps> = ({ onSave
             </div>
             <input
               type="text"
-              value={payuConfig.payuHeaderAuthKey || ''}
-              onChange={(e) => handleFieldChange('payuHeaderAuthKey', e.target.value)}
+              value={payuConfig.headerAuthKey || payuConfig.payuHeaderAuthKey || ''}
+              onChange={(e) => handleFieldChange('headerAuthKey', e.target.value)}
               placeholder="e.g. payu_auth_sec_..."
               className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-mono text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all placeholder:text-slate-400"
             />

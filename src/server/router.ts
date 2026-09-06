@@ -212,6 +212,7 @@ export async function getPayUCredentials(db: D1Database, env: RequestContext['en
   let isTestMode = true;
   let endpoint = '';
   let headerAuthKey = '';
+  let usedFallbackAliases = false;
 
   // 1. Primary DB Source: Dynamically query Cloudflare D1 from 'app_settings' table where config_key = 'payu_config'
   try {
@@ -235,27 +236,43 @@ export async function getPayUCredentials(db: D1Database, env: RequestContext['en
       }
 
       if (parsed) {
-        // Extract merchant key
-        merchantKey =
-          parsed.merchantKey ||
-          parsed.merchant_key ||
+        // Extract merchant key (canonical first, then fallback aliases)
+        if (parsed.merchantKey || parsed.merchant_key) {
+          merchantKey = parsed.merchantKey || parsed.merchant_key;
+        } else if (
           parsed.payuMerchantKey ||
           parsed.payu_merchant_key ||
           parsed.key ||
           parsed.apiKey ||
-          parsed.PAYU_MERCHANT_KEY ||
-          '';
+          parsed.PAYU_MERCHANT_KEY
+        ) {
+          merchantKey =
+            parsed.payuMerchantKey ||
+            parsed.payu_merchant_key ||
+            parsed.key ||
+            parsed.apiKey ||
+            parsed.PAYU_MERCHANT_KEY;
+          usedFallbackAliases = true;
+        }
 
-        // Extract merchant salt
-        merchantSalt =
-          parsed.merchantSalt ||
-          parsed.merchant_salt ||
+        // Extract merchant salt (canonical first, then fallback aliases)
+        if (parsed.merchantSalt || parsed.merchant_salt) {
+          merchantSalt = parsed.merchantSalt || parsed.merchant_salt;
+        } else if (
           parsed.payuMerchantSalt ||
           parsed.payu_merchant_salt ||
           parsed.salt ||
           parsed.apiSecret ||
-          parsed.PAYU_MERCHANT_SALT ||
-          '';
+          parsed.PAYU_MERCHANT_SALT
+        ) {
+          merchantSalt =
+            parsed.payuMerchantSalt ||
+            parsed.payu_merchant_salt ||
+            parsed.salt ||
+            parsed.apiSecret ||
+            parsed.PAYU_MERCHANT_SALT;
+          usedFallbackAliases = true;
+        }
 
         // Extract test mode
         if (parsed.isTestMode !== undefined && parsed.isTestMode !== null) {
@@ -276,8 +293,11 @@ export async function getPayUCredentials(db: D1Database, env: RequestContext['en
         }
 
         // Extract header auth key
-        if (parsed.payuHeaderAuthKey || parsed.headerAuthKey || parsed.header_auth_key) {
-          headerAuthKey = parsed.payuHeaderAuthKey || parsed.headerAuthKey || parsed.header_auth_key;
+        if (parsed.headerAuthKey || parsed.header_auth_key) {
+          headerAuthKey = parsed.headerAuthKey || parsed.header_auth_key;
+        } else if (parsed.payuHeaderAuthKey) {
+          headerAuthKey = parsed.payuHeaderAuthKey;
+          usedFallbackAliases = true;
         }
       }
     }
@@ -307,11 +327,21 @@ export async function getPayUCredentials(db: D1Database, env: RequestContext['en
         if (gwRow.config_json) {
           try {
             const extra = JSON.parse(gwRow.config_json);
-            if (!merchantKey && (extra.merchantKey || extra.payuMerchantKey)) {
-              merchantKey = extra.merchantKey || extra.payuMerchantKey;
+            if (!merchantKey) {
+              if (extra.merchantKey) {
+                merchantKey = extra.merchantKey;
+              } else if (extra.payuMerchantKey) {
+                merchantKey = extra.payuMerchantKey;
+                usedFallbackAliases = true;
+              }
             }
-            if (!merchantSalt && (extra.merchantSalt || extra.payuMerchantSalt)) {
-              merchantSalt = extra.merchantSalt || extra.payuMerchantSalt;
+            if (!merchantSalt) {
+              if (extra.merchantSalt) {
+                merchantSalt = extra.merchantSalt;
+              } else if (extra.payuMerchantSalt) {
+                merchantSalt = extra.payuMerchantSalt;
+                usedFallbackAliases = true;
+              }
             }
           } catch {}
         }
@@ -350,6 +380,12 @@ export async function getPayUCredentials(db: D1Database, env: RequestContext['en
   // Resolve final endpoint
   if (!endpoint) {
     endpoint = isTestMode ? 'https://test.payu.in/_payment' : 'https://secure.payu.in/_payment';
+  }
+
+  if (usedFallbackAliases) {
+    console.warn(
+      '[PayU Config] Resolved via fallback aliases — primary fields are blank, consider re-saving gateway settings'
+    );
   }
 
   return { merchantKey, merchantSalt, isTestMode, endpoint, headerAuthKey };
@@ -4034,32 +4070,82 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
       (method === 'POST' || method === 'PUT')
     ) {
       try {
-        const body = (await request.json().catch(() => ({}))) as any;
-        const merchantKey = (body.merchantKey || body.payuMerchantKey || body.apiKey || body.key || '').trim();
-        const merchantSalt = (body.merchantSalt || body.payuMerchantSalt || body.apiSecret || body.salt || '').trim();
-        const isTestMode = body.isTestMode !== undefined ? Boolean(body.isTestMode) : (body.is_test_mode !== undefined ? Boolean(body.is_test_mode) : true);
-        const endpoint = (body.endpoint || (isTestMode ? 'https://test.payu.in/_payment' : 'https://secure.payu.in/_payment')).trim();
-        const headerAuthKey = (body.headerAuthKey || body.payuHeaderAuthKey || body.header_auth_key || '').trim();
-        const isEnabled = body.isEnabled !== undefined ? Boolean(body.isEnabled) : true;
-        const name = body.name || 'PayU India Hosted Gateway';
+        // Fetch existing config for non-destructive merge
+        const existingRow = await queryFirst<any>(db, "SELECT * FROM app_settings WHERE config_key = 'payu_config'");
+        let existingConfig: any = {};
+        if (existingRow) {
+          const rawVal = existingRow.config_value || existingRow.value;
+          if (typeof rawVal === 'string') {
+            try {
+              existingConfig = JSON.parse(rawVal);
+            } catch {}
+          } else if (typeof rawVal === 'object' && rawVal !== null) {
+            existingConfig = rawVal;
+          }
+        }
 
-        const payuConfigPayload = {
+        const body = (await request.json().catch(() => ({}))) as any;
+
+        // Resolve canonical fields prioritizing explicit body values, falling back to existing stored config
+        const rawMerchantKey = body.merchantKey !== undefined ? body.merchantKey : (body.payuMerchantKey !== undefined ? body.payuMerchantKey : (body.apiKey !== undefined ? body.apiKey : (body.key !== undefined ? body.key : existingConfig.merchantKey || existingConfig.payuMerchantKey || '')));
+        const merchantKey = String(rawMerchantKey || '').trim();
+
+        const rawMerchantSalt = body.merchantSalt !== undefined ? body.merchantSalt : (body.payuMerchantSalt !== undefined ? body.payuMerchantSalt : (body.apiSecret !== undefined ? body.apiSecret : (body.salt !== undefined ? body.salt : existingConfig.merchantSalt || existingConfig.payuMerchantSalt || '')));
+        const merchantSalt = String(rawMerchantSalt || '').trim();
+
+        const rawHeaderAuthKey = body.headerAuthKey !== undefined ? body.headerAuthKey : (body.payuHeaderAuthKey !== undefined ? body.payuHeaderAuthKey : (body.header_auth_key !== undefined ? body.header_auth_key : existingConfig.headerAuthKey || existingConfig.payuHeaderAuthKey || ''));
+        const headerAuthKey = String(rawHeaderAuthKey || '').trim();
+
+        let isTestMode = true;
+        if (body.isTestMode !== undefined) {
+          isTestMode = Boolean(body.isTestMode);
+        } else if (body.is_test_mode !== undefined) {
+          isTestMode = Boolean(body.is_test_mode);
+        } else if (existingConfig.isTestMode !== undefined) {
+          isTestMode = Boolean(existingConfig.isTestMode);
+        }
+
+        let isEnabled = true;
+        if (body.isEnabled !== undefined) {
+          isEnabled = Boolean(body.isEnabled);
+        } else if (existingConfig.isEnabled !== undefined) {
+          isEnabled = Boolean(existingConfig.isEnabled);
+        }
+
+        const name = (body.name || existingConfig.name || 'PayU India Hosted Gateway').trim();
+        const endpoint = (body.endpoint || (isTestMode ? 'https://test.payu.in/_payment' : 'https://secure.payu.in/_payment')).trim();
+        const currency = body.currency || existingConfig.currency || 'INR';
+        const supportedMethods = body.supportedMethods || existingConfig.supportedMethods || ['UPI', 'NET_BANKING', 'CARDS'];
+
+        // Merge: Start with existingConfig, overlay request fields, but ensure canonical computed values win
+        const payuConfigPayload: Record<string, any> = {
+          ...existingConfig,
+          ...body,
           provider: 'payu',
           name,
           isEnabled,
           isTestMode,
           merchantKey,
           merchantSalt,
-          payuMerchantKey: merchantKey,
-          payuMerchantSalt: merchantSalt,
           headerAuthKey,
-          payuHeaderAuthKey: headerAuthKey,
           endpoint,
-          currency: body.currency || 'INR',
-          supportedMethods: body.supportedMethods || ['UPI', 'NET_BANKING', 'CARDS'],
+          currency,
+          supportedMethods,
           updatedAt: new Date().toISOString(),
-          ...body,
         };
+
+        // Clean up duplicate legacy aliases so we never write them going forward
+        delete payuConfigPayload.payuMerchantKey;
+        delete payuConfigPayload.payuMerchantSalt;
+        delete payuConfigPayload.payuHeaderAuthKey;
+        delete payuConfigPayload.payu_merchant_key;
+        delete payuConfigPayload.payu_merchant_salt;
+        delete payuConfigPayload.header_auth_key;
+        delete payuConfigPayload.apiKey;
+        delete payuConfigPayload.apiSecret;
+        delete payuConfigPayload.key;
+        delete payuConfigPayload.salt;
+        delete payuConfigPayload.is_test_mode;
 
         const configValueJson = JSON.stringify(payuConfigPayload);
 
@@ -4313,32 +4399,6 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
           body.endpoint || '',
           JSON.stringify(extraConfig)
         );
-
-        // Also sync payu_config into app_settings table for dynamic D1 configuration
-        if (provider.toLowerCase() === 'payu') {
-          try {
-            const payuConfigJson = JSON.stringify({
-              merchantKey: body.merchantKey || body.payuMerchantKey || body.apiKey || '',
-              merchantSalt: body.merchantSalt || body.payuMerchantSalt || body.apiSecret || '',
-              isTestMode: body.isTestMode !== undefined ? Boolean(body.isTestMode) : true,
-              endpoint: body.endpoint || '',
-              headerAuthKey: body.headerAuthKey || body.payuHeaderAuthKey || '',
-              updatedAt: new Date().toISOString(),
-            });
-
-            await execute(
-              db,
-              `INSERT INTO app_settings (config_key, config_value, updated_at)
-               VALUES ('payu_config', ?, CURRENT_TIMESTAMP)
-               ON CONFLICT(config_key) DO UPDATE SET
-                 config_value = excluded.config_value,
-                 updated_at = CURRENT_TIMESTAMP`,
-              payuConfigJson
-            );
-          } catch (appSetErr) {
-            console.warn('[app_settings] Failed to sync payu_config to app_settings:', appSetErr);
-          }
-        }
 
         // Audit Log
         await execute(
