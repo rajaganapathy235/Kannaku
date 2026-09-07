@@ -38,8 +38,7 @@ import { TenantOrganizationFull } from './types/admin';
 import { ConfirmationModal } from './components/common/ConfirmationModal';
 import { AlertModal } from './components/common/AlertModal';
 import { Lock } from 'lucide-react';
-import { TrialExpiredModal } from './components/subscription/TrialExpiredModal';
-import { isSubscriptionTrialExpired } from './utils/subscriptionUtils';
+import { TrialExpiredModal, ReadOnlyReasonType } from './components/subscription/TrialExpiredModal';
 
 export default function App() {
   const [authSession, setAuthSession] = useState<AuthSession | null>(() => {
@@ -70,17 +69,17 @@ export default function App() {
     KannakuDB.getSubscription()
   );
 
-  // 14-Day Free Trial Expiration State
+  // Server-Authoritative Read-Only & Access Denial State (Single Source of Truth)
+  const [isReadOnly, setIsReadOnly] = useState<boolean>(() => {
+    return Boolean(authSession?.user?.isReadOnly ?? company?.isReadOnly ?? false);
+  });
+  const [readOnlyReason, setReadOnlyReason] = useState<ReadOnlyReasonType>(() => {
+    return (authSession?.user?.code || authSession?.user?.reason || authSession?.user?.readOnlyReason || company?.code || company?.readOnlyReason || null) as ReadOnlyReasonType;
+  });
+
+  // Read-Only Modal State
   const [trialExpiredModalOpen, setTrialExpiredModalOpen] = useState<boolean>(false);
   const [hasAutoPromptedTrialModal, setHasAutoPromptedTrialModal] = useState<boolean>(false);
-
-  // Active tenant and 14-day trial status calculation
-  const activeTenantId = KannakuDB.getActiveTenantId();
-  const allOrgs = SaaSAdminDB.getOrganizations();
-  const activeOrg: TenantOrganizationFull | undefined =
-    allOrgs.find((o) => o.id === activeTenantId || o.adminEmail === company.email) || allOrgs[0];
-
-  const isTrialExpired = isSubscriptionTrialExpired(subscription, activeOrg);
 
   // Active viewing/printing invoice modal
   const [activePrintInvoice, setActivePrintInvoice] = useState<Invoice | null>(null);
@@ -106,12 +105,18 @@ export default function App() {
 
   // Reload database state
   const reloadAllState = () => {
-    setCompany(KannakuDB.getCompanyProfile());
+    const comp = KannakuDB.getCompanyProfile();
+    setCompany(comp);
     setInvoices(KannakuDB.getInvoices());
     setClients(KannakuDB.getClients());
     setProducts(KannakuDB.getProducts());
     setPayments(KannakuDB.getPayments());
     setSubscription(KannakuDB.getSubscription());
+    const currentSession = AuthService.getSession();
+    if (currentSession?.user) {
+      setIsReadOnly(Boolean(currentSession.user.isReadOnly ?? comp.isReadOnly ?? false));
+      setReadOnlyReason((currentSession.user.code || currentSession.user.reason || currentSession.user.readOnlyReason || comp.code || comp.readOnlyReason || null) as ReadOnlyReasonType);
+    }
   };
 
   // Reconcile and synchronize all invoices into payment ledgers on load
@@ -143,8 +148,15 @@ export default function App() {
       window.history.replaceState({}, document.title, cleanUrl);
     }
 
-    // Auto-sync from Cloudflare D1 on app load if authenticated
+    // Auto-sync from Cloudflare D1 and refresh server-side access status on app load if authenticated
     if (authSession?.user) {
+      AuthService.refreshSessionAsync().then((updatedSession) => {
+        if (updatedSession?.user) {
+          setAuthSession(updatedSession);
+          setIsReadOnly(Boolean(updatedSession.user.isReadOnly));
+          setReadOnlyReason((updatedSession.user.code || updatedSession.user.reason || updatedSession.user.readOnlyReason || null) as ReadOnlyReasonType);
+        }
+      });
       KannakuDB.syncFromD1().then((res) => {
         if (res.success) {
           reloadAllState();
@@ -160,9 +172,27 @@ export default function App() {
         setAuthView('login');
         window.location.hash = '#login';
         showToast('⚠️ Session expired or unauthorized. Please sign in.');
-      } else if (detail.status === 402 || detail.code === 'TRIAL_EXPIRED' || detail.error?.includes('trial has expired')) {
+      } else if (
+        detail.status === 402 ||
+        detail.status === 403 ||
+        detail.code === 'TRIAL_EXPIRED' ||
+        detail.code === 'SUBSCRIPTION_EXPIRED' ||
+        detail.code === 'ACCOUNT_SUSPENDED' ||
+        detail.error?.includes('trial has expired') ||
+        detail.error?.includes('Subscription has expired') ||
+        detail.error?.includes('suspended')
+      ) {
+        const reasonCode: ReadOnlyReasonType = (detail.code || detail.reason || (detail.error?.includes('suspended') ? 'ACCOUNT_SUSPENDED' : detail.error?.includes('Subscription') ? 'SUBSCRIPTION_EXPIRED' : 'TRIAL_EXPIRED')) as ReadOnlyReasonType;
+        setIsReadOnly(true);
+        setReadOnlyReason(reasonCode);
         setTrialExpiredModalOpen(true);
-        showToast('⚠️ Your trial has expired. Please subscribe to continue creating records.');
+        if (reasonCode === 'ACCOUNT_SUSPENDED') {
+          showToast('⚠️ Account suspended by administrator. Invoicing is locked in read-only mode.');
+        } else if (reasonCode === 'SUBSCRIPTION_EXPIRED') {
+          showToast('⚠️ Your subscription has expired. Invoicing is locked in read-only mode.');
+        } else {
+          showToast('⚠️ Your trial has expired. Invoicing is locked in read-only mode.');
+        }
       } else if (detail.error?.includes('D1 binding') || detail.error?.includes('env.DB')) {
         setSyncErrorBanner({
           action: 'Cloudflare D1 Database Binding',
@@ -277,13 +307,13 @@ export default function App() {
     showToast('Impersonation ended. Returned to Super Admin Console.');
   };
 
-  // Auto-prompt 14-day trial expired modal once per session
+  // Auto-prompt read-only modal once per session
   useEffect(() => {
-    if (isTrialExpired && !hasAutoPromptedTrialModal && authSession && !isSuperAdminMode) {
+    if (isReadOnly && !hasAutoPromptedTrialModal && authSession && !isSuperAdminMode) {
       setTrialExpiredModalOpen(true);
       setHasAutoPromptedTrialModal(true);
     }
-  }, [isTrialExpired, hasAutoPromptedTrialModal, authSession, isSuperAdminMode]);
+  }, [isReadOnly, hasAutoPromptedTrialModal, authSession, isSuperAdminMode]);
 
   // Compute Next Invoice Number
   const getNextInvoiceNumber = (type: InvoiceType): string => {
@@ -299,11 +329,17 @@ export default function App() {
     return `${prefix}${nextNum}`;
   };
 
-  // Trigger New Invoice with 14-Day Free Trial Guard
+  // Trigger New Invoice with Read-Only Guard
   const handleTriggerNewInvoice = () => {
-    if (isTrialExpired) {
+    if (isReadOnly) {
       setTrialExpiredModalOpen(true);
-      showToast('🔒 14-Day Free Trial Expired. Invoicing is locked in read-only mode.');
+      showToast(
+        readOnlyReason === 'ACCOUNT_SUSPENDED'
+          ? '🔒 Account Suspended. Invoicing is locked in read-only mode.'
+          : readOnlyReason === 'SUBSCRIPTION_EXPIRED'
+          ? '🔒 Subscription Expired. Invoicing is locked in read-only mode.'
+          : '🔒 14-Day Free Trial Expired. Invoicing is locked in read-only mode.'
+      );
       return;
     }
     setEditingInvoice(null);
@@ -312,9 +348,9 @@ export default function App() {
 
   // Invoice Handlers
   const handleSaveInvoice = (invoice: Invoice, andPrint: boolean = false) => {
-    if (isTrialExpired) {
+    if (isReadOnly) {
       setTrialExpiredModalOpen(true);
-      showToast('🔒 Cannot save invoice: 14-day free trial has expired. Upgrade your plan to continue.');
+      showToast('🔒 Cannot save invoice: workspace is in read-only mode. Upgrade your plan to continue.');
       return;
     }
 
@@ -347,9 +383,9 @@ export default function App() {
   };
 
   const handleEditInvoice = (inv: Invoice) => {
-    if (isTrialExpired) {
+    if (isReadOnly) {
       setTrialExpiredModalOpen(true);
-      showToast('🔒 14-Day Free Trial Expired. Invoicing is locked in read-only mode.');
+      showToast('🔒 Invoicing is locked in read-only mode.');
       return;
     }
     setEditingInvoice(inv);
@@ -357,9 +393,9 @@ export default function App() {
   };
 
   const handleConvertQuotationToInvoice = (quotation: Invoice) => {
-    if (isTrialExpired) {
+    if (isReadOnly) {
       setTrialExpiredModalOpen(true);
-      showToast('🔒 14-Day Free Trial Expired. Upgrade plan to convert estimates to tax invoices.');
+      showToast('🔒 Invoicing is locked in read-only mode. Upgrade plan to convert estimates to tax invoices.');
       return;
     }
 
@@ -417,9 +453,9 @@ export default function App() {
   };
 
   const handleDuplicateInvoice = (inv: Invoice) => {
-    if (isTrialExpired) {
+    if (isReadOnly) {
       setTrialExpiredModalOpen(true);
-      showToast('🔒 14-Day Free Trial Expired. Invoicing is locked in read-only mode.');
+      showToast('🔒 Invoicing is locked in read-only mode.');
       return;
     }
 
@@ -691,9 +727,9 @@ export default function App() {
           <Sidebar
             activeTab={activeTab}
             onTabChange={(tab) => {
-              if (tab === 'create_invoice' && isTrialExpired) {
+              if (tab === 'create_invoice' && isReadOnly) {
                 setTrialExpiredModalOpen(true);
-                showToast('🔒 14-Day Free Trial Expired. Invoicing is locked in read-only mode.');
+                showToast('🔒 Invoicing is locked in read-only mode.');
                 return;
               }
               setEditingInvoice(null);
@@ -739,12 +775,13 @@ export default function App() {
             }}
             session={authSession}
             onLogout={handleLogout}
-            isTrialExpired={isTrialExpired}
+            isReadOnly={isReadOnly}
+            readOnlyReason={readOnlyReason}
             onOpenTrialModal={() => setTrialExpiredModalOpen(true)}
           />
 
-          {/* Trial Expired Alert Banner */}
-          {isTrialExpired && (
+          {/* Read-Only Global Alert Banner */}
+          {isReadOnly && (
             <div
               id="trial-expired-global-banner"
               className="bg-amber-500 text-slate-950 px-4 py-2 text-xs font-semibold flex flex-wrap items-center justify-between gap-2 shadow-xs border-b border-amber-600/30 shrink-0"
@@ -752,7 +789,14 @@ export default function App() {
               <div className="flex items-center gap-2">
                 <Lock className="w-4 h-4 text-slate-950 shrink-0" />
                 <span>
-                  <strong>14-Day Free Trial Expired:</strong> Read-only mode active. Your historical records are safe. Invoice creation is paused.
+                  <strong>
+                    {readOnlyReason === 'ACCOUNT_SUSPENDED' || readOnlyReason === 'SUSPENDED'
+                      ? 'Account Suspended:'
+                      : readOnlyReason === 'SUBSCRIPTION_EXPIRED'
+                      ? 'Subscription Expired:'
+                      : '14-Day Free Trial Expired:'}
+                  </strong>{' '}
+                  Read-only mode active. Your historical records and accounting reports are safe. Record creation and invoicing are paused.
                 </span>
               </div>
               <button
@@ -760,7 +804,7 @@ export default function App() {
                 onClick={() => setTrialExpiredModalOpen(true)}
                 className="px-3 py-1 bg-slate-950 hover:bg-slate-900 text-amber-300 rounded-lg text-[11px] font-bold transition-colors cursor-pointer shadow-xs active:scale-98"
               >
-                Upgrade Plan
+                {readOnlyReason === 'ACCOUNT_SUSPENDED' || readOnlyReason === 'SUSPENDED' ? 'View Details' : 'Upgrade Plan'}
               </button>
             </div>
           )}
@@ -779,9 +823,9 @@ export default function App() {
                 onNewInvoice={handleTriggerNewInvoice}
                 onViewInvoice={(inv) => setActivePrintInvoice(inv)}
                 onNavigateTab={(tab) => {
-                  if (tab === 'create_invoice' && isTrialExpired) {
+                  if (tab === 'create_invoice' && isReadOnly) {
                     setTrialExpiredModalOpen(true);
-                    showToast('🔒 14-Day Free Trial Expired. Invoicing is locked in read-only mode.');
+                    showToast('🔒 Invoicing is locked in read-only mode.');
                     return;
                   }
                   setActiveTab(tab);
@@ -799,6 +843,7 @@ export default function App() {
                 onDuplicateInvoice={handleDuplicateInvoice}
                 onDeleteInvoice={handleDeleteInvoice}
                 onConvertQuotation={handleConvertQuotationToInvoice}
+                isReadOnly={isReadOnly}
               />
             )}
 
@@ -813,7 +858,8 @@ export default function App() {
                 onAddNewClient={handleAddClient}
                 onAddNewProduct={handleAddProduct}
                 nextInvoiceNumber={getNextInvoiceNumber}
-                isTrialExpired={isTrialExpired}
+                isReadOnly={isReadOnly}
+                readOnlyReason={readOnlyReason}
                 onOpenUpgradeModal={() => setTrialExpiredModalOpen(true)}
               />
             )}
@@ -829,6 +875,7 @@ export default function App() {
                 onDeleteClient={handleDeleteClient}
                 onViewInvoice={(inv) => setActivePrintInvoice(inv)}
                 onAddLedgerEntry={handleAddLedgerEntry}
+                isReadOnly={isReadOnly}
               />
             )}
 
@@ -840,6 +887,7 @@ export default function App() {
                 onAddSupplier={handleAddClient}
                 onUpdateSupplier={handleUpdateClient}
                 onDeleteSupplier={handleDeleteClient}
+                isReadOnly={isReadOnly}
               />
             )}
 
@@ -849,6 +897,7 @@ export default function App() {
                 onAddProduct={handleAddProduct}
                 onUpdateProduct={handleUpdateProduct}
                 onDeleteProduct={handleDeleteProduct}
+                isReadOnly={isReadOnly}
               />
             )}
 
@@ -858,6 +907,7 @@ export default function App() {
                 clients={clients}
                 company={company}
                 onRecordPayment={handleRecordPayment}
+                isReadOnly={isReadOnly}
               />
             )}
 
@@ -999,7 +1049,7 @@ export default function App() {
         </div>
       )}
 
-      {/* 14-Day Free Trial Expired Dedicated Modal */}
+      {/* Read-Only Access & Subscription Denial Modal */}
       <TrialExpiredModal
         isOpen={trialExpiredModalOpen}
         onClose={() => setTrialExpiredModalOpen(false)}
@@ -1007,6 +1057,8 @@ export default function App() {
           setTrialExpiredModalOpen(false);
           setActiveTab('subscription');
         }}
+        reason={readOnlyReason}
+        code={readOnlyReason}
         expiryDate={subscription.expiryDate}
         organizationName={company.name || 'Your Business'}
       />

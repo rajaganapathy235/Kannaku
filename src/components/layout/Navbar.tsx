@@ -21,7 +21,9 @@ interface NavbarProps {
   onOpenHomepage?: () => void;
   session: AuthSession | null;
   onLogout: () => void;
+  isReadOnly?: boolean;
   isTrialExpired?: boolean;
+  readOnlyReason?: string | null;
   onOpenTrialModal?: () => void;
 }
 
@@ -36,9 +38,12 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenHomepage,
   session,
   onLogout,
+  isReadOnly,
   isTrialExpired,
+  readOnlyReason,
   onOpenTrialModal,
 }) => {
+  const readOnlyActive = isReadOnly ?? isTrialExpired ?? false;
   const getTabTitle = (tab: string) => {
     switch (tab) {
       case 'dashboard':
@@ -90,16 +95,22 @@ export const Navbar: React.FC<NavbarProps> = ({
           <span className="font-mono text-[11px] text-brand-600">({company.registerNumber})</span>
         </div>
 
-        {isTrialExpired && (
+        {readOnlyActive && (
           <button
             id="navbar-trial-expired-chip"
             type="button"
             onClick={onOpenTrialModal}
             className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold bg-amber-100 text-amber-900 border border-amber-300 hover:bg-amber-200 transition-colors cursor-pointer shrink-0 shadow-xs"
-            title="14-Day Free Trial Expired — Read-Only Mode Active. Click to upgrade."
+            title="Read-Only Mode Active — Click to upgrade."
           >
             <Lock className="w-3.5 h-3.5 text-amber-700 shrink-0" />
-            <span className="hidden sm:inline">Trial Expired (Read-Only)</span>
+            <span className="hidden sm:inline">
+              {readOnlyReason === 'ACCOUNT_SUSPENDED' || readOnlyReason === 'SUSPENDED'
+                ? 'Account Suspended (Read-Only)'
+                : readOnlyReason === 'SUBSCRIPTION_EXPIRED'
+                ? 'Subscription Expired (Read-Only)'
+                : 'Trial Expired (Read-Only)'}
+            </span>
             <span className="sm:hidden">Read-Only</span>
           </button>
         )}
@@ -124,13 +135,13 @@ export const Navbar: React.FC<NavbarProps> = ({
           id="btn-navbar-new-invoice"
           onClick={onNewInvoice}
           className={`${
-            isTrialExpired
+            readOnlyActive
               ? 'bg-amber-600 hover:bg-amber-700 text-white'
               : 'bg-brand-600 hover:bg-brand-700 text-white'
           } px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg font-semibold text-xs shadow-xs transition-colors flex items-center gap-1.5 active:scale-98 cursor-pointer`}
-          title={isTrialExpired ? 'Trial Expired — Click to view upgrade options' : 'Create New GST Tax Invoice'}
+          title={readOnlyActive ? 'Read-Only Mode — Click to view upgrade options' : 'Create New GST Tax Invoice'}
         >
-          {isTrialExpired ? <Lock className="w-4 h-4" /> : <PlusCircle className="w-4 h-4" />}
+          {readOnlyActive ? <Lock className="w-4 h-4" /> : <PlusCircle className="w-4 h-4" />}
           <span className="hidden sm:inline">New Invoice</span>
           <span className="sm:hidden">New</span>
         </button>

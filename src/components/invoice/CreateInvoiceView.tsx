@@ -52,7 +52,9 @@ interface CreateInvoiceViewProps {
   onAddNewClient: (client: Client) => void;
   onAddNewProduct: (product: Product) => void;
   nextInvoiceNumber: (type: InvoiceType) => string;
+  isReadOnly?: boolean;
   isTrialExpired?: boolean;
+  readOnlyReason?: string | null;
   onOpenUpgradeModal?: () => void;
 }
 
@@ -66,9 +68,12 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
   onAddNewClient,
   onAddNewProduct,
   nextInvoiceNumber,
+  isReadOnly,
   isTrialExpired,
+  readOnlyReason,
   onOpenUpgradeModal,
 }) => {
+  const isLocked = isReadOnly ?? isTrialExpired ?? false;
   const [invoiceType, setInvoiceType] = useState<InvoiceType>(
     editingInvoice ? editingInvoice.invoiceType : InvoiceType.SALES
   );
@@ -381,7 +386,7 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
 
   // Save invoice
   const handleSubmit = (andPrint: boolean = false) => {
-    if (isTrialExpired) {
+    if (isLocked) {
       onOpenUpgradeModal?.();
       return;
     }
@@ -454,8 +459,8 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
 
   return (
     <div className="max-w-6xl mx-auto space-y-6 pb-20">
-      {/* Trial Expired Alert Banner */}
-      {isTrialExpired && (
+      {/* Read-Only / Trial Expired Alert Banner */}
+      {isLocked && (
         <div
           id="trial-expired-invoice-banner"
           className="p-4 rounded-2xl bg-amber-50 border border-amber-200/90 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs shadow-xs animate-in fade-in duration-200"
@@ -466,10 +471,14 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
             </div>
             <div>
               <span className="font-bold text-sm block text-amber-950">
-                14-Day Free Trial Expired — Invoice Creation Locked
+                {readOnlyReason === 'ACCOUNT_SUSPENDED' || readOnlyReason === 'SUSPENDED'
+                  ? 'Account Suspended — Invoice Creation Locked'
+                  : readOnlyReason === 'SUBSCRIPTION_EXPIRED'
+                  ? 'Subscription Expired — Invoice Creation Locked'
+                  : '14-Day Free Trial Expired — Invoice Creation Locked'}
               </span>
               <span className="text-xs text-amber-800">
-                Your workspace is in read-only mode. Upgrade to a JustGST subscription plan to generate, save, and print new tax invoices.
+                Your workspace is in read-only mode. Upgrade or renew your subscription to generate, save, and print new tax invoices.
               </span>
             </div>
           </div>
@@ -1374,7 +1383,7 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
 
             {/* Action Buttons */}
             <div className="pt-3 border-t border-slate-100 space-y-2">
-              {isTrialExpired ? (
+              {isLocked ? (
                 <button
                   type="button"
                   id="btn-trial-locked-upgrade"
@@ -1382,7 +1391,13 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
                   className="w-full py-3 px-4 rounded-xl text-xs font-bold text-white bg-amber-600 hover:bg-amber-700 shadow-md flex items-center justify-center gap-2 active:scale-98 transition cursor-pointer"
                 >
                   <Lock className="w-4 h-4" />
-                  <span>Trial Expired — Upgrade Plan to Save Bill</span>
+                  <span>
+                    {readOnlyReason === 'ACCOUNT_SUSPENDED' || readOnlyReason === 'SUSPENDED'
+                      ? 'Account Suspended — View Subscription'
+                      : readOnlyReason === 'SUBSCRIPTION_EXPIRED'
+                      ? 'Subscription Expired — Renew Plan to Save'
+                      : 'Trial Expired — Upgrade Plan to Save Bill'}
+                  </span>
                 </button>
               ) : (
                 <>

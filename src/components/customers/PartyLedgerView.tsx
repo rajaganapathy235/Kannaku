@@ -41,6 +41,7 @@ interface PartyLedgerViewProps {
   onEditEntry?: (entry: PaymentLedgerEntry, newBalance: number) => void;
   onDeleteEntry?: (entryId: string, newBalance: number) => void;
   onViewInvoice?: (invoice: Invoice) => void;
+  isReadOnly?: boolean;
 }
 
 type TimeFilter =
@@ -66,6 +67,7 @@ export const PartyLedgerView: React.FC<PartyLedgerViewProps> = ({
   onEditEntry,
   onDeleteEntry,
   onViewInvoice,
+  isReadOnly = false,
 }) => {
   const [typeFilter, setTypeFilter] = useState<TypeFilter>('all');
   const [timeFilter, setTimeFilter] = useState<TimeFilter>('all');
@@ -472,7 +474,13 @@ _Thank you for your business!_`;
                 setEditingEntry(null);
                 setIsAddModalOpen(true);
               }}
-              className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-white bg-brand-600 hover:bg-brand-700 shadow-xs active:scale-98 transition-colors cursor-pointer"
+              disabled={isReadOnly}
+              title={isReadOnly ? 'Action disabled in read-only mode' : 'Add Entry'}
+              className={`hidden sm:inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-white shadow-xs transition-colors ${
+                isReadOnly
+                  ? 'bg-slate-400 opacity-60 cursor-not-allowed'
+                  : 'bg-brand-600 hover:bg-brand-700 active:scale-98 cursor-pointer'
+              }`}
             >
               <Plus className="w-4 h-4" />
               <span>Add Entry</span>
@@ -787,7 +795,12 @@ _Thank you for your business!_`;
                     setEditingEntry(null);
                     setIsAddModalOpen(true);
                   }}
-                  className="text-xs font-bold text-emerald-700 hover:underline cursor-pointer"
+                  disabled={isReadOnly}
+                  className={`text-xs font-bold ${
+                    isReadOnly
+                      ? 'text-slate-400 opacity-50 cursor-not-allowed'
+                      : 'text-emerald-700 hover:underline cursor-pointer'
+                  }`}
                 >
                   + Add new ledger entry
                 </button>
@@ -939,15 +952,25 @@ _Thank you for your business!_`;
                                   setEditingEntry(entry);
                                   setIsAddModalOpen(true);
                                 }}
-                                className="p-1.5 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
-                                title="Edit Entry"
+                                disabled={isReadOnly}
+                                title={isReadOnly ? 'Action disabled in read-only mode' : 'Edit Entry'}
+                                className={`p-1.5 rounded-lg transition-colors ${
+                                  isReadOnly
+                                    ? 'text-slate-300 opacity-50 cursor-not-allowed'
+                                    : 'text-slate-400 hover:text-slate-900 hover:bg-slate-100 cursor-pointer'
+                                }`}
                               >
                                 <Edit2 className="w-3.5 h-3.5" />
                               </button>
                               <button
                                 onClick={() => setEntryToDelete(entry)}
-                                className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
-                                title="Delete Entry"
+                                disabled={isReadOnly}
+                                title={isReadOnly ? 'Action disabled in read-only mode' : 'Delete Entry'}
+                                className={`p-1.5 rounded-lg transition-colors ${
+                                  isReadOnly
+                                    ? 'text-slate-300 opacity-50 cursor-not-allowed'
+                                    : 'text-slate-400 hover:text-rose-600 hover:bg-rose-50 cursor-pointer'
+                                }`}
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
                               </button>
@@ -1098,15 +1121,25 @@ _Thank you for your business!_`;
                                   setEditingEntry(entry);
                                   setIsAddModalOpen(true);
                                 }}
-                                className="p-1 text-slate-400 hover:text-slate-800 rounded cursor-pointer"
-                                title="Edit"
+                                disabled={isReadOnly}
+                                title={isReadOnly ? 'Action disabled in read-only mode' : 'Edit'}
+                                className={`p-1 rounded transition-colors ${
+                                  isReadOnly
+                                    ? 'text-slate-300 opacity-50 cursor-not-allowed'
+                                    : 'text-slate-400 hover:text-slate-800 cursor-pointer'
+                                }`}
                               >
                                 <Edit2 className="w-3.5 h-3.5" />
                               </button>
                               <button
                                 onClick={() => setEntryToDelete(entry)}
-                                className="p-1 text-slate-400 hover:text-rose-600 rounded cursor-pointer"
-                                title="Delete"
+                                disabled={isReadOnly}
+                                title={isReadOnly ? 'Action disabled in read-only mode' : 'Delete'}
+                                className={`p-1 rounded transition-colors ${
+                                  isReadOnly
+                                    ? 'text-slate-300 opacity-50 cursor-not-allowed'
+                                    : 'text-slate-400 hover:text-rose-600 cursor-pointer'
+                                }`}
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
                               </button>
@@ -1197,8 +1230,13 @@ _Thank you for your business!_`;
           setEditingEntry(null);
           setIsAddModalOpen(true);
         }}
-        className="fixed right-4 sm:right-6 bottom-16 sm:bottom-20 z-40 w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white shadow-xl flex items-center justify-center transition-all group cursor-pointer"
-        title="Add Ledger Entry"
+        disabled={isReadOnly}
+        className={`fixed right-4 sm:right-6 bottom-16 sm:bottom-20 z-40 w-12 h-12 sm:w-14 sm:h-14 rounded-full text-white shadow-xl flex items-center justify-center transition-all group ${
+          isReadOnly
+            ? 'bg-slate-400 opacity-60 cursor-not-allowed'
+            : 'bg-emerald-600 hover:bg-emerald-700 active:scale-95 cursor-pointer'
+        }`}
+        title={isReadOnly ? 'Action disabled in read-only mode' : 'Add Ledger Entry'}
       >
         <Plus className="w-6 h-6 sm:w-7 sm:h-7 stroke-[2.5] group-hover:rotate-90 transition-transform duration-200" />
       </button>

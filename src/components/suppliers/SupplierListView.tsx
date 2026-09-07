@@ -26,6 +26,7 @@ interface SupplierListViewProps {
   onAddSupplier: (supplier: Client) => void;
   onUpdateSupplier: (supplier: Client) => void;
   onDeleteSupplier: (supplierId: string) => void;
+  isReadOnly?: boolean;
 }
 
 export const SupplierListView: React.FC<SupplierListViewProps> = ({
@@ -35,6 +36,7 @@ export const SupplierListView: React.FC<SupplierListViewProps> = ({
   onAddSupplier,
   onUpdateSupplier,
   onDeleteSupplier,
+  isReadOnly = false,
 }) => {
   const [search, setSearch] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -179,7 +181,13 @@ export const SupplierListView: React.FC<SupplierListViewProps> = ({
 
         <button
           onClick={handleOpenAdd}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-white bg-brand-600 hover:bg-brand-700 shadow-xs active:scale-98 transition-colors cursor-pointer"
+          disabled={isReadOnly}
+          title={isReadOnly ? 'Action disabled in read-only mode' : 'Add Supplier'}
+          className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-white shadow-xs transition-colors ${
+            isReadOnly
+              ? 'bg-slate-400 opacity-60 cursor-not-allowed'
+              : 'bg-brand-600 hover:bg-brand-700 active:scale-98 cursor-pointer'
+          }`}
         >
           <Plus className="w-4 h-4" />
           <span>Add Supplier</span>
@@ -224,15 +232,25 @@ export const SupplierListView: React.FC<SupplierListViewProps> = ({
                   <div className="flex items-center gap-1 shrink-0">
                     <button
                       onClick={() => handleOpenEdit(s)}
-                      className="p-1.5 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
-                      title="Edit Supplier"
+                      disabled={isReadOnly}
+                      title={isReadOnly ? 'Action disabled in read-only mode' : 'Edit Supplier'}
+                      className={`p-1.5 rounded-lg transition-colors ${
+                        isReadOnly
+                          ? 'text-slate-300 opacity-50 cursor-not-allowed'
+                          : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100 cursor-pointer'
+                      }`}
                     >
                       <Edit2 className="w-3.5 h-3.5" />
                     </button>
                     <button
                       onClick={() => onDeleteSupplier(s.id)}
-                      className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
-                      title="Delete Supplier"
+                      disabled={isReadOnly}
+                      title={isReadOnly ? 'Action disabled in read-only mode' : 'Delete Supplier'}
+                      className={`p-1.5 rounded-lg transition-colors ${
+                        isReadOnly
+                          ? 'text-slate-300 opacity-50 cursor-not-allowed'
+                          : 'text-slate-400 hover:text-red-600 hover:bg-red-50 cursor-pointer'
+                      }`}
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>

@@ -35,6 +35,7 @@ interface CustomerListViewProps {
   onDeleteClient: (clientId: string) => void;
   onViewInvoice: (invoice: Invoice) => void;
   onAddLedgerEntry?: (entry: PaymentLedgerEntry, newBalance: number) => void;
+  isReadOnly?: boolean;
 }
 
 export const CustomerListView: React.FC<CustomerListViewProps> = ({
@@ -47,6 +48,7 @@ export const CustomerListView: React.FC<CustomerListViewProps> = ({
   onDeleteClient,
   onViewInvoice,
   onAddLedgerEntry,
+  isReadOnly = false,
 }) => {
   const [search, setSearch] = useState('');
   const [editingClient, setEditingClient] = useState<Client | null>(null);
@@ -207,6 +209,7 @@ Please let us know once the transfer is completed. Thank you!`;
         party={selectedPartyLedger}
         company={company}
         payments={payments}
+        isReadOnly={isReadOnly}
         onBack={() => setSelectedPartyLedger(null)}
         onAddEntry={(entry, newBalance) => {
           if (onAddLedgerEntry) {
@@ -234,7 +237,13 @@ Please let us know once the transfer is completed. Thank you!`;
 
         <button
           onClick={handleOpenAdd}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-white bg-brand-600 hover:bg-brand-700 shadow-xs active:scale-98 transition-colors cursor-pointer"
+          disabled={isReadOnly}
+          title={isReadOnly ? 'Action disabled in read-only mode' : 'Add New Client'}
+          className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-white shadow-xs transition-colors ${
+            isReadOnly
+              ? 'bg-slate-400 opacity-60 cursor-not-allowed'
+              : 'bg-brand-600 hover:bg-brand-700 active:scale-98 cursor-pointer'
+          }`}
         >
           <Plus className="w-4 h-4" />
           <span>Add New Client</span>
@@ -278,15 +287,25 @@ Please let us know once the transfer is completed. Thank you!`;
                   <div className="flex items-center gap-1">
                     <button
                       onClick={() => handleOpenEdit(c)}
-                      className="p-1.5 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
-                      title="Edit Customer"
+                      disabled={isReadOnly}
+                      title={isReadOnly ? 'Action disabled in read-only mode' : 'Edit Customer'}
+                      className={`p-1.5 rounded-lg transition-colors ${
+                        isReadOnly
+                          ? 'text-slate-300 opacity-50 cursor-not-allowed'
+                          : 'text-slate-400 hover:text-slate-900 hover:bg-slate-100 cursor-pointer'
+                      }`}
                     >
                       <Edit2 className="w-3.5 h-3.5" />
                     </button>
                     <button
                       onClick={() => onDeleteClient(c.id)}
-                      className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
-                      title="Delete Customer"
+                      disabled={isReadOnly}
+                      title={isReadOnly ? 'Action disabled in read-only mode' : 'Delete Customer'}
+                      className={`p-1.5 rounded-lg transition-colors ${
+                        isReadOnly
+                          ? 'text-slate-300 opacity-50 cursor-not-allowed'
+                          : 'text-slate-400 hover:text-rose-600 hover:bg-rose-50 cursor-pointer'
+                      }`}
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>

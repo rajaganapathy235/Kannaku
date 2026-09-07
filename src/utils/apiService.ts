@@ -92,7 +92,14 @@ export class ApiService {
         if (typeof window !== 'undefined') {
           window.dispatchEvent(
             new CustomEvent('kannaku:api-error', {
-              detail: { path, status: res.status, error: errorMsg },
+              detail: {
+                path,
+                status: res.status,
+                error: errorMsg,
+                code: json?.code || null,
+                reason: json?.reason || null,
+                data: json,
+              },
             })
           );
         }

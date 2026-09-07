@@ -179,6 +179,7 @@ export interface CompanyProfile {
   state: string;
   pin: string;
   code: string;
+  stateCode?: string;
   email: string;
   mobile: string;
   registerNumber: string; // GSTIN
@@ -195,6 +196,11 @@ export interface CompanyProfile {
   colorScheme: 'blue' | 'emerald' | 'slate' | 'indigo' | 'crimson';
   termsAndConditions: string;
   jurisdictionCity: string;
+  accountStatus?: string;
+  subscriptionStatus?: string;
+  isReadOnly?: boolean;
+  accessCode?: 'TRIAL_EXPIRED' | 'SUBSCRIPTION_EXPIRED' | 'ACCOUNT_SUSPENDED' | 'SUSPENDED' | null;
+  readOnlyReason?: 'SUSPENDED' | 'TRIAL_EXPIRED' | 'SUBSCRIPTION_EXPIRED' | 'ACCOUNT_SUSPENDED' | null;
 }
 
 export interface Invoice {

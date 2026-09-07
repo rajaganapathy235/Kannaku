@@ -37,39 +37,103 @@ export interface RequestContext {
  * - TRIAL: allowed if trial_end_date is in the future.
  * - EXPIRED/other: write operations strictly forbidden (HTTP 402).
  */
-export function isOrgAccessAllowed(org: any): boolean {
-  if (!org) return false;
-  if ((org.account_status || org.accountStatus || '').toUpperCase() === 'SUSPENDED') {
-    return false;
+export type OrgAccessReason = 'SUSPENDED' | 'TRIAL_EXPIRED' | 'SUBSCRIPTION_EXPIRED' | null;
+export type OrgAccessCode = 'TRIAL_EXPIRED' | 'SUBSCRIPTION_EXPIRED' | 'ACCOUNT_SUSPENDED' | null;
+
+export interface OrgAccessResult {
+  allowed: boolean;
+  reason: OrgAccessReason;
+}
+
+export function isOrgAccessAllowed(org: any): OrgAccessResult {
+  if (!org) return { allowed: false, reason: 'SUBSCRIPTION_EXPIRED' };
+  
+  const accountStatus = (org.account_status || org.accountStatus || '').toUpperCase();
+  if (accountStatus === 'SUSPENDED') {
+    return { allowed: false, reason: 'SUSPENDED' };
   }
+  
   const status = (org.subscription_status || org.subscriptionStatus || '').toUpperCase();
   const now = Date.now();
 
   if (status === 'ACTIVE') {
     const renewalDate = org.renewal_date || org.renewalDate;
     if (!renewalDate) {
-      return true;
+      return { allowed: true, reason: null };
     }
     const renewalTime = new Date(renewalDate).getTime();
     if (isNaN(renewalTime)) {
-      return true;
+      return { allowed: true, reason: null };
     }
-    return renewalTime >= now;
+    if (renewalTime >= now) {
+      return { allowed: true, reason: null };
+    }
+    return { allowed: false, reason: 'SUBSCRIPTION_EXPIRED' };
   }
 
-  if (status === 'TRIAL') {
+  if (status === 'TRIAL' || status === 'TRIALING') {
     const trialEndDate = org.trial_end_date || org.trialEndDate;
     if (!trialEndDate) {
-      return false;
+      return { allowed: false, reason: 'TRIAL_EXPIRED' };
     }
     const trialEndTime = new Date(trialEndDate).getTime();
     if (isNaN(trialEndTime)) {
-      return false;
+      return { allowed: false, reason: 'TRIAL_EXPIRED' };
     }
-    return trialEndTime >= now;
+    if (trialEndTime >= now) {
+      return { allowed: true, reason: null };
+    }
+    return { allowed: false, reason: 'TRIAL_EXPIRED' };
   }
 
-  return false;
+  return { allowed: false, reason: 'SUBSCRIPTION_EXPIRED' };
+}
+
+export function getOrgAccessCode(access: OrgAccessResult, org: any): OrgAccessCode {
+  const accountStatus = (org?.account_status || org?.accountStatus || '').toUpperCase();
+  if (accountStatus === 'SUSPENDED' || access.reason === 'SUSPENDED') {
+    return 'ACCOUNT_SUSPENDED';
+  }
+  if (!access.allowed) {
+    if (access.reason === 'TRIAL_EXPIRED') return 'TRIAL_EXPIRED';
+    if (access.reason === 'SUBSCRIPTION_EXPIRED') return 'SUBSCRIPTION_EXPIRED';
+    return 'SUBSCRIPTION_EXPIRED';
+  }
+  return null;
+}
+
+export function createOrgAccessDeniedResponse(access: OrgAccessResult): Response {
+  if (access.reason === 'SUSPENDED') {
+    return jsonResponse(
+      {
+        error: 'This account has been paused by the administrator. Please contact support.',
+        code: 'ACCOUNT_SUSPENDED',
+        reason: 'SUSPENDED',
+        success: false,
+      },
+      403
+    );
+  }
+  if (access.reason === 'TRIAL_EXPIRED') {
+    return jsonResponse(
+      {
+        error: 'Your trial has expired. Please subscribe to continue.',
+        code: 'TRIAL_EXPIRED',
+        reason: 'TRIAL_EXPIRED',
+        success: false,
+      },
+      402
+    );
+  }
+  return jsonResponse(
+    {
+      error: 'Your subscription has expired. Please renew to continue.',
+      code: 'SUBSCRIPTION_EXPIRED',
+      reason: 'SUBSCRIPTION_EXPIRED',
+      success: false,
+    },
+    402
+  );
 }
 
 // Helper to parse application/x-www-form-urlencoded or application/json request body
@@ -563,6 +627,10 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
       }
 
       const org = await queryFirst<any>(db, 'SELECT * FROM organizations WHERE id = ?', user.organization_id);
+      const accessCheck = isOrgAccessAllowed(org);
+      const isReadOnly = (org?.account_status || '').toUpperCase() === 'SUSPENDED' || !accessCheck.allowed;
+      const code = isReadOnly ? getOrgAccessCode(accessCheck, org) : null;
+      const readOnlyReason = code;
 
       const token = await createSessionToken(
         {
@@ -588,13 +656,33 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
             phone: user.phone,
             role: user.role,
             avatarUrl: user.avatar_url,
+            accountStatus: org?.account_status,
+            subscriptionStatus: org?.subscription_status,
+            isReadOnly,
+            code,
+            readOnlyReason,
           },
-          organization: org || {
+          organization: org ? {
+            ...org,
+            accountStatus: org.account_status,
+            subscriptionStatus: org.subscription_status,
+            isReadOnly,
+            code,
+            readOnlyReason,
+          } : {
             id: user.organization_id,
             name: 'HYTEX COTTON MILLS',
             planId: 'plan_all_in_one_pro',
             planName: 'All-in-One Growth Plan',
+            accountStatus: 'ACTIVE',
+            subscriptionStatus: 'ACTIVE',
+            isReadOnly: false,
+            code: null,
+            readOnlyReason: null,
           },
+          isReadOnly,
+          code,
+          readOnlyReason,
         },
         200,
         { 'Set-Cookie': sessionCookie }
@@ -647,10 +735,10 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
         user.organization_id
       );
 
-      // Enforce account pause/suspension check
-      if (user.role !== 'SUPER_ADMIN' && org && (org.account_status || '').toUpperCase() === 'SUSPENDED') {
-        return errorResponse('This account has been paused by the administrator. Please contact support.', 403);
-      }
+      const accessCheck = isOrgAccessAllowed(org);
+      const isReadOnly = (org?.account_status || '').toUpperCase() === 'SUSPENDED' || !accessCheck.allowed;
+      const code = isReadOnly ? getOrgAccessCode(accessCheck, org) : null;
+      const readOnlyReason = code;
 
       const token = await createSessionToken(
         {
@@ -679,13 +767,33 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
             phone: user.phone,
             role: user.role,
             avatarUrl: user.avatar_url,
+            accountStatus: org?.account_status,
+            subscriptionStatus: org?.subscription_status,
+            isReadOnly,
+            code,
+            readOnlyReason,
           },
-          organization: org || {
+          organization: org ? {
+            ...org,
+            accountStatus: org.account_status,
+            subscriptionStatus: org.subscription_status,
+            isReadOnly,
+            code,
+            readOnlyReason,
+          } : {
             id: user.organization_id,
             name: 'My Business',
             planId: 'plan_all_in_one_pro',
             planName: 'All-in-One Growth Plan',
+            accountStatus: 'ACTIVE',
+            subscriptionStatus: 'TRIAL',
+            isReadOnly: false,
+            code: null,
+            readOnlyReason: null,
           },
+          isReadOnly,
+          code,
+          readOnlyReason,
         },
         200,
         { 'Set-Cookie': sessionCookie }
@@ -1352,6 +1460,7 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
               db,
               `UPDATE organizations SET
                 subscription_status = 'ACTIVE',
+                account_status = 'ACTIVE',
                 renewal_date = ?,
                 plan_id = ?,
                 plan_name = 'All-in-One Growth Plan',
@@ -1613,9 +1722,12 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
   if (path === '/api/auth/me' && method === 'GET') {
     const user = await queryFirst<any>(db, 'SELECT * FROM platform_users WHERE id = ?', session.userId);
     const org = await queryFirst<any>(db, 'SELECT * FROM organizations WHERE id = ?', effectiveOrgId);
-    if (session.role !== 'SUPER_ADMIN' && org && (org.account_status || '').toUpperCase() === 'SUSPENDED') {
-      return errorResponse('This account has been paused by the administrator. Please contact support.', 403);
-    }
+    
+    const accessCheck = isOrgAccessAllowed(org);
+    const isReadOnly = (org?.account_status || '').toUpperCase() === 'SUSPENDED' || !accessCheck.allowed;
+    const code = isReadOnly ? getOrgAccessCode(accessCheck, org) : null;
+    const readOnlyReason = code;
+
     return jsonResponse({
       user: {
         id: user?.id || session.userId,
@@ -1624,8 +1736,23 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
         phone: user?.phone,
         role: user?.role || session.role,
         avatarUrl: user?.avatar_url,
+        accountStatus: org?.account_status,
+        subscriptionStatus: org?.subscription_status,
+        isReadOnly,
+        code,
+        readOnlyReason,
       },
-      organization: org,
+      organization: org ? {
+        ...org,
+        accountStatus: org.account_status,
+        subscriptionStatus: org.subscription_status,
+        isReadOnly,
+        code,
+        readOnlyReason,
+      } : null,
+      isReadOnly,
+      code,
+      readOnlyReason,
     });
   }
 
@@ -1702,9 +1829,11 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
     if (!org) {
       return errorResponse('Organization not found', 404);
     }
-    if (session.role !== 'SUPER_ADMIN' && (org.account_status || '').toUpperCase() === 'SUSPENDED') {
-      return errorResponse('This account has been paused by the administrator. Please contact support.', 403);
-    }
+
+    const accessCheck = isOrgAccessAllowed(org);
+    const isReadOnly = (org?.account_status || '').toUpperCase() === 'SUSPENDED' || !accessCheck.allowed;
+    const code = isReadOnly ? getOrgAccessCode(accessCheck, org) : null;
+    const readOnlyReason = code;
 
     let bankDetail = null;
     try {
@@ -1722,7 +1851,7 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
       city: org.city || '',
       state: org.state || 'Tamil Nadu',
       pin: org.pin || '',
-      code: org.state_code || '33',
+      stateCode: org.state_code || '33',
       email: org.admin_email,
       mobile: org.mobile,
       registerNumber: org.register_number || '',
@@ -1734,14 +1863,24 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
       signatureUrl: org.signature_url || null,
       bankDetail,
       plan: org.plan_name,
+      accountStatus: org.account_status,
       subscriptionStatus: org.subscription_status,
       trialEndDate: org.trial_end_date,
       renewalDate: org.renewal_date,
+      isReadOnly,
+      code,
+      readOnlyReason,
     });
   }
 
   if (path === '/api/organization' && method === 'PUT') {
     try {
+      const org = await queryFirst<any>(db, 'SELECT * FROM organizations WHERE id = ?', effectiveOrgId);
+      const accessCheck = isOrgAccessAllowed(org);
+      if (!accessCheck.allowed) {
+        return createOrgAccessDeniedResponse(accessCheck);
+      }
+
       const body = (await request.json()) as any;
       const bankDetailsJson = body.bankDetail ? JSON.stringify(body.bankDetail) : null;
 
@@ -1829,15 +1968,9 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
     try {
       // Gating check: enforce active trial or subscription
       const org = await queryFirst<any>(db, 'SELECT * FROM organizations WHERE id = ?', effectiveOrgId);
-      if (!isOrgAccessAllowed(org)) {
-        return jsonResponse(
-          {
-            error: 'Your trial has expired. Please subscribe to continue.',
-            code: 'TRIAL_EXPIRED',
-            success: false,
-          },
-          402
-        );
+      const accessCheck = isOrgAccessAllowed(org);
+      if (!accessCheck.allowed) {
+        return createOrgAccessDeniedResponse(accessCheck);
       }
 
       const body = (await request.json()) as any;
@@ -1904,6 +2037,12 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
   }
 
   if (path.startsWith('/api/clients/') && method === 'PUT') {
+    const org = await queryFirst<any>(db, 'SELECT * FROM organizations WHERE id = ?', effectiveOrgId);
+    const accessCheck = isOrgAccessAllowed(org);
+    if (!accessCheck.allowed) {
+      return createOrgAccessDeniedResponse(accessCheck);
+    }
+
     const clientId = path.split('/')[3];
     const existingClient = await queryFirst<{ organization_id: string }>(
       db,
@@ -1951,6 +2090,12 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
   }
 
   if (path.startsWith('/api/clients/') && method === 'DELETE') {
+    const org = await queryFirst<any>(db, 'SELECT * FROM organizations WHERE id = ?', effectiveOrgId);
+    const accessCheck = isOrgAccessAllowed(org);
+    if (!accessCheck.allowed) {
+      return createOrgAccessDeniedResponse(accessCheck);
+    }
+
     const clientId = path.split('/')[3];
     const existingClient = await queryFirst<{ organization_id: string }>(
       db,
@@ -2007,15 +2152,9 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
     try {
       // Gating check: enforce active trial or subscription
       const org = await queryFirst<any>(db, 'SELECT * FROM organizations WHERE id = ?', effectiveOrgId);
-      if (!isOrgAccessAllowed(org)) {
-        return jsonResponse(
-          {
-            error: 'Your trial has expired. Please subscribe to continue.',
-            code: 'TRIAL_EXPIRED',
-            success: false,
-          },
-          402
-        );
+      const accessCheck = isOrgAccessAllowed(org);
+      if (!accessCheck.allowed) {
+        return createOrgAccessDeniedResponse(accessCheck);
       }
 
       const body = (await request.json()) as any;
@@ -2086,6 +2225,12 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
   }
 
   if (path.startsWith('/api/products/') && method === 'PUT') {
+    const org = await queryFirst<any>(db, 'SELECT * FROM organizations WHERE id = ?', effectiveOrgId);
+    const accessCheck = isOrgAccessAllowed(org);
+    if (!accessCheck.allowed) {
+      return createOrgAccessDeniedResponse(accessCheck);
+    }
+
     const productId = path.split('/')[3];
     const existingProd = await queryFirst<{ organization_id: string }>(
       db,
@@ -2141,6 +2286,12 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
   }
 
   if (path.startsWith('/api/products/') && method === 'DELETE') {
+    const org = await queryFirst<any>(db, 'SELECT * FROM organizations WHERE id = ?', effectiveOrgId);
+    const accessCheck = isOrgAccessAllowed(org);
+    if (!accessCheck.allowed) {
+      return createOrgAccessDeniedResponse(accessCheck);
+    }
+
     const productId = path.split('/')[3];
     const existingProd = await queryFirst<{ organization_id: string }>(
       db,
@@ -2295,15 +2446,9 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
     try {
       // Gating check: enforce active trial or subscription
       const org = await queryFirst<any>(db, 'SELECT * FROM organizations WHERE id = ?', effectiveOrgId);
-      if (!isOrgAccessAllowed(org)) {
-        return jsonResponse(
-          {
-            error: 'Your trial has expired. Please subscribe to continue.',
-            code: 'TRIAL_EXPIRED',
-            success: false,
-          },
-          402
-        );
+      const accessCheck = isOrgAccessAllowed(org);
+      if (!accessCheck.allowed) {
+        return createOrgAccessDeniedResponse(accessCheck);
       }
 
       const inv = (await request.json()) as any;
@@ -2434,6 +2579,12 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
   }
 
   if (path.startsWith('/api/invoices/') && method === 'DELETE') {
+    const org = await queryFirst<any>(db, 'SELECT * FROM organizations WHERE id = ?', effectiveOrgId);
+    const accessCheck = isOrgAccessAllowed(org);
+    if (!accessCheck.allowed) {
+      return createOrgAccessDeniedResponse(accessCheck);
+    }
+
     const invoiceId = path.split('/')[3];
     const existingInv = await queryFirst<{ organization_id: string }>(
       db,
@@ -2481,15 +2632,9 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
     try {
       // Gating check: enforce active trial or subscription
       const org = await queryFirst<any>(db, 'SELECT * FROM organizations WHERE id = ?', effectiveOrgId);
-      if (!isOrgAccessAllowed(org)) {
-        return jsonResponse(
-          {
-            error: 'Your trial has expired. Please subscribe to continue.',
-            code: 'TRIAL_EXPIRED',
-            success: false,
-          },
-          402
-        );
+      const accessCheck = isOrgAccessAllowed(org);
+      if (!accessCheck.allowed) {
+        return createOrgAccessDeniedResponse(accessCheck);
       }
 
       const body = (await request.json()) as any;
@@ -2580,6 +2725,12 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
   }
 
   if (path.startsWith('/api/payments/') && method === 'DELETE') {
+    const org = await queryFirst<any>(db, 'SELECT * FROM organizations WHERE id = ?', effectiveOrgId);
+    const accessCheck = isOrgAccessAllowed(org);
+    if (!accessCheck.allowed) {
+      return createOrgAccessDeniedResponse(accessCheck);
+    }
+
     const paymentId = path.split('/')[3];
     const existingPayment = await queryFirst<{ organization_id: string }>(
       db,
@@ -2599,6 +2750,12 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
   // -------------------------------------------------------------
   if (path === '/api/sync/migrate-local' && method === 'POST') {
     try {
+      const org = await queryFirst<any>(db, 'SELECT * FROM organizations WHERE id = ?', effectiveOrgId);
+      const accessCheck = isOrgAccessAllowed(org);
+      if (!accessCheck.allowed) {
+        return createOrgAccessDeniedResponse(accessCheck);
+      }
+
       const data = (await request.json()) as any;
       const { company, clients, products, invoices, payments } = data;
       let insertedCount = { clients: 0, products: 0, invoices: 0, payments: 0 };

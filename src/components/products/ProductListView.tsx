@@ -18,6 +18,7 @@ interface ProductListViewProps {
   onAddProduct: (product: Product) => void;
   onUpdateProduct: (product: Product) => void;
   onDeleteProduct: (productId: string) => void;
+  isReadOnly?: boolean;
 }
 
 export const ProductListView: React.FC<ProductListViewProps> = ({
@@ -25,6 +26,7 @@ export const ProductListView: React.FC<ProductListViewProps> = ({
   onAddProduct,
   onUpdateProduct,
   onDeleteProduct,
+  isReadOnly = false,
 }) => {
   const [search, setSearch] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -169,7 +171,13 @@ export const ProductListView: React.FC<ProductListViewProps> = ({
 
         <button
           onClick={handleOpenAdd}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-white bg-brand-600 hover:bg-brand-700 shadow-xs active:scale-98 transition-colors cursor-pointer"
+          disabled={isReadOnly}
+          title={isReadOnly ? 'Action disabled in read-only mode' : 'Add Product'}
+          className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-white shadow-xs transition-colors ${
+            isReadOnly
+              ? 'bg-slate-400 opacity-60 cursor-not-allowed'
+              : 'bg-brand-600 hover:bg-brand-700 active:scale-98 cursor-pointer'
+          }`}
         >
           <Plus className="w-4 h-4" />
           <span>Add Product</span>
@@ -221,15 +229,25 @@ export const ProductListView: React.FC<ProductListViewProps> = ({
                   <div className="flex items-center gap-1 shrink-0">
                     <button
                       onClick={() => handleOpenEdit(p)}
-                      className="p-1.5 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
-                      title="Edit Product"
+                      disabled={isReadOnly}
+                      title={isReadOnly ? 'Action disabled in read-only mode' : 'Edit Product'}
+                      className={`p-1.5 rounded-lg transition-colors ${
+                        isReadOnly
+                          ? 'text-slate-300 opacity-50 cursor-not-allowed'
+                          : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100 cursor-pointer'
+                      }`}
                     >
                       <Edit2 className="w-3.5 h-3.5" />
                     </button>
                     <button
                       onClick={() => onDeleteProduct(p.id)}
-                      className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
-                      title="Delete Product"
+                      disabled={isReadOnly}
+                      title={isReadOnly ? 'Action disabled in read-only mode' : 'Delete Product'}
+                      className={`p-1.5 rounded-lg transition-colors ${
+                        isReadOnly
+                          ? 'text-slate-300 opacity-50 cursor-not-allowed'
+                          : 'text-slate-400 hover:text-red-600 hover:bg-red-50 cursor-pointer'
+                      }`}
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
@@ -291,7 +309,13 @@ export const ProductListView: React.FC<ProductListViewProps> = ({
 
                 <button
                   onClick={() => handleOpenStockAdjust(p)}
-                  className="px-3 py-1.5 bg-brand-50 hover:bg-brand-100 text-brand-700 rounded-lg text-xs font-bold transition-colors cursor-pointer border border-brand-200/60 active:scale-98"
+                  disabled={isReadOnly}
+                  title={isReadOnly ? 'Action disabled in read-only mode' : 'Adjust Stock'}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors border ${
+                    isReadOnly
+                      ? 'bg-slate-100 text-slate-400 border-slate-200 opacity-60 cursor-not-allowed'
+                      : 'bg-brand-50 hover:bg-brand-100 text-brand-700 border-brand-200/60 active:scale-98 cursor-pointer'
+                  }`}
                 >
                   Adjust Stock
                 </button>

@@ -120,6 +120,7 @@ export class AuthService {
           ? user.avatarUrl.replace(/background=1[Aa]73[Ee]8/g, 'background=059669')
           : `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=059669&color=fff&bold=true`;
 
+        const resData = (res.data || {}) as any;
         const session: AuthSession = {
           token: res.data.token,
           user: {
@@ -133,6 +134,12 @@ export class AuthService {
             organizationName: organization?.name || 'JustGST Workspace',
             gstin: organization?.register_number || organization?.registerNumber || '33ASWPV8266F1ZW',
             planName: organization?.plan_name || organization?.planName || 'All-in-One Growth Plan',
+            accountStatus: user.accountStatus || organization?.account_status || organization?.accountStatus,
+            subscriptionStatus: user.subscriptionStatus || organization?.subscription_status || organization?.subscriptionStatus,
+            isReadOnly: user.isReadOnly ?? organization?.isReadOnly ?? resData.isReadOnly ?? false,
+            code: user.code || organization?.code || resData.code || null,
+            reason: user.code || organization?.code || resData.code || null,
+            readOnlyReason: user.readOnlyReason || user.code || organization?.readOnlyReason || organization?.code || resData.code || null,
             avatarUrl: userAvatar,
           },
           expiresAt,
@@ -178,6 +185,47 @@ export class AuthService {
       return { success: false, error: res.error || 'Failed to update password' };
     } catch (err: any) {
       return { success: false, error: err?.message || 'Network error while changing password' };
+    }
+  }
+
+  // Refresh current user session from /api/auth/me
+  static async refreshSessionAsync(): Promise<AuthSession | null> {
+    try {
+      const res = await ApiService.getMe();
+      if (res.success && res.data?.user) {
+        const currentSession = this.getSession();
+        const { user, organization } = res.data;
+        const resData = (res.data || {}) as any;
+        const session: AuthSession = {
+          token: currentSession?.token,
+          user: {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            phone: user.phone,
+            role: user.role || currentSession?.user?.role || 'OWNER',
+            adminRole: (user.role || currentSession?.user?.role) === 'SUPER_ADMIN' ? 'SUPER_ADMIN' : undefined,
+            organizationId: organization?.id || user.organizationId || currentSession?.user?.organizationId || '',
+            organizationName: organization?.name || currentSession?.user?.organizationName || 'JustGST Workspace',
+            gstin: organization?.register_number || organization?.registerNumber || currentSession?.user?.gstin || '33ASWPV8266F1ZW',
+            planName: organization?.plan_name || organization?.planName || currentSession?.user?.planName || 'All-in-One Growth Plan',
+            accountStatus: user.accountStatus || organization?.account_status || organization?.accountStatus,
+            subscriptionStatus: user.subscriptionStatus || organization?.subscription_status || organization?.subscriptionStatus,
+            isReadOnly: user.isReadOnly ?? organization?.isReadOnly ?? resData.isReadOnly ?? false,
+            code: user.code || organization?.code || resData.code || null,
+            reason: user.code || organization?.code || resData.code || null,
+            readOnlyReason: user.readOnlyReason || user.code || organization?.readOnlyReason || organization?.code || resData.code || null,
+            avatarUrl: user.avatarUrl || currentSession?.user?.avatarUrl,
+          },
+          expiresAt: currentSession?.expiresAt || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+          loginTimestamp: currentSession?.loginTimestamp || new Date().toISOString(),
+        };
+        localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(session));
+        return session;
+      }
+      return null;
+    } catch {
+      return null;
     }
   }
 }

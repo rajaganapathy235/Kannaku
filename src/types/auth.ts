@@ -2,6 +2,8 @@ import { AdminRole } from '../types/admin';
 
 export type UserAuthRole = 'OWNER' | 'SUPER_ADMIN';
 
+export type ReadOnlyReasonCode = 'TRIAL_EXPIRED' | 'SUBSCRIPTION_EXPIRED' | 'ACCOUNT_SUSPENDED' | 'SUSPENDED' | null;
+
 export interface AuthSession {
   token?: string;
   user: {
@@ -16,6 +18,12 @@ export interface AuthSession {
     organizationName: string;
     gstin?: string;
     planName?: string;
+    accountStatus?: string;
+    subscriptionStatus?: string;
+    isReadOnly?: boolean;
+    code?: ReadOnlyReasonCode;
+    reason?: ReadOnlyReasonCode;
+    readOnlyReason?: ReadOnlyReasonCode;
   };
   expiresAt: string;
   loginTimestamp: string;

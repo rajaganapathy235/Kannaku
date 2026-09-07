@@ -14,10 +14,14 @@ import {
   Zap,
 } from 'lucide-react';
 
-interface TrialExpiredModalProps {
+export type ReadOnlyReasonType = 'TRIAL_EXPIRED' | 'SUBSCRIPTION_EXPIRED' | 'ACCOUNT_SUSPENDED' | 'SUSPENDED' | null;
+
+export interface TrialExpiredModalProps {
   isOpen: boolean;
   onClose: () => void;
   onUpgrade: () => void;
+  reason?: ReadOnlyReasonType;
+  code?: ReadOnlyReasonType;
   expiryDate?: string;
   organizationName?: string;
 }
@@ -26,10 +30,43 @@ export const TrialExpiredModal: React.FC<TrialExpiredModalProps> = ({
   isOpen,
   onClose,
   onUpgrade,
+  reason,
+  code,
   expiryDate,
   organizationName = 'Your Business Workspace',
 }) => {
   if (!isOpen) return null;
+
+  const effectiveReason = reason || code || 'TRIAL_EXPIRED';
+
+  let badgeText = '14-Day Free Trial Ended';
+  let titleText = 'Free Trial Expired';
+  let descriptionText = `Your 14-day risk-free trial period for ${organizationName} has concluded${expiryDate ? ` on ${expiryDate}` : ''}.`;
+  let restrictionTitle = 'Invoice Creation is Locked';
+  let restrictionDesc = 'To create new GST tax invoices, generate quotations, record payments, or print fresh delivery challans, please upgrade your workspace to a subscription plan.';
+  let primaryBtnText = 'Upgrade Plan & Unlock Full Access';
+  let badgeColor = 'bg-amber-100 text-amber-800';
+  let iconBg = 'bg-amber-50 border-amber-200/80 text-amber-600';
+
+  if (effectiveReason === 'SUBSCRIPTION_EXPIRED') {
+    badgeText = 'Subscription Expired';
+    titleText = 'Subscription Plan Expired';
+    descriptionText = `Your subscription for ${organizationName} has ended${expiryDate ? ` on ${expiryDate}` : ''}. Your workspace has transitioned to safe read-only mode.`;
+    restrictionTitle = 'Billing Operations Paused';
+    restrictionDesc = 'To resume generating invoices, recording customer payments, adding new inventory, and creating quotations, please renew your subscription.';
+    primaryBtnText = 'Renew Subscription & Unlock Access';
+    badgeColor = 'bg-rose-100 text-rose-800';
+    iconBg = 'bg-rose-50 border-rose-200/80 text-rose-600';
+  } else if (effectiveReason === 'ACCOUNT_SUSPENDED' || effectiveReason === 'SUSPENDED') {
+    badgeText = 'Account Suspended by Admin';
+    titleText = 'Workspace Suspended';
+    descriptionText = `This account (${organizationName}) has been paused by the administrator. Historical records remain viewable and printable in read-only mode.`;
+    restrictionTitle = 'Write Access Restricted';
+    restrictionDesc = 'Creating new invoices, editing existing records, and registering parties are temporarily disabled. Please review your subscription or contact support.';
+    primaryBtnText = 'View Subscription & Contact Support';
+    badgeColor = 'bg-red-100 text-red-800';
+    iconBg = 'bg-red-50 border-red-200/80 text-red-600';
+  }
 
   return (
     <div
@@ -47,16 +84,16 @@ export const TrialExpiredModal: React.FC<TrialExpiredModalProps> = ({
         <div className="p-5 sm:p-6 pb-4">
           <div className="flex items-start justify-between gap-3">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-200/80 flex items-center justify-center text-amber-600 shrink-0 shadow-xs">
+              <div className={`w-12 h-12 rounded-2xl border flex items-center justify-center shrink-0 shadow-xs ${iconBg}`}>
                 <Lock className="w-6 h-6" />
               </div>
               <div>
-                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-bold uppercase tracking-wider mb-1">
+                <div className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider mb-1 ${badgeColor}`}>
                   <Clock className="w-3 h-3" />
-                  <span>14-Day Free Trial Ended</span>
+                  <span>{badgeText}</span>
                 </div>
                 <h2 className="text-lg sm:text-xl font-black text-slate-950 tracking-tight">
-                  Free Trial Expired
+                  {titleText}
                 </h2>
               </div>
             </div>
@@ -73,9 +110,7 @@ export const TrialExpiredModal: React.FC<TrialExpiredModalProps> = ({
           </div>
 
           <p className="text-xs text-slate-600 mt-3 leading-relaxed">
-            Your 14-day risk-free trial period for{' '}
-            <strong className="text-slate-900 font-semibold">{organizationName}</strong> has
-            concluded{expiryDate ? ` on ${expiryDate}` : ''}.
+            {descriptionText}
           </p>
         </div>
 
@@ -101,11 +136,10 @@ export const TrialExpiredModal: React.FC<TrialExpiredModalProps> = ({
             <AlertTriangle className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
             <div className="text-xs">
               <span className="font-bold text-amber-950 block">
-                Invoice Creation is Locked
+                {restrictionTitle}
               </span>
               <p className="text-amber-800 text-[11px] mt-0.5 leading-relaxed">
-                To create new GST tax invoices, generate quotations, record payments, or print fresh
-                delivery challans, please upgrade your workspace to a subscription plan.
+                {restrictionDesc}
               </p>
             </div>
           </div>
@@ -162,7 +196,7 @@ export const TrialExpiredModal: React.FC<TrialExpiredModalProps> = ({
             className="w-full py-3 px-5 bg-brand-600 hover:bg-brand-700 text-white font-bold text-sm rounded-xl flex items-center justify-center gap-2 shadow-md shadow-brand-600/20 active:scale-98 transition-all cursor-pointer"
           >
             <Zap className="w-4 h-4 text-amber-300" />
-            <span>Upgrade Plan &amp; Unlock Full Access</span>
+            <span>{primaryBtnText}</span>
             <ArrowRight className="w-4 h-4 ml-1" />
           </button>
 
