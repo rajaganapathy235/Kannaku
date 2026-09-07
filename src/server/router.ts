@@ -1975,8 +1975,8 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
       }
 
       const body = (await request.json()) as any;
-      if (!body.name || !body.mobile) {
-        return errorResponse('Client name and mobile are required', 400);
+      if (!body.name || !body.name.trim()) {
+        return errorResponse('Client name is required', 400);
       }
 
       // Pre-check: if ID is provided, verify it does not belong to another tenant
