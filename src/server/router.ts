@@ -2091,29 +2091,38 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
   }
 
   if (path.startsWith('/api/clients/') && method === 'DELETE') {
-    const org = await queryFirst<any>(db, 'SELECT * FROM organizations WHERE id = ?', effectiveOrgId);
-    const accessCheck = isOrgAccessAllowed(org);
-    if (!accessCheck.allowed) {
-      return createOrgAccessDeniedResponse(accessCheck);
-    }
+    try {
+      const org = await queryFirst<any>(db, 'SELECT * FROM organizations WHERE id = ?', effectiveOrgId);
+      const accessCheck = isOrgAccessAllowed(org);
+      if (!accessCheck.allowed) {
+        return createOrgAccessDeniedResponse(accessCheck);
+      }
 
-    const clientId = path.split('/')[3];
-    const existingClient = await queryFirst<{ organization_id: string }>(
-      db,
-      'SELECT organization_id FROM clients WHERE id = ?',
-      clientId
-    );
-    if (existingClient && existingClient.organization_id !== effectiveOrgId) {
-      return errorResponse('You do not have permission to delete this client', 403);
-    }
+      const clientId = path.split('/')[3];
+      if (!clientId) {
+        return errorResponse('Client ID is required', 400);
+      }
 
-    await execute(
-      db,
-      'UPDATE clients SET is_active = 0 WHERE id = ? AND organization_id = ?',
-      clientId,
-      effectiveOrgId
-    );
-    return jsonResponse({ success: true, message: 'Client deleted successfully' });
+      const existingClient = await queryFirst<{ organization_id: string }>(
+        db,
+        'SELECT organization_id FROM clients WHERE id = ?',
+        clientId
+      );
+      if (existingClient && existingClient.organization_id !== effectiveOrgId) {
+        return errorResponse('You do not have permission to delete this client', 403);
+      }
+
+      await execute(
+        db,
+        'UPDATE clients SET is_active = 0 WHERE id = ? AND organization_id = ?',
+        clientId,
+        effectiveOrgId
+      );
+      return jsonResponse({ success: true, message: 'Client deleted successfully' });
+    } catch (err: any) {
+      console.error('[Delete Client Error]', err?.message || err);
+      return errorResponse('Failed to delete client: ' + (err?.message || 'Server error'), 500);
+    }
   }
 
   // -------------------------------------------------------------
@@ -2287,29 +2296,38 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
   }
 
   if (path.startsWith('/api/products/') && method === 'DELETE') {
-    const org = await queryFirst<any>(db, 'SELECT * FROM organizations WHERE id = ?', effectiveOrgId);
-    const accessCheck = isOrgAccessAllowed(org);
-    if (!accessCheck.allowed) {
-      return createOrgAccessDeniedResponse(accessCheck);
-    }
+    try {
+      const org = await queryFirst<any>(db, 'SELECT * FROM organizations WHERE id = ?', effectiveOrgId);
+      const accessCheck = isOrgAccessAllowed(org);
+      if (!accessCheck.allowed) {
+        return createOrgAccessDeniedResponse(accessCheck);
+      }
 
-    const productId = path.split('/')[3];
-    const existingProd = await queryFirst<{ organization_id: string }>(
-      db,
-      'SELECT organization_id FROM products WHERE id = ?',
-      productId
-    );
-    if (existingProd && existingProd.organization_id !== effectiveOrgId) {
-      return errorResponse('You do not have permission to delete this product', 403);
-    }
+      const productId = path.split('/')[3];
+      if (!productId) {
+        return errorResponse('Product ID is required', 400);
+      }
 
-    await execute(
-      db,
-      'UPDATE products SET is_active = 0 WHERE id = ? AND organization_id = ?',
-      productId,
-      effectiveOrgId
-    );
-    return jsonResponse({ success: true, message: 'Product deleted successfully' });
+      const existingProd = await queryFirst<{ organization_id: string }>(
+        db,
+        'SELECT organization_id FROM products WHERE id = ?',
+        productId
+      );
+      if (existingProd && existingProd.organization_id !== effectiveOrgId) {
+        return errorResponse('You do not have permission to delete this product', 403);
+      }
+
+      await execute(
+        db,
+        'UPDATE products SET is_active = 0 WHERE id = ? AND organization_id = ?',
+        productId,
+        effectiveOrgId
+      );
+      return jsonResponse({ success: true, message: 'Product deleted successfully' });
+    } catch (err: any) {
+      console.error('[Delete Product Error]', err?.message || err);
+      return errorResponse('Failed to delete product: ' + (err?.message || 'Server error'), 500);
+    }
   }
 
   // -------------------------------------------------------------
@@ -2696,75 +2714,89 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
   }
 
   if (path.startsWith('/api/invoices/') && method === 'DELETE') {
-    const org = await queryFirst<any>(db, 'SELECT * FROM organizations WHERE id = ?', effectiveOrgId);
-    const accessCheck = isOrgAccessAllowed(org);
-    if (!accessCheck.allowed) {
-      return createOrgAccessDeniedResponse(accessCheck);
-    }
-
-    const invoiceId = path.split('/')[3];
-    const existingInv = await queryFirst<any>(
-      db,
-      'SELECT * FROM invoices WHERE id = ?',
-      invoiceId
-    );
-    if (!existingInv) {
-      return jsonResponse({ success: true, message: 'Invoice already deleted' });
-    }
-    if (existingInv.organization_id !== effectiveOrgId) {
-      return errorResponse('You do not have permission to delete this invoice', 403);
-    }
-
-    // INVARIANT: stock must be reversed before re-applying on edit, and reversed on delete
-    // Reverse stock adjustment before deleting the invoice row (sales delete adds stock back, purchase delete removes it)
-    let itemsToReverse: any[] = [];
-    if (existingInv.items_json) {
-      try {
-        itemsToReverse = JSON.parse(existingInv.items_json);
-      } catch (e) {
-        console.error('[Stock Reversal on Delete] Failed to parse items_json:', e);
+    try {
+      const org = await queryFirst<any>(db, 'SELECT * FROM organizations WHERE id = ?', effectiveOrgId);
+      const accessCheck = isOrgAccessAllowed(org);
+      if (!accessCheck.allowed) {
+        return createOrgAccessDeniedResponse(accessCheck);
       }
-    }
 
-    const isOldSales = Number(existingInv.invoice_type) === 1 || existingInv.invoice_type === 'SALES' || existingInv.invoice_type === InvoiceType.SALES;
-    const isOldPurchase = Number(existingInv.invoice_type) === 2 || existingInv.invoice_type === 'PURCHASE' || existingInv.invoice_type === InvoiceType.PURCHASE;
+      const invoiceId = path.split('/')[3];
+      if (!invoiceId) {
+        return errorResponse('Invoice ID is required', 400);
+      }
 
-    if (isOldSales || isOldPurchase) {
-      for (const item of itemsToReverse) {
-        const prodId = item.productId || item.itemId || item.product_id;
-        const qty = Number(item.qty ?? item.quantity ?? 0);
-        if (!prodId || qty <= 0) continue;
+      const existingInv = await queryFirst<any>(
+        db,
+        'SELECT * FROM invoices WHERE id = ?',
+        invoiceId
+      );
+      if (!existingInv) {
+        return jsonResponse({ success: true, message: 'Invoice already deleted' });
+      }
+      if (existingInv.organization_id !== effectiveOrgId) {
+        return errorResponse('You do not have permission to delete this invoice', 403);
+      }
 
+      // INVARIANT: stock must be reversed before re-applying on edit, and reversed on delete
+      // Reverse stock adjustment before deleting the invoice row (sales delete adds stock back, purchase delete removes it)
+      let itemsToReverse: any[] = [];
+      if (existingInv.items_json) {
         try {
-          if (isOldSales) {
-            // Reversing sales invoice on delete: restore deducted stock
-            await execute(
-              db,
-              'UPDATE products SET current_stock = current_stock + ? WHERE id = ? AND organization_id = ?',
-              qty,
-              prodId,
-              effectiveOrgId
-            );
-          } else if (isOldPurchase) {
-            // Reversing purchase invoice on delete: remove added stock
-            await execute(
-              db,
-              'UPDATE products SET current_stock = current_stock - ? WHERE id = ? AND organization_id = ?',
-              qty,
-              prodId,
-              effectiveOrgId
-            );
-          }
-        } catch (stockErr) {
-          console.error(`[Stock Reversal on Delete Error] Failed for product ${prodId}:`, stockErr);
+          itemsToReverse = JSON.parse(existingInv.items_json);
+        } catch (e) {
+          console.error('[Stock Reversal on Delete] Failed to parse items_json:', e);
         }
       }
-    }
 
-    await execute(db, 'DELETE FROM invoice_items WHERE invoice_id = ? AND invoice_id IN (SELECT id FROM invoices WHERE organization_id = ?)', invoiceId, effectiveOrgId);
-    await execute(db, 'DELETE FROM invoices WHERE id = ? AND organization_id = ?', invoiceId, effectiveOrgId);
-    await execute(db, 'DELETE FROM payment_ledgers WHERE invoice_id = ? AND organization_id = ?', invoiceId, effectiveOrgId);
-    return jsonResponse({ success: true, message: 'Invoice deleted successfully' });
+      const isOldSales = Number(existingInv.invoice_type) === 1 || existingInv.invoice_type === 'SALES' || existingInv.invoice_type === InvoiceType.SALES;
+      const isOldPurchase = Number(existingInv.invoice_type) === 2 || existingInv.invoice_type === 'PURCHASE' || existingInv.invoice_type === InvoiceType.PURCHASE;
+
+      if (isOldSales || isOldPurchase) {
+        for (const item of itemsToReverse) {
+          const prodId = item.productId || item.itemId || item.product_id;
+          const qty = Number(item.qty ?? item.quantity ?? 0);
+          if (!prodId || qty <= 0) continue;
+
+          try {
+            if (isOldSales) {
+              // Reversing sales invoice on delete: restore deducted stock
+              await execute(
+                db,
+                'UPDATE products SET current_stock = current_stock + ? WHERE id = ? AND organization_id = ?',
+                qty,
+                prodId,
+                effectiveOrgId
+              );
+            } else if (isOldPurchase) {
+              // Reversing purchase invoice on delete: remove added stock
+              await execute(
+                db,
+                'UPDATE products SET current_stock = current_stock - ? WHERE id = ? AND organization_id = ?',
+                qty,
+                prodId,
+                effectiveOrgId
+              );
+            }
+          } catch (stockErr) {
+            console.error(`[Stock Reversal on Delete Error] Failed for product ${prodId}:`, stockErr);
+          }
+        }
+      }
+
+      // FIX: Correct delete order — children first, then parent invoice row.
+      // invoice_items → payment_ledgers → invoices (avoids FK constraint violations).
+      // FIX: Simplified invoice_items DELETE — removed the broken correlated subquery
+      // that cross-referenced invoice_id against invoices.id (different columns).
+      await execute(db, 'DELETE FROM invoice_items WHERE invoice_id = ?', invoiceId);
+      await execute(db, 'DELETE FROM payment_ledgers WHERE invoice_id = ? AND organization_id = ?', invoiceId, effectiveOrgId);
+      await execute(db, 'DELETE FROM invoices WHERE id = ? AND organization_id = ?', invoiceId, effectiveOrgId);
+
+      return jsonResponse({ success: true, message: 'Invoice deleted successfully' });
+    } catch (err: any) {
+      console.error('[Delete Invoice Error]', err?.message || err);
+      return errorResponse('Failed to delete invoice: ' + (err?.message || 'Server error'), 500);
+    }
   }
 
   // -------------------------------------------------------------
@@ -2891,24 +2923,33 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
   }
 
   if (path.startsWith('/api/payments/') && method === 'DELETE') {
-    const org = await queryFirst<any>(db, 'SELECT * FROM organizations WHERE id = ?', effectiveOrgId);
-    const accessCheck = isOrgAccessAllowed(org);
-    if (!accessCheck.allowed) {
-      return createOrgAccessDeniedResponse(accessCheck);
-    }
+    try {
+      const org = await queryFirst<any>(db, 'SELECT * FROM organizations WHERE id = ?', effectiveOrgId);
+      const accessCheck = isOrgAccessAllowed(org);
+      if (!accessCheck.allowed) {
+        return createOrgAccessDeniedResponse(accessCheck);
+      }
 
-    const paymentId = path.split('/')[3];
-    const existingPayment = await queryFirst<{ organization_id: string }>(
-      db,
-      'SELECT organization_id FROM payment_ledgers WHERE id = ?',
-      paymentId
-    );
-    if (existingPayment && existingPayment.organization_id !== effectiveOrgId) {
-      return errorResponse('You do not have permission to delete this payment', 403);
-    }
+      const paymentId = path.split('/')[3];
+      if (!paymentId) {
+        return errorResponse('Payment ID is required', 400);
+      }
 
-    await execute(db, 'DELETE FROM payment_ledgers WHERE id = ? AND organization_id = ?', paymentId, effectiveOrgId);
-    return jsonResponse({ success: true, message: 'Payment deleted successfully' });
+      const existingPayment = await queryFirst<{ organization_id: string }>(
+        db,
+        'SELECT organization_id FROM payment_ledgers WHERE id = ?',
+        paymentId
+      );
+      if (existingPayment && existingPayment.organization_id !== effectiveOrgId) {
+        return errorResponse('You do not have permission to delete this payment', 403);
+      }
+
+      await execute(db, 'DELETE FROM payment_ledgers WHERE id = ? AND organization_id = ?', paymentId, effectiveOrgId);
+      return jsonResponse({ success: true, message: 'Payment deleted successfully' });
+    } catch (err: any) {
+      console.error('[Delete Payment Error]', err?.message || err);
+      return errorResponse('Failed to delete payment: ' + (err?.message || 'Server error'), 500);
+    }
   }
 
   // -------------------------------------------------------------

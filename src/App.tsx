@@ -716,7 +716,6 @@ export default function App() {
       {/* Impersonation Notification Banner */}
       {activeImpersonation && (
         <ImpersonationBanner
-          session={activeImpersonation}
           onExit={handleStopImpersonation}
         />
       )}
@@ -727,7 +726,7 @@ export default function App() {
           <Sidebar
             activeTab={activeTab}
             onTabChange={(tab) => {
-              if (tab === 'create_invoice' && isReadOnly) {
+              if ((tab as string) === 'create_invoice' && isReadOnly) {
                 setTrialExpiredModalOpen(true);
                 showToast('🔒 Invoicing is locked in read-only mode.');
                 return;
@@ -990,9 +989,9 @@ export default function App() {
         <ConfirmationModal
           isOpen={!!deleteTarget}
           onClose={() => setDeleteTarget(null)}
-          onConfirm={() => {
+          onConfirm={async () => {
             if (deleteTarget.type === 'invoice') {
-              KannakuDB.deleteInvoice(deleteTarget.id);
+              await KannakuDB.deleteInvoice(deleteTarget.id);
               showToast('Invoice deleted.');
             } else if (deleteTarget.type === 'client') {
               KannakuDB.deleteClient(deleteTarget.id);

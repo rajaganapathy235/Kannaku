@@ -346,7 +346,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
               <tbody className="divide-y divide-slate-100 font-mono">
                 {salesInvoices.map((inv) => (
                   <tr key={inv.id} className="hover:bg-slate-50/80 transition-colors">
-                    <td className="py-3 px-4 text-slate-500">{inv.invoiceDate || inv.date || ''}</td>
+                    <td className="py-3 px-4 text-slate-500">{inv.date || ''}</td>
                     <td className="py-3 px-4 font-semibold text-brand-600">
                       {inv.invoiceNumber}
                     </td>
@@ -396,7 +396,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
               <tbody className="divide-y divide-slate-100 font-mono">
                 {purchaseInvoices.map((inv) => (
                   <tr key={inv.id} className="hover:bg-slate-50/80 transition-colors">
-                    <td className="py-3 px-4 text-slate-500">{inv.invoiceDate || inv.date || ''}</td>
+                    <td className="py-3 px-4 text-slate-500">{inv.date || ''}</td>
                     <td className="py-3 px-4 font-semibold text-brand-600">
                       {inv.invoiceNumber}
                     </td>

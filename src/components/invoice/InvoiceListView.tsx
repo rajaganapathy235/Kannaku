@@ -265,7 +265,7 @@ export const InvoiceListView: React.FC<InvoiceListViewProps> = ({
                       onClick={() => onViewInvoice(inv)}
                     >
                       <td className="py-4 px-6 font-mono text-slate-500">
-                        {inv.invoiceDate || inv.date || ''}
+                        {inv.date || ''}
                       </td>
                       <td className="py-4 px-6">
                         <div className="font-mono font-bold text-brand-600">
@@ -430,7 +430,7 @@ export const InvoiceListView: React.FC<InvoiceListViewProps> = ({
                         ₹{formatNumberIndian(inv.calc?.billFigure || 0)}
                       </div>
                       <span className="text-[10px] text-slate-400 font-mono">
-                        {inv.invoiceDate || inv.date || ''}
+                        {inv.date || ''}
                       </span>
                     </div>
                   </div>

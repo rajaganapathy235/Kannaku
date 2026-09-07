@@ -80,8 +80,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const recentInvoices = [...safeInvoices]
     .sort(
       (a, b) =>
-        new Date(b.createdOn || b.invoiceDate || b.date || 0).getTime() -
-        new Date(a.createdOn || a.invoiceDate || a.date || 0).getTime()
+        new Date(b.createdOn || b.date || 0).getTime() -
+        new Date(a.createdOn || a.date || 0).getTime()
     )
     .slice(0, 6);
 
@@ -181,7 +181,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             {clients.length}
           </div>
           <div className="text-brand-600 text-xs mt-2 font-semibold">
-            {clients.filter((c) => c.partyType === 'customer').length} Clients • {clients.filter((c) => c.partyType === 'supplier').length} Suppliers
+            {clients.filter((c) => c.clientType === 'customer').length} Clients • {clients.filter((c) => c.clientType === 'supplier').length} Suppliers
           </div>
         </div>
       </div>
@@ -304,7 +304,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                       {inv.clientSnapshot?.name || 'Cash Customer'}
                     </td>
                     <td className="px-6 py-4 text-slate-500 text-xs font-mono">
-                      {inv.invoiceDate || inv.date || ''}
+                      {inv.date || ''}
                     </td>
                     <td className="px-6 py-4 text-right text-slate-600 font-mono text-xs">
                       ₹{formatNumberIndian(inv.calc?.taxAmount || 0)}

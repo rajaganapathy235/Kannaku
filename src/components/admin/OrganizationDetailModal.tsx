@@ -406,8 +406,8 @@ export const OrganizationDetailModal: React.FC<OrganizationDetailModalProps> = (
                   },
                   {
                     label: 'Logo & Bill Cloud Storage',
-                    used: organization.usage.storageUsedMB,
-                    limit: currentPlan.limits.maxStorageMB,
+                    used: organization.usage.storageUsedMB || 0,
+                    limit: 100,
                     unit: 'MB',
                   },
                 ].map((item, idx) => {

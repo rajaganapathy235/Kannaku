@@ -28,6 +28,7 @@ interface InvoicePrintModalProps {
   invoice: Invoice;
   company: CompanyProfile;
   onClose: () => void;
+  onEdit?: () => void;
   onConvertQuotation?: (invoice: Invoice) => void;
 }
 
@@ -80,7 +81,7 @@ export const InvoicePrintModal: React.FC<InvoicePrintModalProps> = ({
   };
 
   const getInvoiceTitle = (): string => {
-    if (invoice.type === InvoiceType.QUOTATION) {
+    if (invoice.invoiceType === InvoiceType.QUOTATION) {
       return 'PROFORMA INVOICE / ESTIMATE';
     }
     if (
@@ -371,7 +372,7 @@ Thank you for your business!`;
             </button>
 
             {/* If it is a quotation, show Convert button */}
-            {invoice.type === InvoiceType.QUOTATION && (
+            {invoice.invoiceType === InvoiceType.QUOTATION && (
               invoice.isConverted ? (
                 <div
                   className="px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1.5"

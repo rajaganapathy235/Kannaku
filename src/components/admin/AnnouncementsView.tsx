@@ -137,7 +137,7 @@ export const AnnouncementsView: React.FC = () => {
 
                 <div className="mt-3 flex items-center gap-4 text-[11px] text-slate-500">
                   <span>Audience: <strong className="text-slate-300">{ann.targetAudience}</strong></span>
-                  <span>Dismissible: {ann.dismissible ? 'Yes' : 'No'}</span>
+                  <span>Dismissible: {ann.isDismissible ? 'Yes' : 'No'}</span>
                 </div>
               </div>
 

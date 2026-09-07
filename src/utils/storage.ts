@@ -902,7 +902,7 @@ export class KannakuDB {
     }
   }
 
-  static deleteInvoice(id: string): void {
+  static async deleteInvoice(id: string): Promise<boolean> {
     const list = this.getInvoices();
     const inv = list.find((i) => i.id === id);
     const updated = list.filter((i) => i.id !== id);
@@ -928,21 +928,23 @@ export class KannakuDB {
       this.recalculateClientBalance(inv.clientId);
     }
 
-    // Cloudflare D1 Delete
+    // Cloudflare D1 Delete — await result and surface errors to UI
     if (this.isAuthenticated()) {
-      ApiService.deleteInvoice(id).then((res) => {
-        if (!res.success) {
-          console.error('[Kannaku D1 Error] Failed to delete invoice from D1:', res.error);
-          if (typeof window !== 'undefined') {
-            window.dispatchEvent(
-              new CustomEvent('kannaku:d1-sync-error', {
-                detail: { action: 'Delete Invoice', error: res.error, status: res.status },
-              })
-            );
-          }
+      const res = await ApiService.deleteInvoice(id);
+      if (!res.success) {
+        console.error('[Kannaku D1 Error] Failed to delete invoice from D1:', res.error);
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(
+            new CustomEvent('kannaku:d1-sync-error', {
+              detail: { action: 'Delete Invoice', error: res.error, status: res.status },
+            })
+          );
         }
-      });
+        return false;
+      }
     }
+
+    return true;
   }
 
   static syncInvoiceToStock(invoice: Invoice, oldInvoice?: Invoice | null): void {
@@ -1275,8 +1277,9 @@ export class KannakuDB {
 
   static recalculateClientBalance(clientId: string): number {
     const clients = this.getClients();
-    const client = clients.find((c) => c.id === clientId);
-    if (!client) return 0;
+    const clientIdx = clients.findIndex((c) => c.id === clientId);
+    if (clientIdx < 0) return 0;
+    const client = clients[clientIdx];
 
     const payments = this.getPayments().filter(
       (p) => p.partyId === clientId || p.partyName.toLowerCase() === client.name.toLowerCase()
@@ -1292,8 +1295,12 @@ export class KannakuDB {
 
     const isSupplier = client.clientType === 'supplier';
     const newBalance = isSupplier ? credits - debits : debits - credits;
-    const updatedClient = { ...client, balance: newBalance };
-    this.saveClient(updatedClient);
+
+    // FIX: Use saveClients() (pure local save) instead of saveClient() which
+    // triggers D1 sync and causes an infinite loop:
+    //   saveInvoice → syncInvoiceToLedger → recalculateClientBalance → saveClient → D1 sync → ...
+    clients[clientIdx] = { ...client, balance: newBalance };
+    this.saveClients(clients);
     return newBalance;
   }
 

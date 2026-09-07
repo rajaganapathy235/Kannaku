@@ -576,7 +576,7 @@ export const OrganizationsListView: React.FC<OrganizationsListViewProps> = ({
           onConfirm={(org, reason) => {
             setImpersonatingOrg(null);
             if (onImpersonate) {
-              onImpersonate(org, reason);
+              onImpersonate(org);
             }
           }}
         />

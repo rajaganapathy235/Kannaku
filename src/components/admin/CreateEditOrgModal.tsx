@@ -34,7 +34,7 @@ export const CreateEditOrgModal: React.FC<CreateEditOrgModalProps> = ({
   const [planId, setPlanId] = useState('plan_starter');
   const [subscriptionStatus, setSubscriptionStatus] = useState<OrgSubscriptionStatus>('ACTIVE');
   const [accountStatus, setAccountStatus] = useState<OrgAccountStatus>('ACTIVE');
-  const [billingCycle, setBillingCycle] = useState<'MONTHLY' | 'YEARLY'>('MONTHLY');
+  const [billingCycle, setBillingCycle] = useState<'MONTHLY' | 'YEARLY' | 'LIFETIME' | 'TRIAL'>('MONTHLY');
   const [customDomain, setCustomDomain] = useState('');
   const [notes, setNotes] = useState('');
 
@@ -47,7 +47,7 @@ export const CreateEditOrgModal: React.FC<CreateEditOrgModalProps> = ({
         setAdminEmail(organizationToEdit.adminEmail);
         setMobile(organizationToEdit.mobile);
         setRegisterNumber(organizationToEdit.registerNumber || '');
-        setAddress(organizationToEdit.address || '');
+        setAddress(organizationToEdit.notes || '');
         setCity(organizationToEdit.city || 'Bengaluru');
         setState(organizationToEdit.state || 'Karnataka');
         setCountry(organizationToEdit.country || 'India');
@@ -117,12 +117,12 @@ export const CreateEditOrgModal: React.FC<CreateEditOrgModalProps> = ({
         invoicesCreated: 0,
         estimatesCreated: 0,
         customersCount: 0,
+        suppliersCount: 0,
         productsCount: 0,
         storageUsedMB: 0.1,
-        apiRequestsMade: 0,
         pdfGenerationsCount: 0,
-        whatsAppMessagesSent: 0,
-        emailMessagesSent: 0,
+        gstTaxHandledInr: 0,
+        paymentLedgerEntries: 0,
       },
       createdDate: organizationToEdit?.createdDate || new Date().toISOString(),
       lastActive: new Date().toISOString(),

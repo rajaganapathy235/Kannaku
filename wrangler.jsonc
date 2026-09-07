@@ -20,7 +20,7 @@
       "binding": "DB",
       "database_name": "kannaku_saas_prod",
       "database_id": "ef2fed2d-0729-43ea-8a1c-aaa7f537aeb2",
-      "migrations_dir": "src/db"
+      "migrations_dir": "migrations"
     }
   ]
 }

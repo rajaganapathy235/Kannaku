@@ -90,7 +90,7 @@ export const AddLedgerEntryModal: React.FC<AddLedgerEntryModalProps> = ({
       id: initialEntry?.id || `entry_${Date.now()}`,
       partyId: party.id,
       partyName: party.name,
-      partyType: party.clientType,
+      partyType: (party.clientType === 'supplier' ? 'supplier' : 'customer') as 'customer' | 'supplier',
       date,
       type: category,
       entryType: selectedType,
