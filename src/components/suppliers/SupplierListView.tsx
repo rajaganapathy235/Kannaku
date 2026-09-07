@@ -4,28 +4,36 @@ import {
   Building,
   CheckCircle2,
   Edit2,
+  FileText,
   MapPin,
   Phone,
   Plus,
   Search,
+  Share2,
   Trash2,
   Truck,
 } from 'lucide-react';
-import { Client, CompanyProfile, Invoice, InvoiceType } from '../../types';
+import { Client, CompanyProfile, Invoice, InvoiceType, PaymentLedgerEntry } from '../../types';
 import { formatNumberIndian } from '../../utils/numberToWords';
 import {
   INDIAN_STATES,
   getStateCodeByName,
   validateGSTIN,
 } from '../../utils/gstValidation';
+import { SupplierLedgerView } from './SupplierLedgerView';
 
 interface SupplierListViewProps {
   clients: Client[];
   invoices: Invoice[];
   company: CompanyProfile;
+  payments?: PaymentLedgerEntry[];
   onAddSupplier: (supplier: Client) => void;
   onUpdateSupplier: (supplier: Client) => void;
   onDeleteSupplier: (supplierId: string) => void;
+  onViewInvoice?: (invoice: Invoice) => void;
+  onAddLedgerEntry?: (entry: PaymentLedgerEntry, newBalance: number) => void;
+  onEditLedgerEntry?: (entry: PaymentLedgerEntry, newBalance: number) => void;
+  onDeleteLedgerEntry?: (entryId: string, newBalance: number) => void;
   isReadOnly?: boolean;
 }
 
@@ -33,14 +41,20 @@ export const SupplierListView: React.FC<SupplierListViewProps> = ({
   clients,
   invoices,
   company,
+  payments = [],
   onAddSupplier,
   onUpdateSupplier,
   onDeleteSupplier,
+  onViewInvoice,
+  onAddLedgerEntry,
+  onEditLedgerEntry,
+  onDeleteLedgerEntry,
   isReadOnly = false,
 }) => {
   const [search, setSearch] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingSupplier, setEditingSupplier] = useState<Client | null>(null);
+  const [selectedSupplierLedger, setSelectedSupplierLedger] = useState<Client | null>(null);
 
   const [name, setName] = useState('');
   const [mobile, setMobile] = useState('');
@@ -166,16 +180,62 @@ export const SupplierListView: React.FC<SupplierListViewProps> = ({
     setIsModalOpen(false);
   };
 
+  const handleSendReminder = (s: Client) => {
+    const rawPhone = s.mobile ? s.mobile.replace(/\D/g, '') : '';
+    const phone = rawPhone.length === 10 ? `91${rawPhone}` : rawPhone;
+    const isPayable = s.balance >= 0;
+    const message = `Hello ${s.name},
+This is a ledger balance update from ${company.name}.
+Our current recorded balance with your firm is: ₹${formatNumberIndian(Math.abs(s.balance))} ${isPayable ? '(Payable by us)' : '(Advance paid)'}.
+GSTIN: ${company.registerNumber} • Ph: ${company.mobile}
+Thank you!`;
+    const url = phone ? `https://wa.me/${phone}?text=${encodeURIComponent(message)}` : `https://wa.me/?text=${encodeURIComponent(message)}`;
+    window.open(url, '_blank');
+  };
+
+  // If a supplier ledger is selected, display the full SupplierLedgerView
+  if (selectedSupplierLedger) {
+    return (
+      <SupplierLedgerView
+        party={selectedSupplierLedger}
+        company={company}
+        payments={payments}
+        invoices={invoices}
+        isReadOnly={isReadOnly}
+        onBack={() => setSelectedSupplierLedger(null)}
+        onViewInvoice={onViewInvoice}
+        onAddEntry={(entry, newBalance) => {
+          if (onAddLedgerEntry) {
+            onAddLedgerEntry(entry, newBalance);
+          }
+          setSelectedSupplierLedger((prev) => (prev ? { ...prev, balance: newBalance } : null));
+        }}
+        onEditEntry={(entry, newBalance) => {
+          if (onEditLedgerEntry) {
+            onEditLedgerEntry(entry, newBalance);
+          }
+          setSelectedSupplierLedger((prev) => (prev ? { ...prev, balance: newBalance } : null));
+        }}
+        onDeleteEntry={(entryId, newBalance) => {
+          if (onDeleteLedgerEntry) {
+            onDeleteLedgerEntry(entryId, newBalance);
+          }
+          setSelectedSupplierLedger((prev) => (prev ? { ...prev, balance: newBalance } : null));
+        }}
+      />
+    );
+  }
+
   return (
     <div className="space-y-6 pb-12">
       {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-5 rounded-lg border border-[#DADCE0] shadow-sm">
+      <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
         <div>
-          <h2 className="text-base font-semibold text-[#202124]">
-            Suppliers & Vendors (Send Master)
+          <h2 className="text-base font-bold text-slate-900">
+            Suppliers & Vendors (Supplier Master)
           </h2>
-          <p className="text-xs text-[#5F6368]">
-            Manage raw material vendors, supplier contacts & purchase records ({supplierList.length} total)
+          <p className="text-xs text-slate-500">
+            Manage raw material vendors, supplier contacts & track real-time purchase ledgers ({supplierList.length} total)
           </p>
         </div>
 
@@ -195,36 +255,38 @@ export const SupplierListView: React.FC<SupplierListViewProps> = ({
       </div>
 
       {/* Search */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
-        <div className="relative">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search suppliers by name, GSTIN, city..."
-            className="w-full pl-10 pr-4 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-brand-600 focus:ring-2 focus:ring-brand-500/20 transition-all"
-          />
-        </div>
+      <div className="relative">
+        <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search suppliers by name, GSTIN, city..."
+          className="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-brand-600 focus:ring-1 focus:ring-brand-600 shadow-xs transition-colors"
+        />
       </div>
 
       {/* Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {filteredSuppliers.map((s) => {
           const purchaseInvoices = invoices.filter(
             (i) => i.clientId === s.id && i.invoiceType === InvoiceType.PURCHASE
           );
+          const partyPayments = payments.filter(
+            (p) => p.partyId === s.id || (p.partyName && p.partyName.toLowerCase() === s.name.toLowerCase())
+          );
+          const isPayable = s.balance >= 0;
 
           return (
             <div
               key={s.id}
-              className="bg-white rounded-2xl border border-slate-200 shadow-xs p-5 flex flex-col justify-between space-y-4 hover:border-brand-500/40 hover:shadow-md transition-all"
+              className="bg-white rounded-2xl border border-slate-200 p-4 shadow-xs hover:border-brand-600 hover:shadow-sm transition-all space-y-3 flex flex-col justify-between"
             >
-              <div className="space-y-3">
+              <div className="space-y-2">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <h3 className="text-sm font-bold text-slate-900 truncate">{s.name}</h3>
-                    <div className="text-xs text-brand-700 font-mono font-bold mt-1 inline-flex items-center px-2 py-0.5 rounded bg-brand-50 border border-brand-200/60 text-[10px]">
+                    <div className="text-xs text-brand-600 font-mono font-semibold mt-0.5 inline-flex items-center px-2 py-0.5 rounded bg-brand-50 border border-brand-200/60 text-[10px]">
                       GST: {s.registerNumber || 'URP'}
                     </div>
                   </div>
@@ -237,7 +299,7 @@ export const SupplierListView: React.FC<SupplierListViewProps> = ({
                       className={`p-1.5 rounded-lg transition-colors ${
                         isReadOnly
                           ? 'text-slate-300 opacity-50 cursor-not-allowed'
-                          : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100 cursor-pointer'
+                          : 'text-slate-400 hover:text-slate-900 hover:bg-slate-100 cursor-pointer'
                       }`}
                     >
                       <Edit2 className="w-3.5 h-3.5" />
@@ -249,7 +311,7 @@ export const SupplierListView: React.FC<SupplierListViewProps> = ({
                       className={`p-1.5 rounded-lg transition-colors ${
                         isReadOnly
                           ? 'text-slate-300 opacity-50 cursor-not-allowed'
-                          : 'text-slate-400 hover:text-red-600 hover:bg-red-50 cursor-pointer'
+                          : 'text-slate-400 hover:text-rose-600 hover:bg-rose-50 cursor-pointer'
                       }`}
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -257,7 +319,7 @@ export const SupplierListView: React.FC<SupplierListViewProps> = ({
                   </div>
                 </div>
 
-                <div className="text-xs text-slate-500 space-y-1.5 pt-1">
+                <div className="text-xs text-slate-500 space-y-1.5 pt-2 border-t border-slate-100">
                   <div className="flex items-center gap-2">
                     <Phone className="w-3.5 h-3.5 text-slate-400" />
                     <span className="text-slate-700 font-medium">{s.mobile || 'No contact'}</span>
@@ -276,14 +338,35 @@ export const SupplierListView: React.FC<SupplierListViewProps> = ({
                   <span className="text-[10px] text-slate-500 block font-semibold uppercase tracking-wider">
                     Payable Balance
                   </span>
-                  <span className="font-mono font-bold text-sm text-slate-900">
-                    ₹{formatNumberIndian(Math.abs(s.balance))}
+                  <span
+                    className={`font-mono font-black text-sm ${
+                      isPayable ? 'text-rose-600' : 'text-emerald-700'
+                    }`}
+                  >
+                    ₹{formatNumberIndian(Math.abs(s.balance))}{' '}
+                    <span className="text-[10px] font-bold">
+                      {isPayable ? 'CR' : 'DR'}
+                    </span>
                   </span>
                 </div>
 
-                <span className="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 font-semibold text-xs border border-slate-200">
-                  {purchaseInvoices.length} Purchases
-                </span>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    onClick={() => setSelectedSupplierLedger(s)}
+                    className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold shadow-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+                  >
+                    <FileText className="w-3.5 h-3.5" />
+                    <span>Ledger ({partyPayments.length || purchaseInvoices.length})</span>
+                  </button>
+
+                  <button
+                    onClick={() => handleSendReminder(s)}
+                    className="p-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-xl transition-colors cursor-pointer"
+                    title="Share Balance via WhatsApp"
+                  >
+                    <Share2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
               </div>
             </div>
           );

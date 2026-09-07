@@ -77,6 +77,22 @@ export default function App() {
     return (authSession?.user?.code || authSession?.user?.reason || authSession?.user?.readOnlyReason || company?.code || company?.readOnlyReason || null) as ReadOnlyReasonType;
   });
 
+  // Active tenant, plan, and dynamic trial duration configuration
+  const activeTenantId = KannakuDB.getActiveTenantId();
+  const allOrgs = SaaSAdminDB.getOrganizations();
+  const activeOrg: TenantOrganizationFull | undefined =
+    allOrgs.find((o) => o.id === activeTenantId || o.adminEmail === company.email) || allOrgs[0];
+  const allPlans = SaaSAdminDB.getPlans();
+  const activePlan =
+    allPlans.find(
+      (p) => p.id === activeOrg?.planId || p.name === activeOrg?.planName || p.code === activeOrg?.planName
+    ) || allPlans[0];
+
+  const trialDurationDays =
+    activeOrg?.trialDurationDays ||
+    activePlan?.trialDurationDays ||
+    15;
+
   // Read-Only Modal State
   const [trialExpiredModalOpen, setTrialExpiredModalOpen] = useState<boolean>(false);
   const [hasAutoPromptedTrialModal, setHasAutoPromptedTrialModal] = useState<boolean>(false);
@@ -277,7 +293,7 @@ export default function App() {
     reloadAllState();
     setIsSuperAdminMode(false);
     window.location.hash = '';
-    showToast(`🎉 Workspace "${session.user.organizationName}" created successfully! 14-day trial active.`);
+    showToast(`🎉 Workspace "${session.user.organizationName}" created successfully! ${trialDurationDays}-day trial active.`);
   };
 
   const handleLogout = () => {
@@ -338,7 +354,7 @@ export default function App() {
           ? '🔒 Account Suspended. Invoicing is locked in read-only mode.'
           : readOnlyReason === 'SUBSCRIPTION_EXPIRED'
           ? '🔒 Subscription Expired. Invoicing is locked in read-only mode.'
-          : '🔒 14-Day Free Trial Expired. Invoicing is locked in read-only mode.'
+          : `🔒 ${trialDurationDays}-Day Free Trial Expired. Invoicing is locked in read-only mode.`
       );
       return;
     }
@@ -560,6 +576,33 @@ export default function App() {
     }
     reloadAllState();
     showToast(`Ledger entry recorded for ₹${entry.amount}!`);
+  };
+
+  const handleEditLedgerEntry = (entry: PaymentLedgerEntry, newBalance: number) => {
+    KannakuDB.savePayment(entry);
+    if (entry.partyId) {
+      const client = clients.find((c) => c.id === entry.partyId);
+      if (client) {
+        const updated = { ...client, balance: newBalance };
+        KannakuDB.saveClient(updated);
+      }
+    }
+    reloadAllState();
+    showToast(`Ledger entry updated for ₹${entry.amount}!`);
+  };
+
+  const handleDeleteLedgerEntry = (entryId: string, newBalance: number) => {
+    const entry = payments.find((p) => p.id === entryId);
+    KannakuDB.deletePayment(entryId);
+    if (entry && entry.partyId) {
+      const client = clients.find((c) => c.id === entry.partyId);
+      if (client) {
+        const updated = { ...client, balance: newBalance };
+        KannakuDB.saveClient(updated);
+      }
+    }
+    reloadAllState();
+    showToast('Ledger entry deleted.');
   };
 
   const handleUpdateCompany = (updated: CompanyProfile) => {
@@ -794,7 +837,7 @@ export default function App() {
                       ? 'Account Suspended:'
                       : readOnlyReason === 'SUBSCRIPTION_EXPIRED'
                       ? 'Subscription Expired:'
-                      : '14-Day Free Trial Expired:'}
+                      : `${trialDurationDays}-Day Free Trial Expired:`}
                   </strong>{' '}
                   Read-only mode active. Your historical records and accounting reports are safe. Record creation and invoicing are paused.
                 </span>
@@ -860,6 +903,7 @@ export default function App() {
                 nextInvoiceNumber={getNextInvoiceNumber}
                 isReadOnly={isReadOnly}
                 readOnlyReason={readOnlyReason}
+                trialDurationDays={trialDurationDays}
                 onOpenUpgradeModal={() => setTrialExpiredModalOpen(true)}
               />
             )}
@@ -875,6 +919,8 @@ export default function App() {
                 onDeleteClient={handleDeleteClient}
                 onViewInvoice={(inv) => setActivePrintInvoice(inv)}
                 onAddLedgerEntry={handleAddLedgerEntry}
+                onEditLedgerEntry={handleEditLedgerEntry}
+                onDeleteLedgerEntry={handleDeleteLedgerEntry}
                 isReadOnly={isReadOnly}
               />
             )}
@@ -884,9 +930,14 @@ export default function App() {
                 clients={clients}
                 invoices={invoices}
                 company={company}
+                payments={payments}
                 onAddSupplier={handleAddClient}
                 onUpdateSupplier={handleUpdateClient}
                 onDeleteSupplier={handleDeleteClient}
+                onViewInvoice={(inv) => setActivePrintInvoice(inv)}
+                onAddLedgerEntry={handleAddLedgerEntry}
+                onEditLedgerEntry={handleEditLedgerEntry}
+                onDeleteLedgerEntry={handleDeleteLedgerEntry}
                 isReadOnly={isReadOnly}
               />
             )}
@@ -1061,6 +1112,7 @@ export default function App() {
         code={readOnlyReason}
         expiryDate={subscription.expiryDate}
         organizationName={company.name || 'Your Business'}
+        trialDurationDays={trialDurationDays}
       />
     </div>
   );

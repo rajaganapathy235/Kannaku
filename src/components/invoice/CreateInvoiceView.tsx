@@ -55,6 +55,7 @@ interface CreateInvoiceViewProps {
   isReadOnly?: boolean;
   isTrialExpired?: boolean;
   readOnlyReason?: string | null;
+  trialDurationDays?: number;
   onOpenUpgradeModal?: () => void;
 }
 
@@ -71,6 +72,7 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
   isReadOnly,
   isTrialExpired,
   readOnlyReason,
+  trialDurationDays,
   onOpenUpgradeModal,
 }) => {
   const isLocked = isReadOnly ?? isTrialExpired ?? false;
@@ -475,7 +477,7 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
                   ? 'Account Suspended — Invoice Creation Locked'
                   : readOnlyReason === 'SUBSCRIPTION_EXPIRED'
                   ? 'Subscription Expired — Invoice Creation Locked'
-                  : '14-Day Free Trial Expired — Invoice Creation Locked'}
+                  : `${trialDurationDays || 15}-Day Free Trial Expired — Invoice Creation Locked`}
               </span>
               <span className="text-xs text-amber-800">
                 Your workspace is in read-only mode. Upgrade or renew your subscription to generate, save, and print new tax invoices.

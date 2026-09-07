@@ -157,6 +157,7 @@ export interface TenantOrganizationFull {
   subscriptionStartDate: string;
   renewalDate: string;
   trialEndDate?: string;
+  trialDurationDays?: number;
   mrr: number; // in INR
   usersCount: number;
   usage: TenantUsageStats;

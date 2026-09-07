@@ -35,6 +35,8 @@ interface CustomerListViewProps {
   onDeleteClient: (clientId: string) => void;
   onViewInvoice: (invoice: Invoice) => void;
   onAddLedgerEntry?: (entry: PaymentLedgerEntry, newBalance: number) => void;
+  onEditLedgerEntry?: (entry: PaymentLedgerEntry, newBalance: number) => void;
+  onDeleteLedgerEntry?: (entryId: string, newBalance: number) => void;
   isReadOnly?: boolean;
 }
 
@@ -48,6 +50,8 @@ export const CustomerListView: React.FC<CustomerListViewProps> = ({
   onDeleteClient,
   onViewInvoice,
   onAddLedgerEntry,
+  onEditLedgerEntry,
+  onDeleteLedgerEntry,
   isReadOnly = false,
 }) => {
   const [search, setSearch] = useState('');
@@ -209,13 +213,27 @@ Please let us know once the transfer is completed. Thank you!`;
         party={selectedPartyLedger}
         company={company}
         payments={payments}
+        invoices={invoices}
         isReadOnly={isReadOnly}
         onBack={() => setSelectedPartyLedger(null)}
+        onViewInvoice={onViewInvoice}
         onAddEntry={(entry, newBalance) => {
           if (onAddLedgerEntry) {
             onAddLedgerEntry(entry, newBalance);
           }
           // Refresh local selected party balance
+          setSelectedPartyLedger((prev) => (prev ? { ...prev, balance: newBalance } : null));
+        }}
+        onEditEntry={(entry, newBalance) => {
+          if (onEditLedgerEntry) {
+            onEditLedgerEntry(entry, newBalance);
+          }
+          setSelectedPartyLedger((prev) => (prev ? { ...prev, balance: newBalance } : null));
+        }}
+        onDeleteEntry={(entryId, newBalance) => {
+          if (onDeleteLedgerEntry) {
+            onDeleteLedgerEntry(entryId, newBalance);
+          }
           setSelectedPartyLedger((prev) => (prev ? { ...prev, balance: newBalance } : null));
         }}
       />

@@ -1060,7 +1060,8 @@ export class KannakuDB {
       .filter((p) => p.type === 'credit')
       .reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
 
-    const newBalance = debits - credits;
+    const isSupplier = client.clientType === 'supplier';
+    const newBalance = isSupplier ? credits - debits : debits - credits;
     const updatedClient = { ...client, balance: newBalance };
     this.saveClient(updatedClient);
     return newBalance;

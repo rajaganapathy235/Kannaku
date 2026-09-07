@@ -2317,7 +2317,11 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
   if (path === '/api/invoices' && method === 'GET') {
     const invoiceRows = await queryAll<any>(
       db,
-      'SELECT * FROM invoices WHERE organization_id = ? ORDER BY invoice_date DESC, created_at DESC',
+      `SELECT i.*, c.client_type as client_table_type 
+       FROM invoices i 
+       LEFT JOIN clients c ON i.client_id = c.id AND i.organization_id = c.organization_id 
+       WHERE i.organization_id = ? 
+       ORDER BY i.invoice_date DESC, i.created_at DESC`,
       effectiveOrgId
     );
 
@@ -2400,7 +2404,7 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
             state: inv.client_state || '',
             pin: '',
             registerNumber: inv.client_gstin || '',
-            clientType: 'customer',
+            clientType: inv.client_table_type || (Number(inv.invoice_type) === 2 ? 'supplier' : 'customer'),
             balance: inv.balance_amount || 0,
             createdOn: inv.created_at,
           },
@@ -2553,21 +2557,33 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
 
       // 2. Create automatic Payment Ledger Entry if paid amount > 0 (1 D1 row)
       if (Number(calc.paidAmount) > 0) {
+        const isPurchase = Number(inv.invoiceType) === 2 || inv.invoiceType === 'PURCHASE';
+        const paymentType = isPurchase ? 'PAYMENT' : 'RECEIPT';
+        const paymentNotes = isPurchase
+          ? 'Initial payment on purchase bill creation'
+          : 'Initial payment on invoice creation';
         const payId = `pay_${id}`;
         await execute(
           db,
           `INSERT INTO payment_ledgers (
             id, organization_id, client_id, invoice_id, entry_date, payment_type, mode, amount, reference_number, notes
-          ) VALUES (?, ?, ?, ?, ?, 'RECEIPT', 'CASH', ?, ?, 'Initial payment on invoice creation')
-          ON CONFLICT(id) DO UPDATE SET amount = excluded.amount
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          ON CONFLICT(id) DO UPDATE SET
+            amount = excluded.amount,
+            payment_type = excluded.payment_type,
+            mode = excluded.mode,
+            notes = excluded.notes
           WHERE payment_ledgers.organization_id = excluded.organization_id`,
           payId,
           effectiveOrgId,
           inv.clientSnapshot?.id || null,
           id,
           inv.invoiceDate || new Date().toISOString().split('T')[0],
+          paymentType,
+          inv.paymentMode || 'CASH',
           Number(calc.paidAmount),
-          inv.invoiceNumber
+          inv.invoiceNumber,
+          paymentNotes
         );
       }
 

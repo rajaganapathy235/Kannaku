@@ -24,6 +24,7 @@ export interface TrialExpiredModalProps {
   code?: ReadOnlyReasonType;
   expiryDate?: string;
   organizationName?: string;
+  trialDurationDays?: number;
 }
 
 export const TrialExpiredModal: React.FC<TrialExpiredModalProps> = ({
@@ -34,14 +35,16 @@ export const TrialExpiredModal: React.FC<TrialExpiredModalProps> = ({
   code,
   expiryDate,
   organizationName = 'Your Business Workspace',
+  trialDurationDays,
 }) => {
   if (!isOpen) return null;
 
   const effectiveReason = reason || code || 'TRIAL_EXPIRED';
+  const displayTrialDays = trialDurationDays && trialDurationDays > 0 ? trialDurationDays : 14;
 
-  let badgeText = '14-Day Free Trial Ended';
+  let badgeText = `${displayTrialDays}-Day Free Trial Ended`;
   let titleText = 'Free Trial Expired';
-  let descriptionText = `Your 14-day risk-free trial period for ${organizationName} has concluded${expiryDate ? ` on ${expiryDate}` : ''}.`;
+  let descriptionText = `Your ${displayTrialDays}-day risk-free trial period for ${organizationName} has concluded${expiryDate ? ` on ${expiryDate}` : ''}.`;
   let restrictionTitle = 'Invoice Creation is Locked';
   let restrictionDesc = 'To create new GST tax invoices, generate quotations, record payments, or print fresh delivery challans, please upgrade your workspace to a subscription plan.';
   let primaryBtnText = 'Upgrade Plan & Unlock Full Access';
