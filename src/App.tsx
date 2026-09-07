@@ -8,7 +8,6 @@ import {
   InvoiceType,
   PaymentLedgerEntry,
   Product,
-  SubscriptionPlan,
   SubscriptionState,
 } from './types';
 import { KannakuDB } from './utils/storage';
@@ -585,22 +584,6 @@ export default function App() {
     showToast('Company profile updated.');
   };
 
-  // Subscription Upgrade
-  const handleUpgradeSubscription = (plan: SubscriptionPlan) => {
-    const nextExpiry = new Date();
-    nextExpiry.setDate(nextExpiry.getDate() + plan.durationDays);
-
-    const updatedState: SubscriptionState = {
-      isSubscribed: true,
-      activePlan: plan,
-      expiryDate: nextExpiry.toISOString().split('T')[0],
-    };
-
-    KannakuDB.saveSubscription(updatedState);
-    reloadAllState();
-    showToast(`Subscribed to ${plan.name}!`);
-  };
-
   // Default to Landing Page if no active session and not explicitly on login/signup
   if (!authSession && authView !== 'login' && authView !== 'signup') {
     return (
@@ -944,7 +927,6 @@ export default function App() {
               <SubscriptionView
                 company={company}
                 subscription={subscription}
-                onUpgradeSuccess={handleUpgradeSubscription}
               />
             )}
 

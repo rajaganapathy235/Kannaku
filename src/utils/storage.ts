@@ -949,6 +949,7 @@ export class KannakuDB {
     // INVARIANT: stock must be reversed before re-applying on edit, and reversed on delete
     const products = this.getProducts();
     let hasChanges = false;
+    const changedProductIds = new Set<string>();
 
     // 1. Reversal Step (on Edit): If old invoice existed, reverse its stock effect
     if (oldInvoice) {
@@ -967,10 +968,12 @@ export class KannakuDB {
               // Add back what sales previously subtracted
               products[prodIndex].currentStock = (products[prodIndex].currentStock || 0) + qty;
               hasChanges = true;
+              changedProductIds.add(products[prodIndex].id);
             } else if (isOldPurchase) {
               // Subtract what purchase previously added
               products[prodIndex].currentStock = (products[prodIndex].currentStock || 0) - qty;
               hasChanges = true;
+              changedProductIds.add(products[prodIndex].id);
             }
           }
         }
@@ -994,6 +997,7 @@ export class KannakuDB {
             // Decrease stock on sales invoice
             products[prodIndex].currentStock = (products[prodIndex].currentStock || 0) - qty;
             hasChanges = true;
+            changedProductIds.add(products[prodIndex].id);
 
             // Allow negative stock, but warn in console if negative
             if (products[prodIndex].currentStock < 0) {
@@ -1005,6 +1009,7 @@ export class KannakuDB {
             // Increase stock on purchase invoice
             products[prodIndex].currentStock = (products[prodIndex].currentStock || 0) + qty;
             hasChanges = true;
+            changedProductIds.add(products[prodIndex].id);
           }
         }
       }
@@ -1012,6 +1017,29 @@ export class KannakuDB {
 
     if (hasChanges) {
       this.saveProducts(products);
+
+      // Cloudflare D1 Sync for changed products
+      if (this.isAuthenticated()) {
+        const changedProducts = products.filter((p) => changedProductIds.has(p.id));
+        changedProducts.forEach((product) => {
+          ApiService.saveProduct(product).then((res) => {
+            if (!res.success) {
+              console.error('[Kannaku D1 Error] Failed to save product to D1:', res.error);
+              if (typeof window !== 'undefined') {
+                window.dispatchEvent(
+                  new CustomEvent('kannaku:d1-sync-error', {
+                    detail: { action: `Save Product (${product.name})`, error: res.error, status: res.status },
+                  })
+                );
+              }
+            } else if (typeof window !== 'undefined') {
+              window.dispatchEvent(
+                new CustomEvent('kannaku:d1-sync-success', { detail: { action: `Saved Product ${product.name}` } })
+              );
+            }
+          });
+        });
+      }
     }
   }
 
@@ -1024,6 +1052,7 @@ export class KannakuDB {
 
     const products = this.getProducts();
     let hasChanges = false;
+    const changedProductIds = new Set<string>();
 
     for (const item of (invoice.items || [])) {
       const prodId = item.productId || item.itemId;
@@ -1036,16 +1065,41 @@ export class KannakuDB {
           // Deleting sales invoice: add back stock
           products[prodIndex].currentStock = (products[prodIndex].currentStock || 0) + qty;
           hasChanges = true;
+          changedProductIds.add(products[prodIndex].id);
         } else if (isPurchase) {
           // Deleting purchase invoice: subtract stock
           products[prodIndex].currentStock = (products[prodIndex].currentStock || 0) - qty;
           hasChanges = true;
+          changedProductIds.add(products[prodIndex].id);
         }
       }
     }
 
     if (hasChanges) {
       this.saveProducts(products);
+
+      // Cloudflare D1 Sync for changed products
+      if (this.isAuthenticated()) {
+        const changedProducts = products.filter((p) => changedProductIds.has(p.id));
+        changedProducts.forEach((product) => {
+          ApiService.saveProduct(product).then((res) => {
+            if (!res.success) {
+              console.error('[Kannaku D1 Error] Failed to save product to D1:', res.error);
+              if (typeof window !== 'undefined') {
+                window.dispatchEvent(
+                  new CustomEvent('kannaku:d1-sync-error', {
+                    detail: { action: `Save Product (${product.name})`, error: res.error, status: res.status },
+                  })
+                );
+              }
+            } else if (typeof window !== 'undefined') {
+              window.dispatchEvent(
+                new CustomEvent('kannaku:d1-sync-success', { detail: { action: `Saved Product ${product.name}` } })
+              );
+            }
+          });
+        });
+      }
     }
   }
 
@@ -1055,23 +1109,45 @@ export class KannakuDB {
 
     // Quotations / Estimates are non-financial documents and MUST NOT be entered into party ledgers or alter balances.
     if (invoice.invoiceType === InvoiceType.QUOTATION || (!isSales && !isPurchase)) {
-      const filteredPayments = this.getPayments().filter(
+      const allPayments = this.getPayments();
+      const removedEntries = allPayments.filter(
         (p) =>
-          p.invoiceId !== invoice.id &&
-          p.id !== `pay_inv_${invoice.id}` &&
-          p.id !== `pay_rcpt_${invoice.id}` &&
-          p.vchNo !== invoice.invoiceNumber &&
-          p.referenceNo !== invoice.invoiceNumber
+          p.invoiceId === invoice.id ||
+          p.id === `pay_inv_${invoice.id}` ||
+          p.id === `pay_rcpt_${invoice.id}` ||
+          p.vchNo === invoice.invoiceNumber ||
+          p.referenceNo === invoice.invoiceNumber
       );
+      const removedEntryIds = removedEntries.map((p) => p.id);
+      const filteredPayments = allPayments.filter((p) => !removedEntryIds.includes(p.id));
       this.savePayments(filteredPayments);
 
       if (invoice.clientId) {
         this.recalculateClientBalance(invoice.clientId);
       }
+
+      if (this.isAuthenticated() && removedEntryIds.length > 0) {
+        removedEntryIds.forEach((id) => {
+          ApiService.deletePayment(id).then((res) => {
+            if (!res.success) {
+              console.error('[Kannaku D1 Error] Failed to delete payment from D1:', res.error);
+              if (typeof window !== 'undefined') {
+                window.dispatchEvent(
+                  new CustomEvent('kannaku:d1-sync-error', {
+                    detail: { action: 'Delete Payment Entry', error: res.error, status: res.status },
+                  })
+                );
+              }
+            }
+          });
+        });
+      }
       return;
     }
 
     const payments = this.getPayments();
+    const upsertedEntries: PaymentLedgerEntry[] = [];
+    const removedEntryIds: string[] = [];
 
     // 1. Primary Invoice Ledger Entry
     const invEntryId = `pay_inv_${invoice.id}`;
@@ -1104,6 +1180,7 @@ export class KannakuDB {
     } else {
       payments.unshift(mainEntry);
     }
+    upsertedEntries.push(mainEntry);
 
     // 2. Immediate Receipt / Payment entry if paidAmount > 0
     const rcptEntryId = `pay_rcpt_${invoice.id}`;
@@ -1137,9 +1214,13 @@ export class KannakuDB {
       } else {
         payments.unshift(rcptEntry);
       }
+      upsertedEntries.push(rcptEntry);
     } else if (rcptEntryIdx >= 0) {
       // If payment was reverted to 0, remove receipt entry
-      payments.splice(rcptEntryIdx, 1);
+      const [removed] = payments.splice(rcptEntryIdx, 1);
+      if (removed) {
+        removedEntryIds.push(removed.id);
+      }
     }
 
     this.savePayments(payments);
@@ -1152,6 +1233,43 @@ export class KannakuDB {
     // If client changed, recalculate old client balance too
     if (oldInvoice && oldInvoice.clientId && oldInvoice.clientId !== invoice.clientId) {
       this.recalculateClientBalance(oldInvoice.clientId);
+    }
+
+    // Cloudflare D1 Sync
+    if (this.isAuthenticated()) {
+      upsertedEntries.forEach((entry) => {
+        ApiService.savePayment(entry).then((res) => {
+          if (!res.success) {
+            console.error('[Kannaku D1 Error] Failed to record payment in D1:', res.error);
+            if (typeof window !== 'undefined') {
+              window.dispatchEvent(
+                new CustomEvent('kannaku:d1-sync-error', {
+                  detail: { action: `Record Payment (₹${entry.amount})`, error: res.error, status: res.status },
+                })
+              );
+            }
+          } else if (typeof window !== 'undefined') {
+            window.dispatchEvent(
+              new CustomEvent('kannaku:d1-sync-success', { detail: { action: `Recorded Payment ₹${entry.amount}` } })
+            );
+          }
+        });
+      });
+
+      removedEntryIds.forEach((id) => {
+        ApiService.deletePayment(id).then((res) => {
+          if (!res.success) {
+            console.error('[Kannaku D1 Error] Failed to delete payment from D1:', res.error);
+            if (typeof window !== 'undefined') {
+              window.dispatchEvent(
+                new CustomEvent('kannaku:d1-sync-error', {
+                  detail: { action: 'Delete Payment Entry', error: res.error, status: res.status },
+                })
+              );
+            }
+          }
+        });
+      });
     }
   }
 

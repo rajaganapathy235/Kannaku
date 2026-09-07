@@ -22,7 +22,7 @@ import {
   RefreshCw,
   Gift,
 } from 'lucide-react';
-import { CompanyProfile, SubscriptionPlan, SubscriptionState } from '../../types';
+import { CompanyProfile, SubscriptionState } from '../../types';
 import { SaaSAdminDB } from '../../utils/adminStorage';
 import { KannakuDB } from '../../utils/storage';
 import { SaaSPlan, SaaSTransaction, TenantOrganizationFull } from '../../types/admin';
@@ -34,7 +34,6 @@ import { ApiService } from '../../utils/apiService';
 interface SubscriptionViewProps {
   company: CompanyProfile;
   subscription: SubscriptionState;
-  onUpgradeSuccess: (plan: SubscriptionPlan) => void;
 }
 
 export type SubscriptionDurationCycle = '1_MONTH' | '6_MONTHS' | '12_MONTHS';
@@ -106,7 +105,6 @@ const DEFAULT_PLAN_TIERS: SubscriptionPlanTier[] = [
 export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
   company,
   subscription,
-  onUpgradeSuccess,
 }) => {
   const [plans, setPlans] = useState<SaaSPlan[]>(() => SaaSAdminDB.getPlans());
   const [planTiers, setPlanTiers] = useState<SubscriptionPlanTier[]>(DEFAULT_PLAN_TIERS);
