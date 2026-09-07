@@ -370,22 +370,8 @@ export default function App() {
       return;
     }
 
-    // KannakuDB.saveInvoice automatically synchronizes ledger entries and party balances
+    // KannakuDB.saveInvoice automatically synchronizes inventory stock, ledger entries, and party balances
     KannakuDB.saveInvoice(invoice);
-
-    // Deduct stock for sold items
-    if (invoice.invoiceType === InvoiceType.SALES) {
-      invoice.items.forEach((item) => {
-        const prod = products.find((p) => p.name === item.name);
-        if (prod) {
-          const updatedProd = {
-            ...prod,
-            currentStock: Math.max(0, prod.currentStock - item.qty),
-          };
-          KannakuDB.saveProduct(updatedProd);
-        }
-      });
-    }
 
     reloadAllState();
     setEditingInvoice(null);
@@ -446,20 +432,8 @@ export default function App() {
     };
     KannakuDB.saveInvoice(updatedQuotation);
 
-    // 2. Save as Sales Tax Invoice -> triggers syncInvoiceToLedger, posting it to the party ledger & customer balance
+    // 2. Save as Sales Tax Invoice -> triggers syncInvoiceToStock and syncInvoiceToLedger
     KannakuDB.saveInvoice(convertedInvoice);
-
-    // Deduct stock for sold items
-    convertedInvoice.items.forEach((item) => {
-      const prod = products.find((p) => p.name === item.name);
-      if (prod) {
-        const updatedProd = {
-          ...prod,
-          currentStock: Math.max(0, prod.currentStock - item.qty),
-        };
-        KannakuDB.saveProduct(updatedProd);
-      }
-    });
 
     reloadAllState();
     showToast(`Quotation converted to Tax Invoice ${convertedInvoice.invoiceNumber} and entered into Party Ledger!`);

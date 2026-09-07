@@ -36,6 +36,7 @@ export interface ItemTaxRoot {
 export interface InvoiceItem {
   id: string;
   itemId?: string;
+  productId?: string;
   name: string;
   hsnCode: string;
   qty: number;

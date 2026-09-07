@@ -155,6 +155,8 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
       : [
           {
             id: `item_${Date.now()}_1`,
+            itemId: products[0]?.id || '',
+            productId: products[0]?.id || '',
             name: products[0]?.name || '',
             hsnCode: products[0]?.hsnCode || '85044010',
             qty: 1,
@@ -263,6 +265,8 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
       ...items,
       {
         id: `item_${Date.now()}_${items.length + 1}`,
+        itemId: defaultProd?.id || '',
+        productId: defaultProd?.id || '',
         name: defaultProd?.name || '',
         hsnCode: defaultProd?.hsnCode || '85044010',
         qty: 1,
@@ -292,8 +296,12 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
 
     // If product name selected from catalog, auto-populate
     if (field === 'name') {
-      const match = products.find((p) => p.name === value);
+      const match = products.find(
+        (p) => p.name.trim().toLowerCase() === String(value).trim().toLowerCase()
+      );
       if (match) {
+        next[index].itemId = match.id;
+        next[index].productId = match.id;
         next[index].hsnCode = match.hsnCode;
         next[index].baseRate =
           invoiceType === InvoiceType.PURCHASE
@@ -303,6 +311,9 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
         next[index].unit = match.unit;
         next[index].taxPercentage = match.taxRate;
         next[index].subline1 = match.subline1 || '';
+      } else {
+        next[index].itemId = undefined;
+        next[index].productId = undefined;
       }
     }
 

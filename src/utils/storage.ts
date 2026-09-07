@@ -877,6 +877,9 @@ export class KannakuDB {
     }
     this.saveInvoices(list);
 
+    // Automatically synchronize inventory stock for this invoice (create / edit-reversal)
+    this.syncInvoiceToStock(invoice, oldInvoice);
+
     // Automatically synchronize ledger entries for this invoice
     this.syncInvoiceToLedger(invoice, oldInvoice);
 
@@ -904,6 +907,11 @@ export class KannakuDB {
     const inv = list.find((i) => i.id === id);
     const updated = list.filter((i) => i.id !== id);
     this.saveInvoices(updated);
+
+    // Automatically reverse inventory stock for deleted invoice
+    if (inv) {
+      this.reverseInvoiceStock(inv);
+    }
 
     // Remove matching ledger entries
     const payments = this.getPayments().filter(
@@ -934,6 +942,110 @@ export class KannakuDB {
           }
         }
       });
+    }
+  }
+
+  static syncInvoiceToStock(invoice: Invoice, oldInvoice?: Invoice | null): void {
+    // INVARIANT: stock must be reversed before re-applying on edit, and reversed on delete
+    const products = this.getProducts();
+    let hasChanges = false;
+
+    // 1. Reversal Step (on Edit): If old invoice existed, reverse its stock effect
+    if (oldInvoice) {
+      const isOldSales = oldInvoice.invoiceType === InvoiceType.SALES || (oldInvoice.invoiceType as any) === 'SALES' || (oldInvoice.invoiceType as any) === 1;
+      const isOldPurchase = oldInvoice.invoiceType === InvoiceType.PURCHASE || (oldInvoice.invoiceType as any) === 'PURCHASE' || (oldInvoice.invoiceType as any) === 2;
+
+      if (isOldSales || isOldPurchase) {
+        for (const oldItem of (oldInvoice.items || [])) {
+          const prodId = oldItem.productId || oldItem.itemId;
+          const qty = Number(oldItem.qty ?? 0);
+          if (!prodId || qty <= 0) continue;
+
+          const prodIndex = products.findIndex((p) => p.id === prodId);
+          if (prodIndex >= 0) {
+            if (isOldSales) {
+              // Add back what sales previously subtracted
+              products[prodIndex].currentStock = (products[prodIndex].currentStock || 0) + qty;
+              hasChanges = true;
+            } else if (isOldPurchase) {
+              // Subtract what purchase previously added
+              products[prodIndex].currentStock = (products[prodIndex].currentStock || 0) - qty;
+              hasChanges = true;
+            }
+          }
+        }
+      }
+    }
+
+    // 2. Application Step: Apply current invoice's stock effect
+    const isNewSales = invoice.invoiceType === InvoiceType.SALES || (invoice.invoiceType as any) === 'SALES' || (invoice.invoiceType as any) === 1;
+    const isNewPurchase = invoice.invoiceType === InvoiceType.PURCHASE || (invoice.invoiceType as any) === 'PURCHASE' || (invoice.invoiceType as any) === 2;
+
+    // Quotations / Estimates never touch stock
+    if (isNewSales || isNewPurchase) {
+      for (const item of (invoice.items || [])) {
+        const prodId = item.productId || item.itemId;
+        const qty = Number(item.qty ?? 0);
+        if (!prodId || qty <= 0) continue;
+
+        const prodIndex = products.findIndex((p) => p.id === prodId);
+        if (prodIndex >= 0) {
+          if (isNewSales) {
+            // Decrease stock on sales invoice
+            products[prodIndex].currentStock = (products[prodIndex].currentStock || 0) - qty;
+            hasChanges = true;
+
+            // Allow negative stock, but warn in console if negative
+            if (products[prodIndex].currentStock < 0) {
+              console.warn(
+                `[Stock Warning] Product "${products[prodIndex].name}" (${prodId}) stock is negative after Sales Invoice #${invoice.invoiceNumber}: ${products[prodIndex].currentStock}`
+              );
+            }
+          } else if (isNewPurchase) {
+            // Increase stock on purchase invoice
+            products[prodIndex].currentStock = (products[prodIndex].currentStock || 0) + qty;
+            hasChanges = true;
+          }
+        }
+      }
+    }
+
+    if (hasChanges) {
+      this.saveProducts(products);
+    }
+  }
+
+  static reverseInvoiceStock(invoice: Invoice): void {
+    // INVARIANT: stock must be reversed before re-applying on edit, and reversed on delete
+    const isSales = invoice.invoiceType === InvoiceType.SALES || (invoice.invoiceType as any) === 'SALES' || (invoice.invoiceType as any) === 1;
+    const isPurchase = invoice.invoiceType === InvoiceType.PURCHASE || (invoice.invoiceType as any) === 'PURCHASE' || (invoice.invoiceType as any) === 2;
+
+    if (!isSales && !isPurchase) return;
+
+    const products = this.getProducts();
+    let hasChanges = false;
+
+    for (const item of (invoice.items || [])) {
+      const prodId = item.productId || item.itemId;
+      const qty = Number(item.qty ?? 0);
+      if (!prodId || qty <= 0) continue;
+
+      const prodIndex = products.findIndex((p) => p.id === prodId);
+      if (prodIndex >= 0) {
+        if (isSales) {
+          // Deleting sales invoice: add back stock
+          products[prodIndex].currentStock = (products[prodIndex].currentStock || 0) + qty;
+          hasChanges = true;
+        } else if (isPurchase) {
+          // Deleting purchase invoice: subtract stock
+          products[prodIndex].currentStock = (products[prodIndex].currentStock || 0) - qty;
+          hasChanges = true;
+        }
+      }
+    }
+
+    if (hasChanges) {
+      this.saveProducts(products);
     }
   }
 

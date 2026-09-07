@@ -15,6 +15,7 @@ import {
   verifySessionToken,
 } from './crypto';
 import { D1Database, ensureTables, execute, queryAll, queryFirst, seedInitialTenants } from './db';
+import { InvoiceType } from '../types';
 
 export interface RequestContext {
   request: Request;
@@ -2460,15 +2461,65 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
         return errorResponse('Invoice number, client name, and at least one item are required', 400);
       }
 
-      // Pre-check: if ID is provided, verify it does not belong to another tenant
+      // Pre-check: if ID is provided, verify it does not belong to another tenant and fetch existing invoice for edit stock reversal
+      let existingInv: any = null;
       if (inv.id) {
-        const existingInv = await queryFirst<{ organization_id: string }>(
+        existingInv = await queryFirst<any>(
           db,
-          'SELECT organization_id FROM invoices WHERE id = ?',
+          'SELECT * FROM invoices WHERE id = ?',
           inv.id
         );
         if (existingInv && existingInv.organization_id !== effectiveOrgId) {
           return errorResponse('You do not have permission to modify this invoice', 403);
+        }
+      }
+
+      // INVARIANT: stock must be reversed before re-applying on edit, and reversed on delete
+      // On edit: undo previous invoice's stock adjustment before updating the invoice record
+      if (existingInv) {
+        let oldItems: any[] = [];
+        if (existingInv.items_json) {
+          try {
+            oldItems = JSON.parse(existingInv.items_json);
+          } catch (e) {
+            console.error('[Stock Reversal] Failed to parse old items_json:', e);
+            oldItems = [];
+          }
+        }
+
+        const isOldSales = Number(existingInv.invoice_type) === 1 || existingInv.invoice_type === 'SALES' || existingInv.invoice_type === InvoiceType.SALES;
+        const isOldPurchase = Number(existingInv.invoice_type) === 2 || existingInv.invoice_type === 'PURCHASE' || existingInv.invoice_type === InvoiceType.PURCHASE;
+
+        if (isOldSales || isOldPurchase) {
+          for (const oldItem of oldItems) {
+            const prodId = oldItem.productId || oldItem.itemId || oldItem.product_id;
+            const qty = Number(oldItem.qty ?? oldItem.quantity ?? 0);
+            if (!prodId || qty <= 0) continue;
+
+            try {
+              if (isOldSales) {
+                // Reversing previous sales invoice: add back what was previously removed
+                await execute(
+                  db,
+                  'UPDATE products SET current_stock = current_stock + ? WHERE id = ? AND organization_id = ?',
+                  qty,
+                  prodId,
+                  effectiveOrgId
+                );
+              } else if (isOldPurchase) {
+                // Reversing previous purchase invoice: subtract what was previously added
+                await execute(
+                  db,
+                  'UPDATE products SET current_stock = current_stock - ? WHERE id = ? AND organization_id = ?',
+                  qty,
+                  prodId,
+                  effectiveOrgId
+                );
+              }
+            } catch (stockErr) {
+              console.error(`[Stock Reversal Error] Failed to reverse stock for product ${prodId}:`, stockErr);
+            }
+          }
         }
       }
 
@@ -2557,7 +2608,7 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
 
       // 2. Create automatic Payment Ledger Entry if paid amount > 0 (1 D1 row)
       if (Number(calc.paidAmount) > 0) {
-        const isPurchase = Number(inv.invoiceType) === 2 || inv.invoiceType === 'PURCHASE';
+        const isPurchase = Number(inv.invoiceType) === 2 || inv.invoiceType === 'PURCHASE' || inv.invoiceType === InvoiceType.PURCHASE;
         const paymentType = isPurchase ? 'PAYMENT' : 'RECEIPT';
         const paymentNotes = isPurchase
           ? 'Initial payment on purchase bill creation'
@@ -2587,6 +2638,56 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
         );
       }
 
+      // INVARIANT: stock must be reversed before re-applying on edit, and reversed on delete
+      // 3. Automatic inventory stock adjustment (Sales decreases stock, Purchase increases stock, Quotations never touch stock)
+      const isNewSales = Number(inv.invoiceType) === 1 || inv.invoiceType === 'SALES' || inv.invoiceType === InvoiceType.SALES;
+      const isNewPurchase = Number(inv.invoiceType) === 2 || inv.invoiceType === 'PURCHASE' || inv.invoiceType === InvoiceType.PURCHASE;
+
+      if (isNewSales || isNewPurchase) {
+        for (const item of (inv.items || [])) {
+          const prodId = item.productId || item.itemId || item.product_id;
+          const qty = Number(item.qty ?? item.quantity ?? 0);
+          if (!prodId || qty <= 0) continue;
+
+          try {
+            if (isNewSales) {
+              // Sales invoice: decrease current_stock
+              await execute(
+                db,
+                'UPDATE products SET current_stock = current_stock - ? WHERE id = ? AND organization_id = ?',
+                qty,
+                prodId,
+                effectiveOrgId
+              );
+
+              // Allow negative stock, but log a warning if current_stock drops below 0
+              const updatedProd = await queryFirst<{ id: string; name: string; current_stock: number }>(
+                db,
+                'SELECT id, name, current_stock FROM products WHERE id = ? AND organization_id = ?',
+                prodId,
+                effectiveOrgId
+              );
+              if (updatedProd && updatedProd.current_stock < 0) {
+                console.warn(
+                  `[Stock Warning] Product "${updatedProd.name}" (${prodId}) stock is negative after Sales Invoice #${inv.invoiceNumber}: ${updatedProd.current_stock}`
+                );
+              }
+            } else if (isNewPurchase) {
+              // Purchase invoice: increase current_stock
+              await execute(
+                db,
+                'UPDATE products SET current_stock = current_stock + ? WHERE id = ? AND organization_id = ?',
+                qty,
+                prodId,
+                effectiveOrgId
+              );
+            }
+          } catch (stockErr) {
+            console.error(`[Stock Update Error] Failed to update stock for product ${prodId}:`, stockErr);
+          }
+        }
+      }
+
       return jsonResponse({ success: true, id, message: 'Invoice saved successfully' }, 201);
     } catch (err: any) {
       console.error('Save invoice error:', err);
@@ -2602,13 +2703,62 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
     }
 
     const invoiceId = path.split('/')[3];
-    const existingInv = await queryFirst<{ organization_id: string }>(
+    const existingInv = await queryFirst<any>(
       db,
-      'SELECT organization_id FROM invoices WHERE id = ?',
+      'SELECT * FROM invoices WHERE id = ?',
       invoiceId
     );
-    if (existingInv && existingInv.organization_id !== effectiveOrgId) {
+    if (!existingInv) {
+      return jsonResponse({ success: true, message: 'Invoice already deleted' });
+    }
+    if (existingInv.organization_id !== effectiveOrgId) {
       return errorResponse('You do not have permission to delete this invoice', 403);
+    }
+
+    // INVARIANT: stock must be reversed before re-applying on edit, and reversed on delete
+    // Reverse stock adjustment before deleting the invoice row (sales delete adds stock back, purchase delete removes it)
+    let itemsToReverse: any[] = [];
+    if (existingInv.items_json) {
+      try {
+        itemsToReverse = JSON.parse(existingInv.items_json);
+      } catch (e) {
+        console.error('[Stock Reversal on Delete] Failed to parse items_json:', e);
+      }
+    }
+
+    const isOldSales = Number(existingInv.invoice_type) === 1 || existingInv.invoice_type === 'SALES' || existingInv.invoice_type === InvoiceType.SALES;
+    const isOldPurchase = Number(existingInv.invoice_type) === 2 || existingInv.invoice_type === 'PURCHASE' || existingInv.invoice_type === InvoiceType.PURCHASE;
+
+    if (isOldSales || isOldPurchase) {
+      for (const item of itemsToReverse) {
+        const prodId = item.productId || item.itemId || item.product_id;
+        const qty = Number(item.qty ?? item.quantity ?? 0);
+        if (!prodId || qty <= 0) continue;
+
+        try {
+          if (isOldSales) {
+            // Reversing sales invoice on delete: restore deducted stock
+            await execute(
+              db,
+              'UPDATE products SET current_stock = current_stock + ? WHERE id = ? AND organization_id = ?',
+              qty,
+              prodId,
+              effectiveOrgId
+            );
+          } else if (isOldPurchase) {
+            // Reversing purchase invoice on delete: remove added stock
+            await execute(
+              db,
+              'UPDATE products SET current_stock = current_stock - ? WHERE id = ? AND organization_id = ?',
+              qty,
+              prodId,
+              effectiveOrgId
+            );
+          }
+        } catch (stockErr) {
+          console.error(`[Stock Reversal on Delete Error] Failed for product ${prodId}:`, stockErr);
+        }
+      }
     }
 
     await execute(db, 'DELETE FROM invoice_items WHERE invoice_id = ? AND invoice_id IN (SELECT id FROM invoices WHERE organization_id = ?)', invoiceId, effectiveOrgId);

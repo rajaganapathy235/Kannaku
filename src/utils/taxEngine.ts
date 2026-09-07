@@ -110,6 +110,7 @@ export function calculateItemTaxAndTotals(
     return {
       id: item.id || `item_${Date.now()}_${index}`,
       itemId: item.itemId,
+      productId: item.productId || item.itemId,
       name: item.name || 'Item',
       hsnCode: item.hsnCode || '',
       qty,
