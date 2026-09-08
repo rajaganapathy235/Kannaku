@@ -153,7 +153,14 @@ export default function App() {
         origin: { y: 0.6 },
       });
       showToast(`🎉 Payment Verified via PayU! Your Pro subscription is now active.${returnTxnId ? ` (Ref: ${returnTxnId})` : ''}`);
-      KannakuDB.syncFromD1().then(() => reloadAllState());
+      AuthService.refreshSessionAsync().then((updatedSession) => {
+        if (updatedSession?.user) {
+          setAuthSession(updatedSession);
+          setIsReadOnly(Boolean(updatedSession.user.isReadOnly));
+          setReadOnlyReason((updatedSession.user.code || updatedSession.user.reason || updatedSession.user.readOnlyReason || null) as ReadOnlyReasonType);
+        }
+        KannakuDB.syncFromD1().then(() => reloadAllState());
+      });
       const cleanUrl = '/' + window.location.hash;
       window.history.replaceState({}, document.title, cleanUrl);
     } else if (paymentStatus === 'failure') {
@@ -819,6 +826,8 @@ export default function App() {
                 clients={clients}
                 products={products}
                 payments={payments}
+                isReadOnly={isReadOnly}
+                onUpgradeClick={() => setTrialExpiredModalOpen(true)}
                 onNewInvoice={handleTriggerNewInvoice}
                 onViewInvoice={(inv) => setActivePrintInvoice(inv)}
                 onNavigateTab={(tab) => {
@@ -829,7 +838,14 @@ export default function App() {
                   }
                   setActiveTab(tab);
                 }}
-                onOpenQuickPayment={() => setActiveTab('payments')}
+                onOpenQuickPayment={() => {
+                  if (isReadOnly) {
+                    setTrialExpiredModalOpen(true);
+                    showToast('🔒 Action is locked in read-only mode.');
+                    return;
+                  }
+                  setActiveTab('payments');
+                }}
               />
             )}
 

@@ -827,13 +827,21 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
       const slug = companyName.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').substring(0, 30);
       const passHash = await hashPassword(password);
 
-      // Look up configurable trial_duration_days and billing_type from saas_plans
+      // Look up configurable dynamic trial duration:
+      // Priority 1: Admin Panel System Settings (platform_settings table)
+      // Priority 2: Admin Panel Plans Management (saas_plans table)
+      // Default: 15 days
+      const platformSettings = await getPlatformSettingsFromDB(db);
+      const adminTrialDays = platformSettings?.billing?.trialDurationDays;
+
       const assignedPlan = await queryFirst<any>(
         db,
         "SELECT trial_duration_days, billing_type FROM saas_plans WHERE id = 'plan_all_in_one_pro'"
       );
       const trialDays =
-        assignedPlan && assignedPlan.trial_duration_days != null && Number(assignedPlan.trial_duration_days) > 0
+        adminTrialDays !== undefined && adminTrialDays !== null && Number(adminTrialDays) > 0
+          ? Number(adminTrialDays)
+          : assignedPlan && assignedPlan.trial_duration_days != null && Number(assignedPlan.trial_duration_days) > 0
           ? Number(assignedPlan.trial_duration_days)
           : 15;
       const trialEndDate = new Date(Date.now() + trialDays * 24 * 60 * 60 * 1000).toISOString();
@@ -888,15 +896,32 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
         {
           success: true,
           token,
-          user: { id: userId, name: ownerName, email: email.trim(), phone: mobile, role: 'OWNER' },
+          user: {
+            id: userId,
+            name: ownerName,
+            email: email.trim(),
+            phone: mobile,
+            role: 'OWNER',
+            isReadOnly: false,
+            code: null,
+            readOnlyReason: null,
+          },
           organization: {
             id: orgId,
             name: companyName,
             planId: 'plan_all_in_one_pro',
             planName: 'All-in-One Growth Plan',
             subscriptionStatus: 'TRIAL',
+            accountStatus: 'ACTIVE',
             trialEndDate,
+            trialDurationDays: trialDays,
+            isReadOnly: false,
+            code: null,
+            readOnlyReason: null,
           },
+          isReadOnly: false,
+          code: null,
+          readOnlyReason: null,
         },
         201,
         { 'Set-Cookie': sessionCookie }

@@ -9,6 +9,7 @@ import {
   FilePlus,
   FileText,
   HelpCircle,
+  Lock,
   Package,
   Plus,
   PlusCircle,
@@ -42,6 +43,8 @@ interface DashboardViewProps {
   onViewInvoice: (invoice: Invoice) => void;
   onNavigateTab: (tab: any) => void;
   onOpenQuickPayment: () => void;
+  isReadOnly?: boolean;
+  onUpgradeClick?: () => void;
 }
 
 export const DashboardView: React.FC<DashboardViewProps> = ({
@@ -54,6 +57,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   onViewInvoice,
   onNavigateTab,
   onOpenQuickPayment,
+  isReadOnly = false,
+  onUpgradeClick,
 }) => {
   const [transactionTimeframe, setTransactionTimeframe] = useState<'week' | 'all'>('week');
 
@@ -102,6 +107,34 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
   return (
     <div className="space-y-6 pb-12">
+      {/* View-Only Mode Banner */}
+      {isReadOnly && (
+        <div className="bg-gradient-to-r from-amber-500/15 via-amber-500/5 to-transparent border border-amber-500/40 p-4 sm:p-5 rounded-2xl flex flex-wrap items-center justify-between gap-4 shadow-xs">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 bg-amber-500 text-slate-950 rounded-xl shrink-0 shadow-xs">
+              <Lock className="w-5 h-5" />
+            </div>
+            <div>
+              <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                Dashboard is in View-Only Mode
+                <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 bg-amber-200 text-amber-900 rounded-full">Locked</span>
+              </h4>
+              <p className="text-xs text-slate-600 mt-0.5 leading-relaxed">
+                Your trial or subscription period has ended. You have full view, search, and export access to your existing invoices and ledger. Creating new invoices, recording payments, and modifying data are paused.
+              </p>
+            </div>
+          </div>
+          {onUpgradeClick && (
+            <button
+              onClick={onUpgradeClick}
+              className="px-4 py-2.5 bg-slate-950 hover:bg-slate-900 text-amber-300 rounded-xl text-xs font-bold transition-all shadow-xs hover:shadow-md cursor-pointer active:scale-98 shrink-0"
+            >
+              Upgrade / Renew Subscription →
+            </button>
+          )}
+        </div>
+      )}
+
       {/* 4 Financial KPI Metric Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         {/* Total Revenue */}
