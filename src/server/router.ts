@@ -3588,6 +3588,9 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
           billingCycle,
           subscriptionStatus,
           accountStatus,
+          trialEndDate,
+          renewalDate,
+          mrr,
           notes,
         } = body;
 
@@ -3602,8 +3605,9 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
           db,
           `INSERT INTO organizations (
             id, name, slug, owner_name, admin_email, mobile, country, city, state, register_number,
-            plan_id, plan_name, billing_cycle, subscription_status, account_status, notes
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            plan_id, plan_name, billing_cycle, subscription_status, account_status,
+            trial_end_date, renewal_date, mrr_inr, notes
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           orgId,
           name,
           orgSlug,
@@ -3619,6 +3623,9 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
           billingCycle || 'YEARLY',
           subscriptionStatus || 'ACTIVE',
           accountStatus || 'ACTIVE',
+          trialEndDate || null,
+          renewalDate || null,
+          mrr || 0,
           notes || ''
         );
 
@@ -3656,6 +3663,9 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
           return errorResponse('Organization not found', 404);
         }
 
+        const trialEndDateVal = body.trialEndDate !== undefined ? body.trialEndDate : (body.trial_end_date !== undefined ? body.trial_end_date : existing.trial_end_date);
+        const renewalDateVal = body.renewalDate !== undefined ? body.renewalDate : (body.renewal_date !== undefined ? body.renewal_date : existing.renewal_date);
+
         await execute(
           db,
           `UPDATE organizations SET
@@ -3671,6 +3681,10 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
             subscription_status = COALESCE(?, subscription_status),
             account_status = COALESCE(?, account_status),
             billing_cycle = COALESCE(?, billing_cycle),
+            trial_end_date = ?,
+            renewal_date = ?,
+            mrr_inr = COALESCE(?, mrr_inr),
+            custom_domain = COALESCE(?, custom_domain),
             notes = COALESCE(?, notes),
             last_active = CURRENT_TIMESTAMP
           WHERE id = ?`,
@@ -3686,6 +3700,10 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
           body.subscriptionStatus,
           body.accountStatus,
           body.billingCycle,
+          trialEndDateVal,
+          renewalDateVal,
+          body.mrr,
+          body.customDomain,
           body.notes,
           orgId
         );
@@ -3708,7 +3726,7 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
           request.headers.get('cf-connecting-ip') || '127.0.0.1'
         );
 
-        return jsonResponse({ success: true, message: 'Organization updated' });
+        return jsonResponse({ success: true, message: 'Organization updated successfully' });
       } catch (err: any) {
         return errorResponse('Failed to update organization: ' + (err?.message || 'Server error'), 500);
       }

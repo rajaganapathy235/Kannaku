@@ -235,7 +235,12 @@ export const SystemSettingsView: React.FC = () => {
 
           {activeTab === 'billing' && (
             <div className="space-y-4">
-              <h2 className="text-sm font-bold text-white">Subscription & Billing Policy</h2>
+              <div className="flex items-center justify-between">
+                <h2 className="text-sm font-bold text-white">Subscription & Billing Policy</h2>
+                <span className="text-[11px] text-brand-400 bg-brand-950/60 border border-brand-800/60 px-2.5 py-1 rounded-lg">
+                  Trial duration is centrally configured under <strong>Plans & Pricing</strong> (saas_plans D1)
+                </span>
+              </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <label className="font-bold text-slate-300">Default Currency</label>
@@ -244,15 +249,6 @@ export const SystemSettingsView: React.FC = () => {
                     value={settings.billing?.defaultCurrency || 'INR (₹)'}
                     onChange={(e) => updateBilling('defaultCurrency', e.target.value)}
                     className="w-full p-2.5 bg-slate-900 border border-slate-800 rounded-xl text-white font-bold"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="font-bold text-slate-300">Default Trial Period (Days)</label>
-                  <input
-                    type="number"
-                    value={settings.billing?.trialDurationDays ?? 14}
-                    onChange={(e) => updateBilling('trialDurationDays', Number(e.target.value))}
-                    className="w-full p-2.5 bg-slate-900 border border-slate-800 rounded-xl text-white font-mono"
                   />
                 </div>
                 <div className="space-y-1">

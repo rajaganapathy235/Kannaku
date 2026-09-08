@@ -35,6 +35,8 @@ export const CreateEditOrgModal: React.FC<CreateEditOrgModalProps> = ({
   const [subscriptionStatus, setSubscriptionStatus] = useState<OrgSubscriptionStatus>('ACTIVE');
   const [accountStatus, setAccountStatus] = useState<OrgAccountStatus>('ACTIVE');
   const [billingCycle, setBillingCycle] = useState<'MONTHLY' | 'YEARLY' | 'LIFETIME' | 'TRIAL'>('MONTHLY');
+  const [trialEndDate, setTrialEndDate] = useState<string>('');
+  const [renewalDate, setRenewalDate] = useState<string>('');
   const [customDomain, setCustomDomain] = useState('');
   const [notes, setNotes] = useState('');
 
@@ -55,6 +57,16 @@ export const CreateEditOrgModal: React.FC<CreateEditOrgModalProps> = ({
         setSubscriptionStatus(organizationToEdit.subscriptionStatus);
         setAccountStatus(organizationToEdit.accountStatus);
         setBillingCycle(organizationToEdit.billingCycle);
+        setTrialEndDate(
+          organizationToEdit.trialEndDate
+            ? organizationToEdit.trialEndDate.split('T')[0]
+            : new Date(Date.now() + 15 * 86400000).toISOString().split('T')[0]
+        );
+        setRenewalDate(
+          organizationToEdit.renewalDate
+            ? organizationToEdit.renewalDate.split('T')[0]
+            : new Date(Date.now() + 365 * 86400000).toISOString().split('T')[0]
+        );
         setCustomDomain(organizationToEdit.customDomain || '');
         setNotes(organizationToEdit.notes || '');
       } else {
@@ -71,6 +83,8 @@ export const CreateEditOrgModal: React.FC<CreateEditOrgModalProps> = ({
         setSubscriptionStatus('TRIAL');
         setAccountStatus('ACTIVE');
         setBillingCycle('MONTHLY');
+        setTrialEndDate(new Date(Date.now() + 15 * 86400000).toISOString().split('T')[0]);
+        setRenewalDate(new Date(Date.now() + 365 * 86400000).toISOString().split('T')[0]);
         setCustomDomain('');
         setNotes('');
       }
@@ -108,8 +122,8 @@ export const CreateEditOrgModal: React.FC<CreateEditOrgModalProps> = ({
       billingCycle,
       subscriptionStartDate: organizationToEdit?.subscriptionStartDate || new Date().toISOString().split('T')[0],
       mrr: billingCycle === 'YEARLY' ? Math.round(selectedPlan.yearlyPriceInr / 12) : selectedPlan.monthlyPriceInr,
-      renewalDate: organizationToEdit?.renewalDate || new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0],
-      trialEndDate: organizationToEdit?.trialEndDate || new Date(Date.now() + 14 * 86400000).toISOString().split('T')[0],
+      renewalDate: renewalDate ? new Date(renewalDate).toISOString() : new Date(Date.now() + 30 * 86400000).toISOString(),
+      trialEndDate: trialEndDate ? new Date(trialEndDate).toISOString() : new Date(Date.now() + 15 * 86400000).toISOString(),
       usersCount: organizationToEdit?.usersCount || 1,
       customDomain: customDomain || undefined,
       notes: notes ? `${notes} (Address: ${address})` : (address || undefined),
@@ -286,8 +300,65 @@ export const CreateEditOrgModal: React.FC<CreateEditOrgModalProps> = ({
                 className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none"
               >
                 <option value="MONTHLY">Monthly</option>
-                <option value="YEARLY">Yearly (Save 15%)</option>
+                <option value="HALF_YEARLY">6 Months</option>
+                <option value="YEARLY">Yearly</option>
               </select>
+            </div>
+          </div>
+
+          {/* Usage Time Period & Expiry Configuration */}
+          <div className="p-3.5 bg-slate-950/60 rounded-xl border border-slate-800 space-y-3">
+            <div className="text-xs font-bold text-slate-300 uppercase tracking-wide">
+              Usage Time Period & Expiration Dates
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-slate-400">Trial End Date (if Trial)</label>
+                <input
+                  type="date"
+                  value={trialEndDate}
+                  onChange={(e) => setTrialEndDate(e.target.value)}
+                  className="w-full p-2 bg-slate-900 border border-slate-800 rounded-lg text-white font-mono text-xs focus:outline-none"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-slate-400">Paid Renewal Date (if Paid)</label>
+                <input
+                  type="date"
+                  value={renewalDate}
+                  onChange={(e) => setRenewalDate(e.target.value)}
+                  className="w-full p-2 bg-slate-900 border border-slate-800 rounded-lg text-white font-mono text-xs focus:outline-none"
+                />
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-1.5 pt-1">
+              <span className="text-[10px] text-slate-500 font-bold mr-1">Quick Presets:</span>
+              {[
+                { label: '+7 Days', days: 7 },
+                { label: '+15 Days', days: 15 },
+                { label: '+30 Days', days: 30 },
+                { label: '+90 Days', days: 90 },
+                { label: '+1 Year', days: 365 },
+              ].map((p) => (
+                <button
+                  key={p.label}
+                  type="button"
+                  onClick={() => {
+                    const target = subscriptionStatus === 'TRIAL' ? trialEndDate : renewalDate;
+                    const base = target ? new Date(target) : new Date();
+                    const next = isNaN(base.getTime()) ? new Date() : new Date(base);
+                    next.setDate(next.getDate() + p.days);
+                    const iso = next.toISOString().split('T')[0];
+                    if (subscriptionStatus === 'TRIAL') setTrialEndDate(iso);
+                    else setRenewalDate(iso);
+                  }}
+                  className="px-2 py-0.5 bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 rounded text-[10px] font-bold cursor-pointer"
+                >
+                  {p.label}
+                </button>
+              ))}
             </div>
           </div>
 
