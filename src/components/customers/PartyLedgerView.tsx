@@ -11,7 +11,6 @@ import {
   Download,
   Edit2,
   ExternalLink,
-  FileSpreadsheet,
   FileText,
   Filter,
   LayoutGrid,
@@ -342,59 +341,6 @@ _Thank you for your business!_`;
     window.open(url, '_blank');
   };
 
-  // Export ledger transactions to CSV
-  const handleExportCSV = () => {
-    const headers = [
-      'Date',
-      'Voucher No',
-      'Entry Type',
-      'Particulars',
-      'Credit (Paid)',
-      'Debit (Billed)',
-      'Running Balance',
-      'Payment Mode',
-    ];
-
-    const rows = filteredEntries.map((e) => {
-      const isDebit = e.type === 'debit';
-      return [
-        `"${e.date}"`,
-        `"${e.vchNo || ''}"`,
-        `"${e.entryType || (isDebit ? 'Debit' : 'Credit')}"`,
-        `"${(e.particular || '').replace(/"/g, '""')}"`,
-        !isDebit ? Number(e.amount).toFixed(2) : '0.00',
-        isDebit ? Number(e.amount).toFixed(2) : '0.00',
-        e.runningBalance !== undefined ? e.runningBalance.toFixed(2) : '',
-        `"${e.mode || ''}"`,
-      ];
-    });
-
-    const csvContent =
-      'data:text/csv;charset=utf-8,' +
-      [`"Party: ${party.name}"`, `"GSTIN: ${party.registerNumber || 'URP'}"`, '']
-        .concat([headers.join(',')])
-        .concat(rows.map((r) => r.join(',')))
-        .concat([''])
-        .concat([
-          `"Total Credits",,"","","${totalCredits.toFixed(2)}","",""`,
-          `"Total Debits",,"","","","${totalDebits.toFixed(2)}",""`,
-          `"Closing Balance Due",,"","","","","${Math.abs(netClosingBalance).toFixed(2)} ${isDebitBalance ? 'DR' : 'CR'}"`,
-        ])
-        .join('\n');
-
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    const safeName = party.name.replace(/[^a-zA-Z0-9]/g, '_');
-    link.setAttribute(
-      'download',
-      `Ledger_${safeName}_${new Date().toISOString().split('T')[0]}.csv`
-    );
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
   // Handle entry deletion
   const confirmDeleteEntry = () => {
     if (!entryToDelete) return;
@@ -449,15 +395,6 @@ _Thank you for your business!_`;
             >
               <Share2 className="w-4 h-4" />
               <span className="hidden sm:inline">WhatsApp</span>
-            </button>
-
-            <button
-              onClick={handleExportCSV}
-              className="hidden md:flex p-2 sm:px-3 sm:py-2 rounded-xl text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 transition-colors items-center gap-1.5 text-xs font-semibold cursor-pointer"
-              title="Export Statement to CSV / Excel"
-            >
-              <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
-              <span>Excel / CSV</span>
             </button>
 
             <button
