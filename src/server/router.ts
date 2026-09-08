@@ -2410,6 +2410,9 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
           invoiceNumber: inv.invoice_number,
           invoiceType: inv.invoice_type,
           invoiceTaxType: inv.igst_amount > 0 ? 'IGST' : 'CGST_SGST',
+          isConverted: !!inv.is_converted,
+          convertedToInvoiceId: inv.converted_to_invoice_id || undefined,
+          convertedInvoiceNumber: inv.converted_invoice_number || undefined,
           invoiceDate: inv.invoice_date,
           date: inv.invoice_date,
           dueDate: inv.due_date,
@@ -2552,8 +2555,9 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
           client_id, client_name, client_gstin, client_address, client_city, client_state, client_mobile,
           sub_total, discount_total, cgst_amount, sgst_amount, igst_amount, total_tax,
           tcs_percentage, tcs_amount, round_off, grand_total, paid_amount, balance_amount,
-          payment_status, print_template, notes, terms, items_json, extra_items_json, consignee_json, calc_json, created_by
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          payment_status, print_template, notes, terms, items_json, extra_items_json, consignee_json, calc_json, created_by,
+          is_converted, converted_to_invoice_id, converted_invoice_number
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(id) DO UPDATE SET
           invoice_number = excluded.invoice_number,
           invoice_type = excluded.invoice_type,
@@ -2585,7 +2589,10 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
           items_json = excluded.items_json,
           extra_items_json = excluded.extra_items_json,
           consignee_json = excluded.consignee_json,
-          calc_json = excluded.calc_json
+          calc_json = excluded.calc_json,
+          is_converted = excluded.is_converted,
+          converted_to_invoice_id = excluded.converted_to_invoice_id,
+          converted_invoice_number = excluded.converted_invoice_number
         WHERE invoices.organization_id = excluded.organization_id`,
         id,
         effectiveOrgId,
@@ -2621,7 +2628,10 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
         JSON.stringify(inv.extraItems || []),
         JSON.stringify(inv.consignee || {}),
         JSON.stringify(calc),
-        session.name
+        session.name,
+        inv.isConverted ? 1 : 0,
+        inv.convertedToInvoiceId || null,
+        inv.convertedInvoiceNumber || null
       );
 
       // 2. Create automatic Payment Ledger Entry if paid amount > 0 (1 D1 row)
@@ -3147,8 +3157,9 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
               client_id, client_name, client_gstin, client_address, client_city, client_state, client_mobile,
               sub_total, discount_total, cgst_amount, sgst_amount, igst_amount, total_tax,
               tcs_percentage, tcs_amount, round_off, grand_total, paid_amount, balance_amount,
-              payment_status, print_template, notes, terms, items_json, extra_items_json, consignee_json, calc_json, created_by
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+              payment_status, print_template, notes, terms, items_json, extra_items_json, consignee_json, calc_json, created_by,
+              is_converted, converted_to_invoice_id, converted_invoice_number
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(id) DO UPDATE SET
               invoice_number = excluded.invoice_number,
               invoice_type = excluded.invoice_type,
@@ -3180,7 +3191,10 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
               items_json = excluded.items_json,
               extra_items_json = excluded.extra_items_json,
               consignee_json = excluded.consignee_json,
-              calc_json = excluded.calc_json
+              calc_json = excluded.calc_json,
+              is_converted = excluded.is_converted,
+              converted_to_invoice_id = excluded.converted_to_invoice_id,
+              converted_invoice_number = excluded.converted_invoice_number
             WHERE invoices.organization_id = excluded.organization_id`,
             invoiceId,
             effectiveOrgId,
@@ -3216,7 +3230,10 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
             JSON.stringify(inv.extraItems || []),
             JSON.stringify(inv.consignee || {}),
             JSON.stringify(calc),
-            session.name
+            session.name,
+            inv.isConverted ? 1 : 0,
+            inv.convertedToInvoiceId || null,
+            inv.convertedInvoiceNumber || null
           );
 
           insertedCount.invoices++;

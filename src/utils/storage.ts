@@ -1296,11 +1296,31 @@ export class KannakuDB {
     const isSupplier = client.clientType === 'supplier';
     const newBalance = isSupplier ? credits - debits : debits - credits;
 
-    // FIX: Use saveClients() (pure local save) instead of saveClient() which
+    // Use saveClients() (pure local save) instead of saveClient() here, since saveClient()
     // triggers D1 sync and causes an infinite loop:
     //   saveInvoice → syncInvoiceToLedger → recalculateClientBalance → saveClient → D1 sync → ...
-    clients[clientIdx] = { ...client, balance: newBalance };
+    // But the balance must still reach D1 — call ApiService.saveClient() directly (bypassing
+    // KannakuDB.saveClient()'s wrapper, which is what causes the loop) so the recalculated
+    // balance doesn't silently drift from what's persisted in Cloudflare D1.
+    const updatedClient = { ...client, balance: newBalance };
+    clients[clientIdx] = updatedClient;
     this.saveClients(clients);
+
+    if (this.isAuthenticated()) {
+      ApiService.saveClient(updatedClient).then((res) => {
+        if (!res.success) {
+          console.error('[Kannaku D1 Error] Failed to sync recalculated balance to D1:', res.error);
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(
+              new CustomEvent('kannaku:d1-sync-error', {
+                detail: { action: `Recalculate Balance (${client.name})`, error: res.error, status: res.status },
+              })
+            );
+          }
+        }
+      });
+    }
+
     return newBalance;
   }
 
