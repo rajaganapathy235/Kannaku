@@ -149,3 +149,25 @@
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/* Always visible, sleek custom scrollbar */
+.visible-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #94a3b8 #f1f5f9;
+}
+.visible-scrollbar::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+.visible-scrollbar::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 6px;
+}
+.visible-scrollbar::-webkit-scrollbar-thumb {
+  background: #94a3b8;
+  border-radius: 6px;
+  border: 1.5px solid #f1f5f9;
+}
+.visible-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+}
