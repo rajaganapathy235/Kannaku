@@ -188,6 +188,10 @@ CREATE TABLE IF NOT EXISTS payment_ledgers (
   reference_number TEXT,
   bank_account TEXT,
   notes TEXT,
+  entry_type TEXT,
+  particular TEXT,
+  vch_no TEXT,
+  debit_credit TEXT,
   created_at TEXT DEFAULT CURRENT_TIMESTAMP
 );
 

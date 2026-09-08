@@ -1324,6 +1324,33 @@ export class KannakuDB {
     return newBalance;
   }
 
+  static reconcileAllClientBalances(): void {
+    const clients = this.getClients();
+    const payments = this.getPayments();
+    if (clients.length === 0) return;
+
+    const updatedClients = clients.map((client) => {
+      const clientPayments = payments.filter(
+        (p) =>
+          p.partyId === client.id ||
+          (p.partyName && client.name && p.partyName.toLowerCase() === client.name.toLowerCase())
+      );
+
+      const debits = clientPayments
+        .filter((p) => p.type === 'debit')
+        .reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+
+      const credits = clientPayments
+        .filter((p) => p.type === 'credit')
+        .reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+
+      const isSupplier = client.clientType === 'supplier';
+      const newBalance = isSupplier ? credits - debits : debits - credits;
+      return { ...client, balance: newBalance };
+    });
+    this.saveClients(updatedClients);
+  }
+
   static reconcileInvoicesWithLedger(): void {
     const invoices = this.getInvoices();
     invoices.forEach((inv) => {
@@ -1470,6 +1497,9 @@ export class KannakuDB {
       if (paymentsRes.success && Array.isArray(paymentsRes.data)) {
         this.savePayments(paymentsRes.data);
       }
+
+      // Reconcile client balances so displayed balances always reflect freshly loaded payments & ledger data
+      this.reconcileAllClientBalances();
 
       const counts = {
         clients: Array.isArray(clientsRes.data) ? clientsRes.data.length : 0,

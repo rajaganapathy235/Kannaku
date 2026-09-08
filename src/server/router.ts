@@ -2637,21 +2637,36 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
       // 2. Create automatic Payment Ledger Entry if paid amount > 0 (1 D1 row)
       if (Number(calc.paidAmount) > 0) {
         const isPurchase = Number(inv.invoiceType) === 2 || inv.invoiceType === 'PURCHASE' || inv.invoiceType === InvoiceType.PURCHASE;
+        const isSales = !isPurchase;
         const paymentType = isPurchase ? 'PAYMENT' : 'RECEIPT';
+        const entryType = isPurchase ? 'Payment Out' : 'Payment In';
+        const debitCredit = isSales ? 'credit' : 'debit';
+        const vchNo = isSales ? `RCPT-${inv.invoiceNumber}` : `PYMT-${inv.invoiceNumber}`;
+        const particular = isSales
+          ? `Payment Received for Inv #${inv.invoiceNumber} (${inv.paymentMode || 'Direct'})`
+          : `Payment Made for Bill #${inv.invoiceNumber}`;
         const paymentNotes = isPurchase
           ? 'Initial payment on purchase bill creation'
           : 'Initial payment on invoice creation';
-        const payId = `pay_${id}`;
+        const payId = `pay_rcpt_${id}`;
         await execute(
           db,
           `INSERT INTO payment_ledgers (
-            id, organization_id, client_id, invoice_id, entry_date, payment_type, mode, amount, reference_number, notes
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            id, organization_id, client_id, invoice_id, entry_date, payment_type, mode, amount, reference_number, notes, entry_type, particular, vch_no, debit_credit
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           ON CONFLICT(id) DO UPDATE SET
-            amount = excluded.amount,
+            client_id = excluded.client_id,
+            invoice_id = excluded.invoice_id,
+            entry_date = excluded.entry_date,
             payment_type = excluded.payment_type,
             mode = excluded.mode,
-            notes = excluded.notes
+            amount = excluded.amount,
+            reference_number = excluded.reference_number,
+            notes = excluded.notes,
+            entry_type = excluded.entry_type,
+            particular = excluded.particular,
+            vch_no = excluded.vch_no,
+            debit_credit = excluded.debit_credit
           WHERE payment_ledgers.organization_id = excluded.organization_id`,
           payId,
           effectiveOrgId,
@@ -2662,7 +2677,11 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
           inv.paymentMode || 'CASH',
           Number(calc.paidAmount),
           inv.invoiceNumber,
-          paymentNotes
+          paymentNotes,
+          entryType,
+          particular,
+          vchNo,
+          debitCredit
         );
       }
 
@@ -2815,23 +2834,48 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
   if (path === '/api/payments' && method === 'GET') {
     const rows = await queryAll<any>(
       db,
-      'SELECT * FROM payment_ledgers WHERE organization_id = ? ORDER BY entry_date DESC, created_at DESC',
+      `SELECT 
+        p.*,
+        c.name AS client_name,
+        c.client_type AS client_party_type,
+        i.invoice_number AS inv_number
+      FROM payment_ledgers p
+      LEFT JOIN clients c ON p.client_id = c.id
+      LEFT JOIN invoices i ON p.invoice_id = i.id
+      WHERE p.organization_id = ?
+      ORDER BY p.entry_date DESC, p.created_at DESC`,
       effectiveOrgId
     );
 
-    const payments = rows.map((r) => ({
-      id: r.id,
-      partyId: r.client_id || '',
-      partyName: '',
-      type: r.payment_type || 'RECEIPT',
-      mode: r.mode || 'CASH',
-      amount: r.amount,
-      referenceNo: r.reference_number || '',
-      invoiceNo: '',
-      invoiceId: r.invoice_id || null,
-      notes: r.notes || '',
-      date: r.entry_date,
-    }));
+    const payments = rows.map((r) => {
+      const debitCredit =
+        r.debit_credit === 'credit' || r.debit_credit === 'debit'
+          ? r.debit_credit
+          : r.payment_type === 'RECEIPT'
+          ? 'credit'
+          : r.payment_type === 'PAYMENT'
+          ? 'debit'
+          : 'credit';
+
+      return {
+        id: r.id,
+        partyId: r.client_id || '',
+        partyName: r.party_name || r.client_name || '',
+        partyType: (r.client_party_type === 'supplier' ? 'supplier' : 'customer') as 'customer' | 'supplier',
+        invoiceId: r.invoice_id || null,
+        invoiceNumber: r.inv_number || '',
+        date: r.entry_date,
+        type: debitCredit,
+        entryType: r.entry_type || '',
+        mode: r.mode || 'CASH',
+        amount: Number(r.amount) || 0,
+        particular: r.particular || r.notes || '',
+        vchNo: r.vch_no || r.reference_number || '',
+        referenceNo: r.reference_number || r.vch_no || '',
+        notes: r.notes || '',
+        createdOn: r.created_at || new Date().toISOString(),
+      };
+    });
 
     return jsonResponse(payments);
   }
@@ -2887,12 +2931,22 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
       }
 
       const id = body.id || `pay_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+      const debitCredit =
+        body.type === 'credit' || body.type === 'debit'
+          ? body.type
+          : body.payment_type === 'RECEIPT' || body.type === 'RECEIPT'
+          ? 'credit'
+          : 'debit';
+      const paymentType = body.payment_type || (debitCredit === 'credit' ? 'RECEIPT' : 'PAYMENT');
+      const entryType = body.entryType || (debitCredit === 'credit' ? 'Payment In' : 'Payment Out');
+      const particular = body.particular || body.notes || body.note || '';
+      const vchNo = body.vchNo || body.referenceNo || null;
 
       await execute(
         db,
         `INSERT INTO payment_ledgers (
-          id, organization_id, client_id, invoice_id, entry_date, payment_type, mode, amount, reference_number, notes
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          id, organization_id, client_id, invoice_id, entry_date, payment_type, mode, amount, reference_number, notes, entry_type, particular, vch_no, debit_credit
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(id) DO UPDATE SET
           client_id = excluded.client_id,
           invoice_id = excluded.invoice_id,
@@ -2901,18 +2955,26 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
           mode = excluded.mode,
           amount = excluded.amount,
           reference_number = excluded.reference_number,
-          notes = excluded.notes
+          notes = excluded.notes,
+          entry_type = excluded.entry_type,
+          particular = excluded.particular,
+          vch_no = excluded.vch_no,
+          debit_credit = excluded.debit_credit
         WHERE payment_ledgers.organization_id = excluded.organization_id`,
         id,
         effectiveOrgId,
         body.partyId || null,
         body.invoiceId || null,
         body.date || new Date().toISOString().split('T')[0],
-        body.type || 'RECEIPT',
+        paymentType,
         body.mode || 'CASH',
         Number(body.amount),
-        body.referenceNo || null,
-        body.notes || ''
+        body.referenceNo || vchNo || null,
+        body.notes || particular || '',
+        entryType,
+        particular,
+        vchNo,
+        debitCredit
       );
 
       // Reconcile invoice balance if linked to an invoice
@@ -3258,11 +3320,25 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
             paymentId = `pay_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
           }
 
+          const debitCredit =
+            p.type === 'credit' || p.type === 'debit'
+              ? p.type
+              : p.payment_type === 'RECEIPT' || p.type === 'RECEIPT'
+              ? 'credit'
+              : p.payment_type === 'PAYMENT' || p.type === 'PAYMENT'
+              ? 'debit'
+              : 'credit';
+          const paymentType = p.payment_type || (debitCredit === 'credit' ? 'RECEIPT' : 'PAYMENT');
+          const entryType = p.entryType || p.entry_type || (debitCredit === 'credit' ? 'Payment In' : 'Payment Out');
+          const particular = p.particular || p.notes || p.note || '';
+          const vchNo = p.vchNo || p.vch_no || p.referenceNo || p.reference_number || null;
+          const notes = p.notes || p.note || '';
+
           await execute(
             db,
             `INSERT INTO payment_ledgers (
-              id, organization_id, client_id, invoice_id, entry_date, payment_type, mode, amount, reference_number, notes
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+              id, organization_id, client_id, invoice_id, entry_date, payment_type, mode, amount, reference_number, notes, entry_type, particular, vch_no, debit_credit
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(id) DO UPDATE SET
               client_id = excluded.client_id,
               invoice_id = excluded.invoice_id,
@@ -3271,18 +3347,26 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
               mode = excluded.mode,
               amount = excluded.amount,
               reference_number = excluded.reference_number,
-              notes = excluded.notes
+              notes = excluded.notes,
+              entry_type = excluded.entry_type,
+              particular = excluded.particular,
+              vch_no = excluded.vch_no,
+              debit_credit = excluded.debit_credit
             WHERE payment_ledgers.organization_id = excluded.organization_id`,
             paymentId,
             effectiveOrgId,
-            p.partyId || null,
-            p.invoiceId || null,
-            p.date || new Date().toISOString().split('T')[0],
-            p.type || 'RECEIPT',
+            p.partyId || p.client_id || null,
+            p.invoiceId || p.invoice_id || null,
+            p.date || p.entry_date || new Date().toISOString().split('T')[0],
+            paymentType,
             p.mode || 'CASH',
             Number(p.amount),
-            p.referenceNo || null,
-            p.notes || ''
+            p.referenceNo || p.reference_number || vchNo || null,
+            notes,
+            entryType,
+            particular,
+            vchNo,
+            debitCredit
           );
           insertedCount.payments++;
         }

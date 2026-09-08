@@ -408,6 +408,10 @@ export async function ensureTables(db: D1Database): Promise<void> {
         reference_number TEXT,
         bank_account TEXT,
         notes TEXT,
+        entry_type TEXT,
+        particular TEXT,
+        vch_no TEXT,
+        debit_credit TEXT,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP
       )`,
     },
@@ -816,6 +820,21 @@ export async function ensureTables(db: D1Database): Promise<void> {
       const subCols = subInfo.results || [];
       if (Array.isArray(subCols) && subCols.length > 0 && !subCols.some((c) => c.name === 'coupon_code')) {
         await db.prepare('ALTER TABLE subscription_transactions ADD COLUMN coupon_code TEXT').run();
+      }
+    } catch {
+      // Ignored if already existing
+    }
+
+    // Migration: add entry_type, particular, vch_no, debit_credit to payment_ledgers if missing
+    try {
+      const plInfo = await db.prepare('PRAGMA table_info(payment_ledgers)').all<{ name: string }>();
+      const plCols = plInfo.results || [];
+      if (Array.isArray(plCols) && plCols.length > 0) {
+        const colNames = new Set(plCols.map((c) => c.name));
+        if (!colNames.has('entry_type')) await db.prepare('ALTER TABLE payment_ledgers ADD COLUMN entry_type TEXT').run();
+        if (!colNames.has('particular')) await db.prepare('ALTER TABLE payment_ledgers ADD COLUMN particular TEXT').run();
+        if (!colNames.has('vch_no')) await db.prepare('ALTER TABLE payment_ledgers ADD COLUMN vch_no TEXT').run();
+        if (!colNames.has('debit_credit')) await db.prepare('ALTER TABLE payment_ledgers ADD COLUMN debit_credit TEXT').run();
       }
     } catch {
       // Ignored if already existing
