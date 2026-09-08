@@ -2515,9 +2515,20 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
 
         if (isOldSales || isOldPurchase) {
           for (const oldItem of oldItems) {
-            const prodId = oldItem.productId || oldItem.itemId || oldItem.product_id;
+            let prodId = oldItem.productId || oldItem.itemId || oldItem.product_id;
             const qty = Number(oldItem.qty ?? oldItem.quantity ?? 0);
-            if (!prodId || qty <= 0) continue;
+            if (qty <= 0) continue;
+
+            if (!prodId && oldItem.name) {
+              const matched = await queryFirst<{ id: string }>(
+                db,
+                'SELECT id FROM products WHERE LOWER(TRIM(name)) = LOWER(TRIM(?)) AND organization_id = ?',
+                oldItem.name,
+                effectiveOrgId
+              );
+              if (matched) prodId = matched.id;
+            }
+            if (!prodId) continue;
 
             try {
               if (isOldSales) {
@@ -2700,9 +2711,20 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
 
       if (isNewSales || isNewPurchase) {
         for (const item of (inv.items || [])) {
-          const prodId = item.productId || item.itemId || item.product_id;
+          let prodId = item.productId || item.itemId || item.product_id;
           const qty = Number(item.qty ?? item.quantity ?? 0);
-          if (!prodId || qty <= 0) continue;
+          if (qty <= 0) continue;
+
+          if (!prodId && item.name) {
+            const matched = await queryFirst<{ id: string }>(
+              db,
+              'SELECT id FROM products WHERE LOWER(TRIM(name)) = LOWER(TRIM(?)) AND organization_id = ?',
+              item.name,
+              effectiveOrgId
+            );
+            if (matched) prodId = matched.id;
+          }
+          if (!prodId) continue;
 
           try {
             if (isNewSales) {
@@ -2791,9 +2813,20 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
 
       if (isOldSales || isOldPurchase) {
         for (const item of itemsToReverse) {
-          const prodId = item.productId || item.itemId || item.product_id;
+          let prodId = item.productId || item.itemId || item.product_id;
           const qty = Number(item.qty ?? item.quantity ?? 0);
-          if (!prodId || qty <= 0) continue;
+          if (qty <= 0) continue;
+
+          if (!prodId && item.name) {
+            const matched = await queryFirst<{ id: string }>(
+              db,
+              'SELECT id FROM products WHERE LOWER(TRIM(name)) = LOWER(TRIM(?)) AND organization_id = ?',
+              item.name,
+              effectiveOrgId
+            );
+            if (matched) prodId = matched.id;
+          }
+          if (!prodId) continue;
 
           try {
             if (isOldSales) {

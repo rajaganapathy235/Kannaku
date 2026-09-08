@@ -951,31 +951,45 @@ export class KannakuDB {
     // INVARIANT: stock must be reversed before re-applying on edit, and reversed on delete
     const products = this.getProducts();
     let hasChanges = false;
-    const changedProductIds = new Set<string>();
+
+    // Robust helper to locate product index by ID or by name
+    const findProductIndex = (item: any): number => {
+      const prodId = item.productId || item.itemId || item.product_id;
+      if (prodId) {
+        const idx = products.findIndex((p) => p.id === prodId);
+        if (idx >= 0) return idx;
+      }
+      if (item.name && typeof item.name === 'string') {
+        const cleanName = item.name.trim().toLowerCase();
+        if (cleanName) {
+          return products.findIndex((p) => p.name && p.name.trim().toLowerCase() === cleanName);
+        }
+      }
+      return -1;
+    };
 
     // 1. Reversal Step (on Edit): If old invoice existed, reverse its stock effect
     if (oldInvoice) {
-      const isOldSales = oldInvoice.invoiceType === InvoiceType.SALES || (oldInvoice.invoiceType as any) === 'SALES' || (oldInvoice.invoiceType as any) === 1;
-      const isOldPurchase = oldInvoice.invoiceType === InvoiceType.PURCHASE || (oldInvoice.invoiceType as any) === 'PURCHASE' || (oldInvoice.invoiceType as any) === 2;
+      const oldTypeRaw = oldInvoice.invoiceType as any;
+      const isOldSales = Number(oldTypeRaw) === 1 || oldTypeRaw === 'SALES' || oldTypeRaw === InvoiceType.SALES;
+      const isOldPurchase = Number(oldTypeRaw) === 2 || oldTypeRaw === 'PURCHASE' || oldTypeRaw === InvoiceType.PURCHASE;
 
+      // Old quotation (type 3) never touched stock, so no reversal needed
       if (isOldSales || isOldPurchase) {
         for (const oldItem of (oldInvoice.items || [])) {
-          const prodId = oldItem.productId || oldItem.itemId;
-          const qty = Number(oldItem.qty ?? 0);
-          if (!prodId || qty <= 0) continue;
+          const qty = Number(oldItem.qty ?? (oldItem as any).quantity ?? 0);
+          if (qty <= 0) continue;
 
-          const prodIndex = products.findIndex((p) => p.id === prodId);
+          const prodIndex = findProductIndex(oldItem);
           if (prodIndex >= 0) {
             if (isOldSales) {
-              // Add back what sales previously subtracted
+              // Reversing old sales invoice: restore deducted stock
               products[prodIndex].currentStock = (products[prodIndex].currentStock || 0) + qty;
               hasChanges = true;
-              changedProductIds.add(products[prodIndex].id);
             } else if (isOldPurchase) {
-              // Subtract what purchase previously added
+              // Reversing old purchase invoice: subtract added stock
               products[prodIndex].currentStock = (products[prodIndex].currentStock || 0) - qty;
               hasChanges = true;
-              changedProductIds.add(products[prodIndex].id);
             }
           }
         }
@@ -983,35 +997,33 @@ export class KannakuDB {
     }
 
     // 2. Application Step: Apply current invoice's stock effect
-    const isNewSales = invoice.invoiceType === InvoiceType.SALES || (invoice.invoiceType as any) === 'SALES' || (invoice.invoiceType as any) === 1;
-    const isNewPurchase = invoice.invoiceType === InvoiceType.PURCHASE || (invoice.invoiceType as any) === 'PURCHASE' || (invoice.invoiceType as any) === 2;
+    const newTypeRaw = invoice.invoiceType as any;
+    const isNewSales = Number(newTypeRaw) === 1 || newTypeRaw === 'SALES' || newTypeRaw === InvoiceType.SALES;
+    const isNewPurchase = Number(newTypeRaw) === 2 || newTypeRaw === 'PURCHASE' || newTypeRaw === InvoiceType.PURCHASE;
 
-    // Quotations / Estimates never touch stock
+    // Quotations / Estimates (type 3) MUST NEVER touch stock
     if (isNewSales || isNewPurchase) {
       for (const item of (invoice.items || [])) {
-        const prodId = item.productId || item.itemId;
-        const qty = Number(item.qty ?? 0);
-        if (!prodId || qty <= 0) continue;
+        const qty = Number(item.qty ?? (item as any).quantity ?? 0);
+        if (qty <= 0) continue;
 
-        const prodIndex = products.findIndex((p) => p.id === prodId);
+        const prodIndex = findProductIndex(item);
         if (prodIndex >= 0) {
           if (isNewSales) {
-            // Decrease stock on sales invoice
+            // Sales invoice: decrease stock
             products[prodIndex].currentStock = (products[prodIndex].currentStock || 0) - qty;
             hasChanges = true;
-            changedProductIds.add(products[prodIndex].id);
 
             // Allow negative stock, but warn in console if negative
             if (products[prodIndex].currentStock < 0) {
               console.warn(
-                `[Stock Warning] Product "${products[prodIndex].name}" (${prodId}) stock is negative after Sales Invoice #${invoice.invoiceNumber}: ${products[prodIndex].currentStock}`
+                `[Stock Warning] Product "${products[prodIndex].name}" (${products[prodIndex].id}) stock is negative after Sales Invoice #${invoice.invoiceNumber}: ${products[prodIndex].currentStock}`
               );
             }
           } else if (isNewPurchase) {
-            // Increase stock on purchase invoice
+            // Purchase invoice: increase stock
             products[prodIndex].currentStock = (products[prodIndex].currentStock || 0) + qty;
             hasChanges = true;
-            changedProductIds.add(products[prodIndex].id);
           }
         }
       }
@@ -1019,89 +1031,59 @@ export class KannakuDB {
 
     if (hasChanges) {
       this.saveProducts(products);
-
-      // Cloudflare D1 Sync for changed products
-      if (this.isAuthenticated()) {
-        const changedProducts = products.filter((p) => changedProductIds.has(p.id));
-        changedProducts.forEach((product) => {
-          ApiService.saveProduct(product).then((res) => {
-            if (!res.success) {
-              console.error('[Kannaku D1 Error] Failed to save product to D1:', res.error);
-              if (typeof window !== 'undefined') {
-                window.dispatchEvent(
-                  new CustomEvent('kannaku:d1-sync-error', {
-                    detail: { action: `Save Product (${product.name})`, error: res.error, status: res.status },
-                  })
-                );
-              }
-            } else if (typeof window !== 'undefined') {
-              window.dispatchEvent(
-                new CustomEvent('kannaku:d1-sync-success', { detail: { action: `Saved Product ${product.name}` } })
-              );
-            }
-          });
-        });
-      }
+      // NOTE: We do not call ApiService.saveProduct() here because ApiService.saveInvoice()
+      // immediately triggers the server to update current_stock in D1 atomically.
+      // Calling saveProduct() concurrently causes a race condition that double-deducts stock.
     }
   }
 
   static reverseInvoiceStock(invoice: Invoice): void {
     // INVARIANT: stock must be reversed before re-applying on edit, and reversed on delete
-    const isSales = invoice.invoiceType === InvoiceType.SALES || (invoice.invoiceType as any) === 'SALES' || (invoice.invoiceType as any) === 1;
-    const isPurchase = invoice.invoiceType === InvoiceType.PURCHASE || (invoice.invoiceType as any) === 'PURCHASE' || (invoice.invoiceType as any) === 2;
+    const invTypeRaw = invoice.invoiceType as any;
+    const isSales = Number(invTypeRaw) === 1 || invTypeRaw === 'SALES' || invTypeRaw === InvoiceType.SALES;
+    const isPurchase = Number(invTypeRaw) === 2 || invTypeRaw === 'PURCHASE' || invTypeRaw === InvoiceType.PURCHASE;
 
+    // Quotations / Estimates never touched stock, so nothing to reverse
     if (!isSales && !isPurchase) return;
 
     const products = this.getProducts();
     let hasChanges = false;
-    const changedProductIds = new Set<string>();
+
+    const findProductIndex = (item: any): number => {
+      const prodId = item.productId || item.itemId || item.product_id;
+      if (prodId) {
+        const idx = products.findIndex((p) => p.id === prodId);
+        if (idx >= 0) return idx;
+      }
+      if (item.name && typeof item.name === 'string') {
+        const cleanName = item.name.trim().toLowerCase();
+        if (cleanName) {
+          return products.findIndex((p) => p.name && p.name.trim().toLowerCase() === cleanName);
+        }
+      }
+      return -1;
+    };
 
     for (const item of (invoice.items || [])) {
-      const prodId = item.productId || item.itemId;
-      const qty = Number(item.qty ?? 0);
-      if (!prodId || qty <= 0) continue;
+      const qty = Number(item.qty ?? (item as any).quantity ?? 0);
+      if (qty <= 0) continue;
 
-      const prodIndex = products.findIndex((p) => p.id === prodId);
+      const prodIndex = findProductIndex(item);
       if (prodIndex >= 0) {
         if (isSales) {
           // Deleting sales invoice: add back stock
           products[prodIndex].currentStock = (products[prodIndex].currentStock || 0) + qty;
           hasChanges = true;
-          changedProductIds.add(products[prodIndex].id);
         } else if (isPurchase) {
           // Deleting purchase invoice: subtract stock
           products[prodIndex].currentStock = (products[prodIndex].currentStock || 0) - qty;
           hasChanges = true;
-          changedProductIds.add(products[prodIndex].id);
         }
       }
     }
 
     if (hasChanges) {
       this.saveProducts(products);
-
-      // Cloudflare D1 Sync for changed products
-      if (this.isAuthenticated()) {
-        const changedProducts = products.filter((p) => changedProductIds.has(p.id));
-        changedProducts.forEach((product) => {
-          ApiService.saveProduct(product).then((res) => {
-            if (!res.success) {
-              console.error('[Kannaku D1 Error] Failed to save product to D1:', res.error);
-              if (typeof window !== 'undefined') {
-                window.dispatchEvent(
-                  new CustomEvent('kannaku:d1-sync-error', {
-                    detail: { action: `Save Product (${product.name})`, error: res.error, status: res.status },
-                  })
-                );
-              }
-            } else if (typeof window !== 'undefined') {
-              window.dispatchEvent(
-                new CustomEvent('kannaku:d1-sync-success', { detail: { action: `Saved Product ${product.name}` } })
-              );
-            }
-          });
-        });
-      }
     }
   }
 
