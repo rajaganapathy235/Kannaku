@@ -2407,8 +2407,10 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
 
         return {
           id: inv.id,
+          clientId: inv.client_id || '',
+          paymentMode: inv.payment_mode || 'CASH',
           invoiceNumber: inv.invoice_number,
-          invoiceType: inv.invoice_type,
+          invoiceType: Number(inv.invoice_type) || 1,
           invoiceTaxType: inv.igst_amount > 0 ? 'IGST' : 'CGST_SGST',
           isConverted: !!inv.is_converted,
           convertedToInvoiceId: inv.converted_to_invoice_id || undefined,
@@ -2649,11 +2651,13 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
           ? 'Initial payment on purchase bill creation'
           : 'Initial payment on invoice creation';
         const payId = `pay_rcpt_${id}`;
+        const partyName = inv.clientSnapshot?.name || 'Party';
+        const partyTypeStr = isPurchase ? 'supplier' : 'customer';
         await execute(
           db,
           `INSERT INTO payment_ledgers (
-            id, organization_id, client_id, invoice_id, entry_date, payment_type, mode, amount, reference_number, notes, entry_type, particular, vch_no, debit_credit
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            id, organization_id, client_id, invoice_id, entry_date, payment_type, mode, amount, reference_number, notes, entry_type, particular, vch_no, debit_credit, party_name, party_type
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           ON CONFLICT(id) DO UPDATE SET
             client_id = excluded.client_id,
             invoice_id = excluded.invoice_id,
@@ -2666,11 +2670,13 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
             entry_type = excluded.entry_type,
             particular = excluded.particular,
             vch_no = excluded.vch_no,
-            debit_credit = excluded.debit_credit
+            debit_credit = excluded.debit_credit,
+            party_name = excluded.party_name,
+            party_type = excluded.party_type
           WHERE payment_ledgers.organization_id = excluded.organization_id`,
           payId,
           effectiveOrgId,
-          inv.clientSnapshot?.id || null,
+          inv.clientId || inv.clientSnapshot?.id || null,
           id,
           inv.invoiceDate || new Date().toISOString().split('T')[0],
           paymentType,
@@ -2681,7 +2687,9 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
           entryType,
           particular,
           vchNo,
-          debitCredit
+          debitCredit,
+          partyName,
+          partyTypeStr
         );
       }
 
@@ -2838,7 +2846,10 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
         p.*,
         c.name AS client_name,
         c.client_type AS client_party_type,
-        i.invoice_number AS inv_number
+        i.invoice_number AS inv_number,
+        i.client_id AS inv_client_id,
+        i.client_name AS inv_client_name,
+        i.invoice_type AS inv_invoice_type
       FROM payment_ledgers p
       LEFT JOIN clients c ON p.client_id = c.id
       LEFT JOIN invoices i ON p.invoice_id = i.id
@@ -2857,16 +2868,21 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
           ? 'debit'
           : 'credit';
 
+      const partyId = r.party_id || r.client_id || r.inv_client_id || '';
+      const partyName = r.party_name || r.client_name || r.inv_client_name || '';
+      const rawPartyType = r.party_type || r.client_party_type || (r.inv_invoice_type === 2 ? 'supplier' : 'customer');
+      const partyType = (rawPartyType === 'supplier' ? 'supplier' : 'customer') as 'customer' | 'supplier';
+
       return {
         id: r.id,
-        partyId: r.client_id || '',
-        partyName: r.party_name || r.client_name || '',
-        partyType: (r.client_party_type === 'supplier' ? 'supplier' : 'customer') as 'customer' | 'supplier',
+        partyId,
+        partyName,
+        partyType,
         invoiceId: r.invoice_id || null,
-        invoiceNumber: r.inv_number || '',
+        invoiceNumber: r.vch_no || r.inv_number || r.reference_number || '',
         date: r.entry_date,
         type: debitCredit,
-        entryType: r.entry_type || '',
+        entryType: r.entry_type || (debitCredit === 'credit' ? 'Payment In' : 'Payment Out'),
         mode: r.mode || 'CASH',
         amount: Number(r.amount) || 0,
         particular: r.particular || (r.notes && !r.notes.startsWith('{') ? r.notes : '') || '',
@@ -2947,12 +2963,31 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
         : '';
       const particular = (typeof body.particular === 'string' && !body.particular.startsWith('{') ? body.particular : '') || cleanNote;
       const vchNo = body.vchNo || body.referenceNo || null;
+      let partyId = body.partyId || body.client_id || null;
+      let partyName = body.partyName || null;
+      let partyType = body.partyType || null;
+
+      if (partyId && (!partyName || !partyType)) {
+        const client = await queryFirst<any>(db, 'SELECT name, client_type FROM clients WHERE id = ? AND organization_id = ?', partyId, effectiveOrgId);
+        if (client) {
+          if (!partyName) partyName = client.name;
+          if (!partyType) partyType = client.client_type;
+        }
+      }
+      if (body.invoiceId && (!partyId || !partyName || !partyType)) {
+        const inv = await queryFirst<any>(db, 'SELECT client_id, client_name, invoice_type FROM invoices WHERE id = ? AND organization_id = ?', body.invoiceId, effectiveOrgId);
+        if (inv) {
+          if (!partyId) partyId = inv.client_id;
+          if (!partyName) partyName = inv.client_name;
+          if (!partyType) partyType = Number(inv.invoice_type) === 2 ? 'supplier' : 'customer';
+        }
+      }
 
       await execute(
         db,
         `INSERT INTO payment_ledgers (
-          id, organization_id, client_id, invoice_id, entry_date, payment_type, mode, amount, reference_number, notes, entry_type, particular, vch_no, debit_credit
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          id, organization_id, client_id, invoice_id, entry_date, payment_type, mode, amount, reference_number, notes, entry_type, particular, vch_no, debit_credit, party_name, party_type
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(id) DO UPDATE SET
           client_id = excluded.client_id,
           invoice_id = excluded.invoice_id,
@@ -2965,11 +3000,13 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
           entry_type = excluded.entry_type,
           particular = excluded.particular,
           vch_no = excluded.vch_no,
-          debit_credit = excluded.debit_credit
+          debit_credit = excluded.debit_credit,
+          party_name = excluded.party_name,
+          party_type = excluded.party_type
         WHERE payment_ledgers.organization_id = excluded.organization_id`,
         id,
         effectiveOrgId,
-        body.partyId || null,
+        partyId,
         body.invoiceId || null,
         body.date || new Date().toISOString().split('T')[0],
         paymentType,
@@ -2980,7 +3017,9 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
         entryType,
         particular,
         vchNo,
-        debitCredit
+        debitCredit,
+        partyName,
+        partyType
       );
 
       // Reconcile invoice balance if linked to an invoice

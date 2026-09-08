@@ -1106,11 +1106,12 @@ export class KannakuDB {
   }
 
   static syncInvoiceToLedger(invoice: Invoice, oldInvoice?: Invoice): void {
-    const isSales = invoice.invoiceType === InvoiceType.SALES;
-    const isPurchase = invoice.invoiceType === InvoiceType.PURCHASE;
+    const invTypeRaw = invoice.invoiceType as any;
+    const isSales = Number(invTypeRaw) === 1 || invTypeRaw === 'SALES' || invTypeRaw === InvoiceType.SALES;
+    const isPurchase = Number(invTypeRaw) === 2 || invTypeRaw === 'PURCHASE' || invTypeRaw === InvoiceType.PURCHASE;
 
     // Quotations / Estimates are non-financial documents and MUST NOT be entered into party ledgers or alter balances.
-    if (invoice.invoiceType === InvoiceType.QUOTATION || (!isSales && !isPurchase)) {
+    if (Number(invTypeRaw) === 3 || invTypeRaw === 'QUOTATION' || invTypeRaw === InvoiceType.QUOTATION || (!isSales && !isPurchase)) {
       const allPayments = this.getPayments();
       const removedEntries = allPayments.filter(
         (p) =>
@@ -1124,8 +1125,9 @@ export class KannakuDB {
       const filteredPayments = allPayments.filter((p) => !removedEntryIds.includes(p.id));
       this.savePayments(filteredPayments);
 
-      if (invoice.clientId) {
-        this.recalculateClientBalance(invoice.clientId);
+      const partyId = invoice.clientId || invoice.clientSnapshot?.id;
+      if (partyId) {
+        this.recalculateClientBalance(partyId);
       }
 
       if (this.isAuthenticated() && removedEntryIds.length > 0) {
@@ -1151,6 +1153,10 @@ export class KannakuDB {
     const upsertedEntries: PaymentLedgerEntry[] = [];
     const removedEntryIds: string[] = [];
 
+    const partyId = invoice.clientId || invoice.clientSnapshot?.id || '';
+    const partyName = invoice.clientSnapshot?.name || 'Party';
+    const partyType: 'customer' | 'supplier' = isPurchase ? 'supplier' : 'customer';
+
     // 1. Primary Invoice Ledger Entry
     const invEntryId = `pay_inv_${invoice.id}`;
     const mainEntryIdx = payments.findIndex(
@@ -1159,12 +1165,12 @@ export class KannakuDB {
 
     const mainEntry: PaymentLedgerEntry = {
       id: invEntryId,
-      partyId: invoice.clientId,
-      partyName: invoice.clientSnapshot?.name || 'Party',
-      partyType: isPurchase ? 'supplier' : 'customer',
+      partyId,
+      partyName,
+      partyType,
       invoiceId: invoice.id,
       invoiceNumber: invoice.invoiceNumber,
-      date: invoice.date || new Date().toISOString().split('T')[0],
+      date: invoice.date || (invoice as any).invoiceDate || new Date().toISOString().split('T')[0],
       type: isSales ? 'debit' : 'credit',
       entryType: isSales ? 'Sales' : isPurchase ? 'Purchase' : 'Sales',
       mode: invoice.paymentMode || 'Credit Invoice',
@@ -1193,12 +1199,12 @@ export class KannakuDB {
     if (invoice.calc.paidAmount && invoice.calc.paidAmount > 0) {
       const rcptEntry: PaymentLedgerEntry = {
         id: rcptEntryId,
-        partyId: invoice.clientId,
-        partyName: invoice.clientSnapshot?.name || 'Party',
-        partyType: isPurchase ? 'supplier' : 'customer',
+        partyId,
+        partyName,
+        partyType,
         invoiceId: invoice.id,
         invoiceNumber: invoice.invoiceNumber,
-        date: invoice.date || new Date().toISOString().split('T')[0],
+        date: invoice.date || (invoice as any).invoiceDate || new Date().toISOString().split('T')[0],
         type: isSales ? 'credit' : 'debit',
         entryType: isSales ? 'Payment In' : 'Payment Out',
         mode: invoice.paymentMode || 'Cash/Bank',
@@ -1497,6 +1503,9 @@ export class KannakuDB {
       if (paymentsRes.success && Array.isArray(paymentsRes.data)) {
         this.savePayments(paymentsRes.data);
       }
+
+      // Reconcile invoices with ledger so all active invoices are guaranteed to be present in ledger
+      this.reconcileInvoicesWithLedger();
 
       // Reconcile client balances so displayed balances always reflect freshly loaded payments & ledger data
       this.reconcileAllClientBalances();

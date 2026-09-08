@@ -85,13 +85,15 @@ export const PartyLedgerView: React.FC<PartyLedgerViewProps> = ({
 
   // Filter entries for this party
   const partyEntries = useMemo(() => {
-    return payments.filter(
-      (p) =>
-        p.partyId === party.id ||
-        (p.partyName &&
-          p.partyName.toLowerCase() === party.name.toLowerCase() &&
-          (!p.partyType || p.partyType === 'customer'))
-    );
+    return payments.filter((p) => {
+      // Must not be explicitly a supplier entry
+      if (p.partyType && p.partyType !== 'customer') return false;
+      const matchesId = Boolean(p.partyId && party.id && p.partyId === party.id);
+      const matchesName = Boolean(
+        p.partyName && party.name && p.partyName.trim().toLowerCase() === party.name.trim().toLowerCase()
+      );
+      return matchesId || matchesName;
+    });
   }, [payments, party]);
 
   // Apply filters and sorting
@@ -257,6 +259,11 @@ export const PartyLedgerView: React.FC<PartyLedgerViewProps> = ({
 
   // Find linked invoice if exists
   const findLinkedInvoice = (entry: PaymentLedgerEntry): Invoice | undefined => {
+    if (!invoices || invoices.length === 0) return undefined;
+    if (entry.invoiceId) {
+      const found = invoices.find((i) => i.id === entry.invoiceId);
+      if (found) return found;
+    }
     if (entry.invoiceNumber) {
       const found = invoices.find(
         (i) => i.invoiceNumber.toLowerCase() === entry.invoiceNumber?.toLowerCase()

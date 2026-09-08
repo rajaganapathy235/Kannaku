@@ -86,13 +86,15 @@ export const SupplierLedgerView: React.FC<SupplierLedgerViewProps> = ({
 
   // Filter entries for this supplier
   const partyEntries = useMemo(() => {
-    return payments.filter(
-      (p) =>
-        p.partyId === party.id ||
-        (p.partyName &&
-          p.partyName.toLowerCase() === party.name.toLowerCase() &&
-          (!p.partyType || p.partyType === 'supplier'))
-    );
+    return payments.filter((p) => {
+      // Must not be explicitly a customer entry
+      if (p.partyType && p.partyType !== 'supplier') return false;
+      const matchesId = Boolean(p.partyId && party.id && p.partyId === party.id);
+      const matchesName = Boolean(
+        p.partyName && party.name && p.partyName.trim().toLowerCase() === party.name.trim().toLowerCase()
+      );
+      return matchesId || matchesName;
+    });
   }, [payments, party]);
 
   // Apply filters and sorting
