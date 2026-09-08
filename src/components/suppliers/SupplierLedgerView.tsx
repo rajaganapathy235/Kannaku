@@ -11,7 +11,6 @@ import {
   Download,
   Edit2,
   ExternalLink,
-  FileSpreadsheet,
   FileText,
   Filter,
   LayoutGrid,
@@ -275,69 +274,6 @@ export const SupplierLedgerView: React.FC<SupplierLedgerViewProps> = ({
     }
   };
 
-  // Export CSV
-  const handleExportCSV = () => {
-    const safeName = party.name.replace(/[^a-zA-Z0-9]/g, '_');
-    const date = new Date().toISOString().split('T')[0];
-    const filename = `Supplier_Ledger_${safeName}_${date}.csv`;
-
-    const headers = [
-      'Date',
-      'Bill / Voucher No',
-      'Entry Type',
-      'Particulars',
-      'Credit (Purchases ₹)',
-      'Debit (Paid Out ₹)',
-      'Payable Balance (₹)',
-      'Payment Mode',
-    ];
-
-    const rows = filteredEntries.map((e) => {
-      const isCredit = e.type === 'credit';
-      const balStr =
-        e.runningBalance !== undefined
-          ? `${Math.abs(e.runningBalance).toFixed(2)} ${
-              e.runningBalance >= 0 ? 'CR' : 'DR'
-            }`
-          : '';
-      return [
-        `"${e.date}"`,
-        `"${e.vchNo || e.referenceNo || ''}"`,
-        `"${e.entryType || (isCredit ? 'Purchase' : 'Payment Out')}"`,
-        `"${(e.particular || '').replace(/"/g, '""')}"`,
-        isCredit ? Number(e.amount).toFixed(2) : '0.00',
-        !isCredit ? Number(e.amount).toFixed(2) : '0.00',
-        `"${balStr}"`,
-        `"${e.mode || ''}"`,
-      ];
-    });
-
-    // Summary row
-    rows.push([]);
-    rows.push([
-      '"TOTALS"',
-      '""',
-      '""',
-      '""',
-      totalCredits.toFixed(2),
-      totalDebits.toFixed(2),
-      `"${Math.abs(netClosingBalance).toFixed(2)} ${isPayable ? 'CR' : 'DR'}"`,
-      '""',
-    ]);
-
-    const csvContent =
-      'data:text/csv;charset=utf-8,' +
-      [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
-
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute('download', filename);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
   // WhatsApp Share Entire Statement
   const handleShareWhatsApp = () => {
     const rawPhone = party.mobile ? party.mobile.replace(/\D/g, '') : '';
@@ -482,15 +418,6 @@ _Generated via JustGST_`;
             >
               <Plus className="w-4 h-4" />
               <span>Add Entry</span>
-            </button>
-
-            <button
-              onClick={handleExportCSV}
-              className="px-3 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs shadow-xs flex items-center gap-1.5 transition-colors cursor-pointer"
-              title="Export to CSV"
-            >
-              <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
-              <span className="hidden sm:inline">Export CSV</span>
             </button>
 
             <button

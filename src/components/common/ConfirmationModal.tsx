@@ -3,7 +3,7 @@ import React from 'react';
 interface Props {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: () => void;
+  onConfirm: () => void | Promise<void>;
   title: string;
   message: string;
 }
@@ -24,8 +24,8 @@ export const ConfirmationModal: React.FC<Props> = ({ isOpen, onClose, onConfirm,
             Cancel
           </button>
           <button
-            onClick={() => {
-              onConfirm();
+            onClick={async () => {
+              await onConfirm();
               onClose();
             }}
             className="flex-1 px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-semibold text-sm transition-colors"
