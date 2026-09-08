@@ -627,4 +627,53 @@ export class ApiService {
   static async getAdminActivityFeed() {
     return this.request<any[]>('/api/admin/activity-feed');
   }
+
+  // -------------------------------------------------------------
+  // CLIENT SUBSCRIPTION & BILLING
+  // -------------------------------------------------------------
+  static async getSubscriptionStatus() {
+    return this.request<{
+      subscription: {
+        organizationId: string;
+        workspaceName: string;
+        planId: string;
+        planName: string;
+        subscriptionStatus: 'ACTIVE' | 'TRIAL' | 'EXPIRED' | 'PAST_DUE' | 'CANCELLED';
+        accountStatus: 'ACTIVE' | 'SUSPENDED';
+        renewalDate: string | null;
+        trialEndDate: string | null;
+        paymentProvider: string;
+        daysRemaining: number;
+        isReadOnly: boolean;
+        code: string | null;
+        readOnlyReason: string | null;
+        activeGateway: {
+          name: string;
+          provider: string;
+          isConfigured: boolean;
+          currency: string;
+        };
+      };
+    }>('/api/subscription/current');
+  }
+
+  static async getSubscriptionTransactions() {
+    return this.request<{
+      transactions: Array<{
+        id: string;
+        organizationId: string;
+        organizationName: string;
+        amount: number;
+        currency: string;
+        status: 'SUCCESSFUL' | 'FAILED' | 'PENDING';
+        date: string;
+        invoiceNumber: string;
+        paymentMethod: string;
+        paymentProvider: string;
+        planName: string;
+        billingCycle: string;
+        gatewayRefId?: string;
+      }>;
+    }>('/api/subscription/transactions');
+  }
 }

@@ -1249,9 +1249,14 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
         salt: payuSalt,
       });
 
-      const reqOrigin = request.headers.get('origin') || url.origin;
-      const surl = body.surl || `${reqOrigin}/api/payments/payu/return`;
-      const furl = body.furl || `${reqOrigin}/api/payments/payu/return`;
+      // Calculate application base URL for callbacks (ignore cross-origin PayU Origin header)
+      const host = request.headers.get('x-forwarded-host') || request.headers.get('host') || url.host;
+      const proto = request.headers.get('x-forwarded-proto') || (url.protocol ? url.protocol.replace(':', '') : 'https');
+      const computedOrigin = `${proto}://${host}`.replace(/\/$/, '');
+      const appBaseUrl = env.APP_URL || (computedOrigin.startsWith('http') ? computedOrigin : url.origin) || 'https://justgst.in';
+
+      const surl = body.surl || `${appBaseUrl}/api/payments/payu/return`;
+      const furl = body.furl || `${appBaseUrl}/api/payments/payu/return`;
 
       // Record pending transaction for audit
       try {
@@ -1325,13 +1330,114 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
     path === '/api/payu/webhook' ||
     path === '/api/payu/verify';
 
-  if (isPayUReturnOrCallbackPath && (method === 'POST' || method === 'GET')) {
-    const origin = request.headers.get('origin') || url.origin || '';
+  if (isPayUReturnOrCallbackPath && (method === 'POST' || method === 'GET' || method === 'OPTIONS')) {
+    // CRITICAL: Determine the actual SaaS application base URL.
+    // We MUST NOT use request.headers.get('origin') because on a cross-origin form POST from PayU,
+    // request.headers.get('origin') will be 'https://test.payu.in' or 'https://secure.payu.in'!
+    const hostHeader = request.headers.get('x-forwarded-host') || request.headers.get('host') || url.host;
+    const protoHeader = request.headers.get('x-forwarded-proto') || (url.protocol ? url.protocol.replace(':', '') : 'https');
+    const computedAppOrigin = `${protoHeader}://${hostHeader}`.replace(/\/$/, '');
+    const appBaseUrl = env.APP_URL || (computedAppOrigin.startsWith('http') ? computedAppOrigin : url.origin) || 'https://justgst.in';
+
     const isWebhookOrJsonApi =
       path === '/api/payu/verify' ||
       path === '/api/payu/webhook' ||
       path === '/api/payments/payu/webhook' ||
       (request.headers.get('accept') || '').includes('application/json');
+
+    // Helper to render high-reliability redirect (HTTP 303 + instant HTML/JS auto-forward fallback)
+    const createRedirectResponse = (targetUrl: string, isSuccess: boolean, titleMsg?: string): Response => {
+      const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="refresh" content="0;url=${targetUrl}">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${isSuccess ? 'Payment Successful' : 'Redirecting to Subscription'}</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: #0f172a;
+      color: #f8fafc;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 16px;
+    }
+    .card {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 16px;
+      padding: 32px 24px;
+      text-align: center;
+      max-width: 420px;
+      width: 100%;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
+    }
+    .icon-wrap {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      margin: 0 auto 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: ${isSuccess ? 'rgba(34, 197, 94, 0.15)' : 'rgba(99, 102, 241, 0.15)'};
+      color: ${isSuccess ? '#4ade80' : '#818cf8'};
+    }
+    .spinner {
+      width: 28px;
+      height: 28px;
+      border: 3px solid rgba(255, 255, 255, 0.1);
+      border-top-color: ${isSuccess ? '#22c55e' : '#6366f1'};
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    h2 { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+    p { font-size: 14px; color: #94a3b8; line-height: 1.5; margin-bottom: 20px; }
+    .btn {
+      display: inline-block;
+      background: ${isSuccess ? '#16a34a' : '#4f46e5'};
+      color: #ffffff;
+      padding: 10px 20px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="icon-wrap">
+      <div class="spinner"></div>
+    </div>
+    <h2>${isSuccess ? 'Payment Successful!' : 'Returning to Subscription...'}</h2>
+    <p>${titleMsg || (isSuccess ? 'Activating your subscription and returning you to the app...' : 'Returning you back to the subscription page...')}</p>
+    <a href="${targetUrl}" class="btn">Click here if not redirected automatically</a>
+  </div>
+  <script>
+    try {
+      window.location.replace(${JSON.stringify(targetUrl)});
+    } catch (e) {
+      window.location.href = ${JSON.stringify(targetUrl)};
+    }
+  </script>
+</body>
+</html>`;
+
+      return new Response(html, {
+        status: 303,
+        headers: {
+          'Content-Type': 'text/html; charset=utf-8',
+          Location: targetUrl,
+          'Cache-Control': 'no-store, no-cache, must-revalidate',
+        },
+      });
+    };
 
     try {
       // 1. Form-Urlencoded & JSON & Query Parsing
@@ -1371,231 +1477,17 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
       // 2. Multi-Tier Credential Resolution
       const { merchantKey: payuKey, merchantSalt: payuSalt } = await getPayUCredentials(db, env);
 
-      if (!payuSalt) {
+      if (!payuSalt && status === 'success') {
         console.error('[PayU Return] PAYU_MERCHANT_SALT is not configured in D1 app_settings, payment_gateway_config, or env');
         if (isWebhookOrJsonApi) {
           return errorResponse('PayU Merchant Salt is not configured on server', 500);
         }
-        return new Response(null, {
-          status: 303,
-          headers: {
-            Location: `${origin}/?payment_status=failure&txnid=${encodeURIComponent(txnid)}&error=${encodeURIComponent('Payment gateway salt configuration missing')}`,
-          },
-        });
+        const failureUrl = `${appBaseUrl}/#subscription?payment_status=failure&txnid=${encodeURIComponent(txnid)}&error=${encodeURIComponent('Payment gateway configuration missing')}`;
+        return createRedirectResponse(failureUrl, false, 'Returning to subscription page...');
       }
 
-      // 3. Reverse SHA-512 Hash Verification
-      const { isValid, calculatedHash } = await verifyPayUReverseHash(body, payuSalt, payuKey);
-
-      if (!isValid && receivedHash) {
-        console.warn(`[PayU Return] Reverse hash mismatch for txnid: ${txnid}. Calculated: ${calculatedHash}, Received: ${receivedHash}`);
-
-        // Update transaction status to FAILED in database
-        if (txnid) {
-          try {
-            await execute(
-              db,
-              `UPDATE subscription_transactions SET
-                payment_status = 'FAILED',
-                payu_payment_id = ?,
-                payu_response_json = ?,
-                updated_at = CURRENT_TIMESTAMP
-              WHERE txnid = ?`,
-              mihpayid,
-              JSON.stringify(body),
-              txnid
-            );
-          } catch (dbErr) {
-            console.error('[PayU Return] Failed to update tampered transaction in DB:', dbErr);
-          }
-        }
-
-        if (isWebhookOrJsonApi) {
-          return jsonResponse({
-            error: 'Hash verification failed: invalid signature',
-            success: false,
-            calculatedHash,
-            receivedHash,
-          }, 400);
-        }
-
-        return new Response(null, {
-          status: 303,
-          headers: {
-            Location: `${origin}/?payment_status=failure&txnid=${encodeURIComponent(txnid)}&error=${encodeURIComponent('Security signature verification failed')}`,
-          },
-        });
-      }
-
-      // 4. Idempotent Order & Subscription Fulfillment
-      if (status === 'success') {
-        const orgId = udf1;
-        const durationDays = parseInt(udf4, 10) || 365;
-
-        // Query existing transaction record for idempotency check (wrapped in try/catch to never block fulfillment)
-        let existingTxn: any = null;
-        if (txnid) {
-          try {
-            existingTxn = await queryFirst<any>(db, 'SELECT * FROM subscription_transactions WHERE txnid = ?', txnid);
-          } catch (lookupErr: any) {
-            console.error('[PayU Return] Error looking up subscription_transactions for txnid:', txnid, lookupErr?.message || lookupErr);
-          }
-        }
-
-        if (existingTxn && existingTxn.payment_status === 'SUCCESS') {
-          // Idempotent no-op: already verified and fulfilled
-          if (isWebhookOrJsonApi) {
-            return jsonResponse({
-              success: true,
-              verified: true,
-              message: 'Transaction already verified and processed (idempotent)',
-              txnid,
-              mihpayid,
-            });
-          }
-
-          return new Response(null, {
-            status: 303,
-            headers: {
-              Location: `${origin}/?payment_status=success&txnid=${encodeURIComponent(txnid)}&amount=${encodeURIComponent(amount)}`,
-            },
-          });
-        }
-
-        // Calculate renewal date extending existing subscription if still active in future
-        let baseDate = Date.now();
-        if (orgId) {
-          try {
-            const org = await queryFirst<any>(db, 'SELECT * FROM organizations WHERE id = ?', orgId);
-            if (org?.renewal_date) {
-              const existingRenewalTime = new Date(org.renewal_date).getTime();
-              if (!isNaN(existingRenewalTime) && existingRenewalTime > baseDate) {
-                baseDate = existingRenewalTime;
-              }
-            }
-          } catch (orgQueryErr: any) {
-            console.error('[PayU Return] Error querying organization for renewal extension:', orgQueryErr?.message || orgQueryErr);
-          }
-        }
-        const renewalDate = new Date(baseDate + durationDays * 24 * 60 * 60 * 1000).toISOString();
-
-        // 4.1 Activate organization subscription in D1 (Primary Core Business Logic)
-        if (orgId) {
-          try {
-            await execute(
-              db,
-              `UPDATE organizations SET
-                subscription_status = 'ACTIVE',
-                account_status = 'ACTIVE',
-                renewal_date = ?,
-                plan_id = ?,
-                plan_name = 'All-in-One Growth Plan',
-                payment_provider = 'payu',
-                last_active = CURRENT_TIMESTAMP
-              WHERE id = ?`,
-              renewalDate,
-              udf5 || 'plan_all_in_one_pro',
-              orgId
-            );
-          } catch (orgUpdateErr: any) {
-            console.error('[PayU Return] Critical error updating organization subscription_status:', orgUpdateErr?.message || orgUpdateErr);
-          }
-        }
-
-        // 4.2 Update subscription_transactions record in D1 (Non-blocking)
-        if (txnid) {
-          try {
-            await execute(
-              db,
-              `UPDATE subscription_transactions SET
-                payment_status = 'SUCCESS',
-                payu_payment_id = ?,
-                payu_response_json = ?,
-                updated_at = CURRENT_TIMESTAMP
-              WHERE txnid = ?`,
-              mihpayid || txnid,
-              JSON.stringify(body),
-              txnid
-            );
-          } catch (subTxnErr: any) {
-            console.error('[PayU Return] Error updating subscription_transactions record:', subTxnErr?.message || subTxnErr);
-          }
-        }
-
-        // 4.3 Increment coupon usage count if coupon was applied (Non-blocking)
-        if (existingTxn && existingTxn.coupon_code) {
-          try {
-            await execute(
-              db,
-              `UPDATE coupons SET used_count = used_count + 1 WHERE UPPER(code) = ?`,
-              existingTxn.coupon_code.toUpperCase().trim()
-            );
-          } catch (couponErr: any) {
-            console.error('[PayU Return] Failed to increment coupon usage:', couponErr?.message || couponErr);
-          }
-        }
-
-        // 4.4 Record transaction in saas_transactions audit ledger (Non-blocking)
-        try {
-          const org = orgId ? await queryFirst<any>(db, 'SELECT name FROM organizations WHERE id = ?', orgId) : null;
-          await execute(
-            db,
-            `INSERT INTO saas_transactions (
-              id, organization_id, organization_name, amount, currency, payment_method, payment_provider, status, date, invoice_number, gateway_ref_id, customer_email, plan_name, billing_cycle
-            ) VALUES (?, ?, ?, ?, 'INR', 'PayU Hosted Checkout', 'PayU', 'SUCCESSFUL', CURRENT_TIMESTAMP, ?, ?, ?, 'All-in-One Growth Plan', ?)`,
-            `txn_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
-            orgId || 'unknown_org',
-            org?.name || 'Customer Workspace',
-            Number(amount) || 0,
-            `INV-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
-            txnid || mihpayid,
-            email || '',
-            udf3 || '1_MONTH'
-          );
-        } catch (saasTxnErr: any) {
-          console.error('[PayU Return] Error recording saas_transactions audit entry:', saasTxnErr?.message || saasTxnErr);
-        }
-
-        // 4.5 Record in audit_logs (Non-blocking)
-        try {
-          await execute(
-            db,
-            `INSERT INTO audit_logs (
-              id, organization_id, admin_id, admin_name, admin_role, action, target_id, target_name, target_type, ip_address
-            ) VALUES (?, ?, ?, ?, 'SYSTEM', 'PAYMENT_SUCCESS', ?, ?, 'SUBSCRIPTION', ?)`,
-            `audit_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
-            orgId || 'org_system',
-            udf2 || 'user_payu',
-            firstname || 'Customer',
-            txnid || mihpayid,
-            `Subscription All-in-One Growth Plan - ${udf3 || '1_MONTH'}`,
-            request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for') || '127.0.0.1'
-          );
-        } catch (auditErr: any) {
-          console.error('[PayU Return] Error inserting audit log for payment success:', auditErr?.message || auditErr);
-        }
-
-        // 5. Success Browser Redirection or Webhook Response
-        if (isWebhookOrJsonApi) {
-          return jsonResponse({
-            success: true,
-            verified: true,
-            message: 'Payment verified and organization subscription activated',
-            txnid,
-            mihpayid,
-            status,
-          });
-        }
-
-        const successRedirectUrl = `${origin}/?payment_status=success&txnid=${encodeURIComponent(txnid)}&amount=${encodeURIComponent(amount)}`;
-        return new Response(null, {
-          status: 303,
-          headers: {
-            Location: successRedirectUrl,
-          },
-        });
-      } else {
-        // Payment failed, cancelled, or pending
+      // 3. Handle Cancelled or Failed payments immediately
+      if (status !== 'success') {
         if (txnid) {
           try {
             await execute(
@@ -1619,7 +1511,7 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
           return jsonResponse({
             success: false,
             verified: true,
-            message: 'Payment failure recorded',
+            message: 'Payment failure or cancellation recorded',
             txnid,
             mihpayid,
             status,
@@ -1627,26 +1519,216 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
           });
         }
 
-        const failureRedirectUrl = `${origin}/?payment_status=failure&txnid=${encodeURIComponent(txnid)}&error=${encodeURIComponent(errorMessage)}`;
-        return new Response(null, {
-          status: 303,
-          headers: {
-            Location: failureRedirectUrl,
-          },
+        const failureRedirectUrl = `${appBaseUrl}/#subscription?payment_status=failure&txnid=${encodeURIComponent(txnid)}&error=${encodeURIComponent(errorMessage)}`;
+        return createRedirectResponse(failureRedirectUrl, false, 'Payment cancelled. Returning to subscription page...');
+      }
+
+      // 4. Reverse SHA-512 Hash Verification for successful payments
+      if (payuSalt) {
+        const { isValid, calculatedHash } = await verifyPayUReverseHash(body, payuSalt, payuKey);
+
+        if (!isValid && receivedHash) {
+          console.warn(`[PayU Return] Reverse hash mismatch for txnid: ${txnid}. Calculated: ${calculatedHash}, Received: ${receivedHash}`);
+
+          // Update transaction status to FAILED in database
+          if (txnid) {
+            try {
+              await execute(
+                db,
+                `UPDATE subscription_transactions SET
+                  payment_status = 'FAILED',
+                  payu_payment_id = ?,
+                  payu_response_json = ?,
+                  updated_at = CURRENT_TIMESTAMP
+                WHERE txnid = ?`,
+                mihpayid,
+                JSON.stringify(body),
+                txnid
+              );
+            } catch (dbErr) {
+              console.error('[PayU Return] Failed to update tampered transaction in DB:', dbErr);
+            }
+          }
+
+          if (isWebhookOrJsonApi) {
+            return jsonResponse({
+              error: 'Hash verification failed: invalid signature',
+              success: false,
+              calculatedHash,
+              receivedHash,
+            }, 400);
+          }
+
+          const failureUrl = `${appBaseUrl}/#subscription?payment_status=failure&txnid=${encodeURIComponent(txnid)}&error=${encodeURIComponent('Security signature verification failed')}`;
+          return createRedirectResponse(failureUrl, false, 'Security verification failed. Returning to subscription...');
+        }
+      }
+
+      // 5. Idempotent Order & Subscription Fulfillment for Successful Payments
+      const orgId = udf1;
+      const durationDays = parseInt(udf4, 10) || 365;
+
+      // Query existing transaction record for idempotency check (wrapped in try/catch to never block fulfillment)
+      let existingTxn: any = null;
+      if (txnid) {
+        try {
+          existingTxn = await queryFirst<any>(db, 'SELECT * FROM subscription_transactions WHERE txnid = ?', txnid);
+        } catch (lookupErr: any) {
+          console.error('[PayU Return] Error looking up subscription_transactions for txnid:', txnid, lookupErr?.message || lookupErr);
+        }
+      }
+
+      if (existingTxn && existingTxn.payment_status === 'SUCCESS') {
+        // Idempotent no-op: already verified and fulfilled
+        if (isWebhookOrJsonApi) {
+          return jsonResponse({
+            success: true,
+            verified: true,
+            message: 'Transaction already verified and processed (idempotent)',
+            txnid,
+            mihpayid,
+          });
+        }
+
+        const successRedirectUrl = `${appBaseUrl}/#subscription?payment_status=success&txnid=${encodeURIComponent(txnid)}&amount=${encodeURIComponent(amount)}`;
+        return createRedirectResponse(successRedirectUrl, true, 'Payment verified! Returning to subscription...');
+      }
+
+      // Calculate renewal date extending existing subscription if still active in future
+      let baseDate = Date.now();
+      if (orgId) {
+        try {
+          const org = await queryFirst<any>(db, 'SELECT * FROM organizations WHERE id = ?', orgId);
+          if (org?.renewal_date) {
+            const existingRenewalTime = new Date(org.renewal_date).getTime();
+            if (!isNaN(existingRenewalTime) && existingRenewalTime > baseDate) {
+              baseDate = existingRenewalTime;
+            }
+          }
+        } catch (orgQueryErr: any) {
+          console.error('[PayU Return] Error querying organization for renewal extension:', orgQueryErr?.message || orgQueryErr);
+        }
+      }
+      const renewalDate = new Date(baseDate + durationDays * 24 * 60 * 60 * 1000).toISOString();
+
+      // 5.1 Activate organization subscription in D1 (Primary Core Business Logic)
+      if (orgId) {
+        try {
+          await execute(
+            db,
+            `UPDATE organizations SET
+              subscription_status = 'ACTIVE',
+              account_status = 'ACTIVE',
+              renewal_date = ?,
+              plan_id = ?,
+              plan_name = 'All-in-One Growth Plan',
+              payment_provider = 'payu',
+              last_active = CURRENT_TIMESTAMP
+            WHERE id = ?`,
+            renewalDate,
+            udf5 || 'plan_all_in_one_pro',
+            orgId
+          );
+        } catch (orgUpdateErr: any) {
+          console.error('[PayU Return] Critical error updating organization subscription_status:', orgUpdateErr?.message || orgUpdateErr);
+        }
+      }
+
+      // 5.2 Update subscription_transactions record in D1 (Non-blocking)
+      if (txnid) {
+        try {
+          await execute(
+            db,
+            `UPDATE subscription_transactions SET
+              payment_status = 'SUCCESS',
+              payu_payment_id = ?,
+              payu_response_json = ?,
+              updated_at = CURRENT_TIMESTAMP
+            WHERE txnid = ?`,
+            mihpayid || txnid,
+            JSON.stringify(body),
+            txnid
+          );
+        } catch (subTxnErr: any) {
+          console.error('[PayU Return] Error updating subscription_transactions record:', subTxnErr?.message || subTxnErr);
+        }
+      }
+
+      // 5.3 Increment coupon usage count if coupon was applied (Non-blocking)
+      if (existingTxn && existingTxn.coupon_code) {
+        try {
+          await execute(
+            db,
+            `UPDATE coupons SET used_count = used_count + 1 WHERE UPPER(code) = ?`,
+            existingTxn.coupon_code.toUpperCase().trim()
+          );
+        } catch (couponErr: any) {
+          console.error('[PayU Return] Failed to increment coupon usage:', couponErr?.message || couponErr);
+        }
+      }
+
+      // 5.4 Record transaction in saas_transactions audit ledger (Non-blocking)
+      try {
+        const org = orgId ? await queryFirst<any>(db, 'SELECT name FROM organizations WHERE id = ?', orgId) : null;
+        await execute(
+          db,
+          `INSERT INTO saas_transactions (
+            id, organization_id, organization_name, amount, currency, payment_method, payment_provider, status, date, invoice_number, gateway_ref_id, customer_email, plan_name, billing_cycle
+          ) VALUES (?, ?, ?, ?, 'INR', 'PayU Hosted Checkout', 'PayU', 'SUCCESSFUL', CURRENT_TIMESTAMP, ?, ?, ?, 'All-in-One Growth Plan', ?)`,
+          `txn_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+          orgId || 'unknown_org',
+          org?.name || 'Customer Workspace',
+          Number(amount) || 0,
+          `INV-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
+          txnid || mihpayid,
+          email || '',
+          udf3 || '1_MONTH'
+        );
+      } catch (saasTxnErr: any) {
+        console.error('[PayU Return] Error recording saas_transactions audit entry:', saasTxnErr?.message || saasTxnErr);
+      }
+
+      // 5.5 Record in audit_logs (Non-blocking)
+      try {
+        await execute(
+          db,
+          `INSERT INTO audit_logs (
+            id, organization_id, admin_id, admin_name, admin_role, action, target_id, target_name, target_type, ip_address
+          ) VALUES (?, ?, ?, ?, 'SYSTEM', 'PAYMENT_SUCCESS', ?, ?, 'SUBSCRIPTION', ?)`,
+          `audit_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+          orgId || 'org_system',
+          udf2 || 'user_payu',
+          firstname || 'Customer',
+          txnid || mihpayid,
+          `Subscription All-in-One Growth Plan - ${udf3 || '1_MONTH'}`,
+          request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for') || '127.0.0.1'
+        );
+      } catch (auditErr: any) {
+        console.error('[PayU Return] Error inserting audit log for payment success:', auditErr?.message || auditErr);
+      }
+
+      // 6. Success Browser Redirection or Webhook Response
+      if (isWebhookOrJsonApi) {
+        return jsonResponse({
+          success: true,
+          verified: true,
+          message: 'Payment verified and organization subscription activated',
+          txnid,
+          mihpayid,
+          status,
         });
       }
+
+      const successRedirectUrl = `${appBaseUrl}/#subscription?payment_status=success&txnid=${encodeURIComponent(txnid)}&amount=${encodeURIComponent(amount)}`;
+      return createRedirectResponse(successRedirectUrl, true, 'Payment verified! Returning to subscription page...');
     } catch (err: any) {
       console.error('[PayU Return Handler Error]', err);
       if (isWebhookOrJsonApi) {
         return errorResponse('Failed to process PayU callback: ' + (err?.message || 'Server error'), 500);
       }
 
-      return new Response(null, {
-        status: 303,
-        headers: {
-          Location: `${origin}/?payment_status=failure&error=${encodeURIComponent('Internal server error during return processing')}`,
-        },
-      });
+      const fallbackUrl = `${appBaseUrl}/#subscription?payment_status=failure&error=${encodeURIComponent('Internal server error during return processing')}`;
+      return createRedirectResponse(fallbackUrl, false, 'Returning to subscription page...');
     }
   }
 
@@ -1844,6 +1926,133 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
       });
     } catch (err: any) {
       return errorResponse('Failed to change password: ' + (err?.message || 'Server error'), 500);
+    }
+  }
+
+  // -------------------------------------------------------------
+  // 3.1 REAL CLIENT SUBSCRIPTION & GATEWAY STATUS
+  // -------------------------------------------------------------
+  if (path === '/api/subscription/current' && method === 'GET') {
+    const org = await queryFirst<any>(db, 'SELECT * FROM organizations WHERE id = ?', effectiveOrgId);
+    if (!org) {
+      return errorResponse('Organization not found', 404);
+    }
+
+    const accessCheck = isOrgAccessAllowed(org);
+    const isReadOnly = (org?.account_status || '').toUpperCase() === 'SUSPENDED' || !accessCheck.allowed;
+    const code = isReadOnly ? getOrgAccessCode(accessCheck, org) : null;
+    const readOnlyReason = code;
+
+    const subStatus = (org.subscription_status || 'TRIAL').toUpperCase();
+    const now = Date.now();
+    let daysRemaining = 0;
+
+    if (subStatus === 'ACTIVE') {
+      if (org.renewal_date) {
+        const renewalTime = new Date(org.renewal_date).getTime();
+        daysRemaining = !isNaN(renewalTime) ? Math.max(0, Math.ceil((renewalTime - now) / (1000 * 60 * 60 * 24))) : 365;
+      } else {
+        daysRemaining = 365;
+      }
+    } else if (subStatus === 'TRIAL') {
+      if (org.trial_end_date) {
+        const trialTime = new Date(org.trial_end_date).getTime();
+        daysRemaining = !isNaN(trialTime) ? Math.max(0, Math.ceil((trialTime - now) / (1000 * 60 * 60 * 24))) : 14;
+      } else if (org.created_at) {
+        const createdTime = new Date(org.created_at).getTime();
+        const trialEndTime = createdTime + 14 * 24 * 60 * 60 * 1000;
+        daysRemaining = Math.max(0, Math.ceil((trialEndTime - now) / (1000 * 60 * 60 * 24)));
+      } else {
+        daysRemaining = 14;
+      }
+    }
+
+    const { merchantKey } = await getPayUCredentials(db, env);
+
+    return jsonResponse({
+      success: true,
+      subscription: {
+        organizationId: org.id,
+        workspaceName: org.name,
+        planId: org.plan_id || 'plan_all_in_one_pro',
+        planName: org.plan_name || 'All-in-One Growth Plan',
+        subscriptionStatus: subStatus,
+        accountStatus: org.account_status || 'ACTIVE',
+        renewalDate: org.renewal_date || null,
+        trialEndDate: org.trial_end_date || null,
+        paymentProvider: org.payment_provider || 'payu',
+        daysRemaining,
+        isReadOnly,
+        code,
+        readOnlyReason,
+        activeGateway: {
+          name: 'PayU India Hosted Gateway',
+          provider: 'payu',
+          isConfigured: !!merchantKey,
+          currency: 'INR',
+        },
+      },
+    });
+  }
+
+  // -------------------------------------------------------------
+  // 3.2 REAL CLIENT BILLING HISTORY / TRANSACTIONS
+  // -------------------------------------------------------------
+  if (path === '/api/subscription/transactions' && method === 'GET') {
+    try {
+      const saasTxns = await queryAll<any>(
+        db,
+        'SELECT * FROM saas_transactions WHERE organization_id = ? ORDER BY date DESC LIMIT 50',
+        effectiveOrgId
+      );
+      const subTxns = await queryAll<any>(
+        db,
+        'SELECT * FROM subscription_transactions WHERE organization_id = ? ORDER BY created_at DESC LIMIT 50',
+        effectiveOrgId
+      );
+
+      const merged = [
+        ...saasTxns.map((t) => ({
+          id: t.id,
+          organizationId: t.organization_id,
+          organizationName: t.organization_name,
+          amount: Number(t.amount) || 0,
+          currency: t.currency || 'INR',
+          status: t.status === 'SUCCESSFUL' || t.status === 'SUCCESS' ? 'SUCCESSFUL' : t.status === 'FAILED' ? 'FAILED' : 'PENDING',
+          date: t.date,
+          invoiceNumber: t.invoice_number || `INV-${t.id.slice(-6)}`,
+          paymentMethod: t.payment_method || 'PayU Hosted Checkout',
+          paymentProvider: t.payment_provider || 'PayU',
+          planName: t.plan_name || 'All-in-One Growth Plan',
+          billingCycle: t.billing_cycle || '1_MONTH',
+          gatewayRefId: t.gateway_ref_id || t.id,
+        })),
+        ...subTxns
+          .filter((st) => !saasTxns.some((t) => t.gateway_ref_id === st.txnid || t.id === st.txnid || t.gateway_ref_id === st.payu_payment_id))
+          .map((st) => ({
+            id: st.txnid || st.id,
+            organizationId: st.organization_id,
+            organizationName: org?.name || 'Workspace',
+            amount: Number(st.amount) || 0,
+            currency: 'INR',
+            status: st.payment_status === 'SUCCESS' ? 'SUCCESSFUL' : st.payment_status === 'FAILED' ? 'FAILED' : 'PENDING',
+            date: st.created_at,
+            invoiceNumber: `INV-${(st.txnid || st.id).slice(-6)}`,
+            paymentMethod: 'PayU Hosted Checkout',
+            paymentProvider: 'PayU',
+            planName: st.plan_name || 'All-in-One Growth Plan',
+            billingCycle: st.billing_cycle || '1_MONTH',
+            gatewayRefId: st.payu_payment_id || st.txnid,
+          })),
+      ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+      return jsonResponse({
+        success: true,
+        transactions: merged,
+      });
+    } catch (err: any) {
+      console.error('[Subscription Transactions Error]', err);
+      return errorResponse('Failed to fetch transactions: ' + (err?.message || 'Server error'), 500);
     }
   }
 

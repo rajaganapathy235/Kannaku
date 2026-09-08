@@ -1472,6 +1472,16 @@ export class KannakuDB {
 
       if (orgRes.success && orgRes.data) {
         localStorage.setItem(this.getTenantKey(STORAGE_KEYS.COMPANY), JSON.stringify(orgRes.data));
+        const subStatus = (orgRes.data.subscriptionStatus || '').toUpperCase();
+        const isSubscribed = subStatus === 'ACTIVE';
+        const subState: SubscriptionState = {
+          isSubscribed,
+          status: (isSubscribed ? 'ACTIVE' : subStatus === 'EXPIRED' ? 'EXPIRED' : 'TRIAL') as any,
+          plan: orgRes.data.plan || 'All-in-One Growth Plan',
+          expiryDate: orgRes.data.renewalDate || orgRes.data.trialEndDate || '',
+          startDate: (orgRes.data as any).createdAt || '',
+        };
+        this.saveSubscription(subState);
       }
       if (clientsRes.success && Array.isArray(clientsRes.data)) {
         this.saveClients(clientsRes.data);
@@ -1537,10 +1547,28 @@ export class KannakuDB {
     try {
       const tenantKey = this.getTenantKey(STORAGE_KEYS.SUBSCRIPTION);
       const data = localStorage.getItem(tenantKey);
-      if (data) return JSON.parse(data);
+      let sub: SubscriptionState | null = data ? JSON.parse(data) : null;
+      if (!sub) {
+        const legacy = localStorage.getItem(STORAGE_KEYS.SUBSCRIPTION);
+        sub = legacy ? JSON.parse(legacy) : null;
+      }
 
-      const legacy = localStorage.getItem(STORAGE_KEYS.SUBSCRIPTION);
-      return legacy ? JSON.parse(legacy) : INITIAL_SUBSCRIPTION_STATE;
+      const company = this.getCompanyProfile();
+      if (company && (company as any).subscriptionStatus) {
+        const subStatus = ((company as any).subscriptionStatus || '').toUpperCase();
+        const isSubscribed = subStatus === 'ACTIVE';
+        if (subStatus) {
+          return {
+            ...(sub || INITIAL_SUBSCRIPTION_STATE),
+            isSubscribed,
+            status: (isSubscribed ? 'ACTIVE' : subStatus === 'EXPIRED' ? 'EXPIRED' : 'TRIAL') as any,
+            plan: (company as any).plan || sub?.plan || 'All-in-One Growth Plan',
+            expiryDate: (company as any).renewalDate || (company as any).trialEndDate || sub?.expiryDate || '',
+          };
+        }
+      }
+
+      return sub || INITIAL_SUBSCRIPTION_STATE;
     } catch {
       return INITIAL_SUBSCRIPTION_STATE;
     }

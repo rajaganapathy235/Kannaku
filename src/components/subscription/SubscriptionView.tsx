@@ -23,11 +23,8 @@ import {
   Gift,
 } from 'lucide-react';
 import { CompanyProfile, SubscriptionState } from '../../types';
-import { SaaSAdminDB } from '../../utils/adminStorage';
-import { KannakuDB } from '../../utils/storage';
-import { SaaSPlan, SaaSTransaction, TenantOrganizationFull } from '../../types/admin';
+import { SaaSPlan } from '../../types/admin';
 import { LegalModal, LegalDocType } from '../home/LegalModal';
-import { isSubscriptionTrialExpired } from '../../utils/subscriptionUtils';
 import { AuthService } from '../../utils/authService';
 import { ApiService } from '../../utils/apiService';
 
@@ -102,15 +99,60 @@ const DEFAULT_PLAN_TIERS: SubscriptionPlanTier[] = [
   },
 ];
 
+interface LiveSubscriptionData {
+  organizationId: string;
+  workspaceName: string;
+  planId: string;
+  planName: string;
+  subscriptionStatus: 'ACTIVE' | 'TRIAL' | 'EXPIRED' | 'PAST_DUE' | 'CANCELLED';
+  accountStatus: 'ACTIVE' | 'SUSPENDED';
+  renewalDate: string | null;
+  trialEndDate: string | null;
+  paymentProvider: string;
+  daysRemaining: number;
+  isReadOnly: boolean;
+  code: string | null;
+  readOnlyReason: string | null;
+  activeGateway: {
+    name: string;
+    provider: string;
+    isConfigured: boolean;
+    currency: string;
+  };
+}
+
+interface LiveTransactionRecord {
+  id: string;
+  organizationId: string;
+  organizationName: string;
+  amount: number;
+  currency: string;
+  status: 'SUCCESSFUL' | 'FAILED' | 'PENDING';
+  date: string;
+  invoiceNumber: string;
+  paymentMethod: string;
+  paymentProvider: string;
+  planName: string;
+  billingCycle: string;
+  gatewayRefId?: string;
+}
+
 export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
   company,
   subscription,
 }) => {
-  const [plans, setPlans] = useState<SaaSPlan[]>(() => SaaSAdminDB.getPlans());
+  const [liveSub, setLiveSub] = useState<LiveSubscriptionData | null>(null);
+  const [isLoadingSub, setIsLoadingSub] = useState<boolean>(true);
+
+  const [plans, setPlans] = useState<SaaSPlan[]>([]);
   const [planTiers, setPlanTiers] = useState<SubscriptionPlanTier[]>(DEFAULT_PLAN_TIERS);
   const [selectedTier, setSelectedTier] = useState<SubscriptionPlanTier>(DEFAULT_PLAN_TIERS[2]);
   const [activeTab, setActiveTab] = useState<'plans' | 'history'>('plans');
   const [isLoadingPlans, setIsLoadingPlans] = useState<boolean>(false);
+
+  const [transactions, setTransactions] = useState<LiveTransactionRecord[]>([]);
+  const [isLoadingTxns, setIsLoadingTxns] = useState<boolean>(false);
+
   const [isProcessing, setIsProcessing] = useState(false);
   const [showCheckoutModal, setShowCheckoutModal] = useState(false);
   const [checkoutStep, setCheckoutStep] = useState<'idle' | 'initiating' | 'redirecting' | 'error'>('idle');
@@ -131,9 +173,42 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
     message?: string;
   } | null>(null);
 
-  // Fetch live plans dynamically from /api/plans endpoint
+  // 1. Fetch real live subscription state directly from D1
+  const fetchRealSubscription = async () => {
+    setIsLoadingSub(true);
+    try {
+      const res = await ApiService.getSubscriptionStatus();
+      if (res.success && res.data?.subscription) {
+        setLiveSub(res.data.subscription as LiveSubscriptionData);
+      }
+    } catch (err) {
+      console.warn('[SubscriptionView] Error fetching live subscription status:', err);
+    } finally {
+      setIsLoadingSub(false);
+    }
+  };
+
+  // 2. Fetch real live billing history / transactions from D1
+  const fetchRealTransactions = async () => {
+    setIsLoadingTxns(true);
+    try {
+      const res = await ApiService.getSubscriptionTransactions();
+      if (res.success && Array.isArray(res.data?.transactions)) {
+        setTransactions(res.data.transactions);
+      }
+    } catch (err) {
+      console.warn('[SubscriptionView] Error fetching live transactions:', err);
+    } finally {
+      setIsLoadingTxns(false);
+    }
+  };
+
+  // 3. Fetch live plans dynamically from /api/plans endpoint (Cloudflare D1)
   useEffect(() => {
     let isMounted = true;
+    fetchRealSubscription();
+    fetchRealTransactions();
+
     setIsLoadingPlans(true);
     fetch('/api/plans')
       .then((res) => res.json())
@@ -146,7 +221,6 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
 
           if (Array.isArray(data.tiers) && data.tiers.length > 0) {
             setPlanTiers(data.tiers);
-            // Default select annual or 12 months tier
             const popular = data.tiers.find((t: SubscriptionPlanTier) => t.isPopular) || data.tiers[data.tiers.length - 1];
             setSelectedTier(popular);
           } else if (data.flagshipPlan || (Array.isArray(data.plans) && data.plans.length > 0)) {
@@ -208,7 +282,7 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
         }
       })
       .catch((err) => {
-        console.warn('Could not fetch live plans, using local cache:', err);
+        console.warn('Could not fetch live plans:', err);
       })
       .finally(() => {
         if (isMounted) setIsLoadingPlans(false);
@@ -224,28 +298,21 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
     setLegalModalOpen(true);
   };
 
-  const activeGateway = SaaSAdminDB.getActivePaymentGateway();
-  const flagshipPlan =
-    plans.find((p) => p.id === 'plan_all_in_one_pro') ||
-    plans[0] ||
-    SaaSAdminDB.getPlans()[0] || {
-      id: 'plan_all_in_one_pro',
-      name: 'All-in-One Growth Plan',
-      description: 'Single comprehensive plan with ALL GST invoicing, Tally multi-copy prints & compliance features unlocked',
-      monthlyPriceInr: 99,
-      sixMonthPriceInr: 474,
-      yearlyPriceInr: 588,
-      trialDurationDays: 7,
-      isPopular: true,
-    };
+  // Real data calculations (server-authoritative)
+  const workspaceName = liveSub?.workspaceName || company.name || 'My Business';
+  const flagshipPlanName = liveSub?.planName || subscription.plan || 'All-in-One Growth Plan';
+  const subStatus = liveSub?.subscriptionStatus || (subscription.isSubscribed ? 'ACTIVE' : subscription.status) || 'TRIAL';
+  const isSuspended = liveSub?.accountStatus === 'SUSPENDED';
+  const isReadOnly = liveSub ? liveSub.isReadOnly : subscription.status === 'EXPIRED';
 
-  // Identify tenant org in admin storage
-  const activeTenantId = KannakuDB.getActiveTenantId();
-  const allOrgs = SaaSAdminDB.getOrganizations();
-  const activeOrg: TenantOrganizationFull | undefined =
-    allOrgs.find((o) => o.id === activeTenantId || o.adminEmail === company.email) || allOrgs[0];
+  const renewalDate = liveSub?.renewalDate || subscription.expiryDate || null;
+  const trialEndDate = liveSub?.trialEndDate || null;
 
-  const isTrialExpired = isSubscriptionTrialExpired(subscription, activeOrg);
+  const isLiveActive = subStatus === 'ACTIVE';
+  const daysRemaining = liveSub !== null ? liveSub.daysRemaining : (subscription.trialDaysRemaining ?? 14);
+  const isTrialExpired = !isLiveActive && (isReadOnly || daysRemaining <= 0 || subStatus === 'EXPIRED');
+
+  const activeGatewayName = liveSub?.activeGateway?.name || 'PayU India Hosted Gateway';
 
   const handleOpenSubscribeModal = (tier: SubscriptionPlanTier) => {
     setSelectedTier(tier);
@@ -333,7 +400,6 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
         return;
       }
 
-      // If response is not ok or missing parameters, fail gracefully with error state
       const errorMsg =
         data.error ||
         data.message ||
@@ -351,12 +417,6 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
     }
   };
 
-  const allTxns = SaaSAdminDB.getTransactions().filter(
-    (t) =>
-      (activeOrg && t.organizationId === activeOrg.id) ||
-      t.organizationName.toLowerCase() === (company.name || '').toLowerCase()
-  );
-
   return (
     <div className="space-y-6 pb-12">
       {/* Top Header Card */}
@@ -364,11 +424,11 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
         <div>
           <div className="flex items-center gap-2">
             <h2 className="text-base font-bold text-slate-900">
-              Subscription & Plan Upgrades
+              Subscription &amp; Plan Upgrades
             </h2>
             <span className="px-2.5 py-0.5 rounded-full bg-brand-50 border border-brand-200 text-brand-700 text-xs font-bold flex items-center gap-1">
               <Sparkles className="w-3 h-3 text-brand-600" />
-              <span>All-in-One Growth Plan</span>
+              <span>{flagshipPlanName}</span>
             </span>
           </div>
           <p className="text-xs text-slate-500 mt-1">
@@ -389,7 +449,10 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
             Subscription Plans
           </button>
           <button
-            onClick={() => setActiveTab('history')}
+            onClick={() => {
+              setActiveTab('history');
+              fetchRealTransactions();
+            }}
             className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5 ${
               activeTab === 'history'
                 ? 'bg-brand-600 text-white shadow-xs'
@@ -397,7 +460,7 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
             }`}
           >
             <Receipt className="w-3.5 h-3.5" />
-            <span>Billing History ({allTxns.length})</span>
+            <span>Billing History ({transactions.length})</span>
           </button>
         </div>
       </div>
@@ -430,7 +493,7 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
         </div>
       )}
 
-      {/* Flagship Plan Banner & Workspace Status */}
+      {/* Flagship Plan Banner & Workspace Status (Real Data) */}
       <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <div className="w-12 h-12 rounded-2xl bg-brand-50 border border-brand-200 flex items-center justify-center text-brand-600 shrink-0">
@@ -440,36 +503,40 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-xs text-slate-500 font-semibold">Active Flagship Plan:</span>
               <span className="text-sm font-black text-slate-900">
-                {flagshipPlan.name}
+                {flagshipPlanName}
               </span>
               <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold flex items-center gap-1">
                 <Check className="w-3 h-3 text-emerald-600" />
                 <span>All Features Included</span>
               </span>
               <span
-                className={`px-2 py-0.5 rounded-md text-[10px] font-bold border ${
-                  subscription.status === 'ACTIVE'
+                className={`px-2.5 py-0.5 rounded-md text-[10px] font-bold border ${
+                  isSuspended
+                    ? 'bg-rose-50 text-rose-700 border-rose-200'
+                    : isLiveActive
                     ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                     : isTrialExpired
                     ? 'bg-rose-50 text-rose-700 border-rose-200'
                     : 'bg-amber-50 text-amber-700 border-amber-200'
                 }`}
               >
-                {subscription.status === 'ACTIVE'
+                {isSuspended
+                  ? 'ACCOUNT SUSPENDED'
+                  : isLiveActive
                   ? 'ACTIVE & VERIFIED'
                   : isTrialExpired
                   ? 'TRIAL EXPIRED (READ-ONLY)'
-                  : `FREE TRIAL (${flagshipPlan.trialDurationDays || 7} DAYS)`}
+                  : `FREE TRIAL (${daysRemaining} DAYS REMAINING)`}
               </span>
             </div>
             <p className="text-xs text-slate-500 mt-1">
               Workspace:{' '}
               <strong className="text-slate-800">
-                {company.name || 'My Business'}
+                {workspaceName}
               </strong>{' '}
               • Expiry / Renewal:{' '}
               <strong className="text-brand-600 font-mono">
-                {subscription.expiryDate || 'Continuous Active'}
+                {renewalDate || trialEndDate || 'Continuous Active'}
               </strong>
             </p>
           </div>
@@ -481,7 +548,7 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
               Payment Gateway
             </span>
             <span className="text-xs font-bold text-slate-700">
-              {activeGateway.name || 'PayU India Hosted Gateway'}
+              {activeGatewayName}
             </span>
           </div>
           <button
@@ -599,7 +666,7 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
             })}
           </div>
 
-          {/* Included Features Section (Intact Checklist Layout) */}
+          {/* Included Features Section */}
           <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-xs mt-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
@@ -642,14 +709,27 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
         <div className="rounded-2xl bg-white border border-slate-200 shadow-xs p-5">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
-              Subscription Invoices & Receipts
+              Subscription Invoices &amp; Receipts
             </h3>
-            <span className="text-xs text-slate-500">{allTxns.length} records found</span>
+            <span className="text-xs text-slate-500">
+              {isLoadingTxns ? 'Loading transactions...' : `${transactions.length} records found`}
+            </span>
           </div>
 
-          {allTxns.length === 0 ? (
-            <div className="text-center py-10 text-slate-400 text-xs">
-              No transactions recorded yet for this workspace.
+          {isLoadingTxns ? (
+            <div className="py-12 text-center text-slate-400 text-xs flex flex-col items-center justify-center gap-2">
+              <div className="w-6 h-6 border-2 border-brand-500 border-t-transparent rounded-full animate-spin"></div>
+              <span>Fetching server billing records...</span>
+            </div>
+          ) : transactions.length === 0 ? (
+            <div className="text-center py-12 px-4">
+              <div className="w-12 h-12 rounded-2xl bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400 mx-auto mb-3">
+                <Receipt className="w-6 h-6" />
+              </div>
+              <h4 className="text-xs font-bold text-slate-700">No Billing Transactions Yet</h4>
+              <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
+                Your subscription invoices and payment receipts will be automatically recorded here after completing checkout.
+              </p>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -658,14 +738,14 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
                   <tr className="text-slate-500 uppercase tracking-wider text-[11px] font-bold">
                     <th className="py-3 px-4 font-semibold">Invoice #</th>
                     <th className="py-3 px-4 font-semibold">Date</th>
-                    <th className="py-3 px-4 font-semibold">Plan & Duration</th>
+                    <th className="py-3 px-4 font-semibold">Plan &amp; Duration</th>
                     <th className="py-3 px-4 font-semibold">Gateway</th>
                     <th className="py-3 px-4 font-semibold">Amount</th>
                     <th className="py-3 px-4 font-semibold">Status</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-slate-700">
-                  {allTxns.map((t) => (
+                  {transactions.map((t) => (
                     <tr key={t.id} className="hover:bg-slate-50">
                       <td className="py-3.5 px-4 font-mono font-bold text-brand-600">
                         {t.invoiceNumber}
@@ -685,7 +765,15 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
                         ₹{t.amount.toLocaleString('en-IN')}
                       </td>
                       <td className="py-3.5 px-4">
-                        <span className="px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 font-bold text-[10px]">
+                        <span
+                          className={`px-2 py-0.5 rounded-full border font-bold text-[10px] ${
+                            t.status === 'SUCCESSFUL'
+                              ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
+                              : t.status === 'FAILED'
+                              ? 'bg-rose-50 border-rose-200 text-rose-700'
+                              : 'bg-amber-50 border-amber-200 text-amber-700'
+                          }`}
+                        >
                           {t.status}
                         </span>
                       </td>
@@ -697,6 +785,247 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
           )}
         </div>
       )}
+
+      {/* PayU Hosted Checkout Modal */}
+      {showCheckoutModal && (
+        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-200 rounded-2xl w-full max-w-md p-6 space-y-5 shadow-2xl relative">
+            {checkoutStep === 'idle' && (
+              <>
+                <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-900">Subscribe &amp; Activate</h3>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Workspace: <span className="text-brand-600 font-semibold">{workspaceName}</span>
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setShowCheckoutModal(false)}
+                    className="p-1 text-slate-400 hover:text-slate-600 rounded-lg cursor-pointer"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+
+                {/* Plan Summary Box */}
+                <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2.5 text-xs">
+                  <div className="flex justify-between text-slate-500">
+                    <span>Plan:</span>
+                    <span className="font-bold text-slate-900">{flagshipPlanName}</span>
+                  </div>
+                  <div className="flex justify-between text-slate-500">
+                    <span>Selected Duration:</span>
+                    <span className="font-bold text-brand-600">
+                      {selectedTier.name}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-slate-500">
+                    <span>Base Price:</span>
+                    <span className={`font-mono ${appliedCoupon ? 'line-through text-slate-400' : 'font-bold text-slate-900'}`}>
+                      ₹{selectedTier.totalPriceInr}
+                    </span>
+                  </div>
+                  {appliedCoupon && (
+                    <div className="flex justify-between text-emerald-700 bg-emerald-50 px-2.5 py-1.5 rounded-lg border border-emerald-200">
+                      <span className="flex items-center gap-1 font-semibold">
+                        <Tag className="w-3.5 h-3.5" />
+                        Discount ({appliedCoupon.code}):
+                      </span>
+                      <span className="font-bold font-mono">-₹{appliedCoupon.discountAmount}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between text-slate-500">
+                    <span>Active Gateway:</span>
+                    <span className="font-bold text-emerald-700">{activeGatewayName}</span>
+                  </div>
+                  <div className="pt-2.5 border-t border-slate-200 flex justify-between items-baseline">
+                    <span className="font-bold text-slate-900">Total Payable:</span>
+                    <span className="text-xl font-black text-slate-900 font-mono">
+                      ₹{appliedCoupon ? appliedCoupon.finalAmount : selectedTier.totalPriceInr}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Coupon Code Entry */}
+                {!appliedCoupon ? (
+                  <div className="space-y-1.5">
+                    <label className="text-[11px] font-semibold text-slate-600 uppercase tracking-wider block">
+                      Have a Promo / Discount Coupon?
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={couponInput}
+                        onChange={(e) => {
+                          setCouponInput(e.target.value.toUpperCase());
+                          if (couponError) setCouponError('');
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            handleApplyCoupon();
+                          }
+                        }}
+                        placeholder="e.g. WELCOME50, SAVE20"
+                        className="flex-1 px-3 py-2 text-xs border border-slate-300 rounded-xl uppercase tracking-wider font-mono focus:outline-hidden focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleApplyCoupon}
+                        disabled={isApplyingCoupon || !couponInput.trim()}
+                        className="px-4 py-2 bg-slate-800 hover:bg-slate-900 disabled:opacity-50 text-white font-bold text-xs rounded-xl transition-all cursor-pointer disabled:cursor-not-allowed"
+                      >
+                        {isApplyingCoupon ? 'Applying...' : 'Apply'}
+                      </button>
+                    </div>
+                    {couponError && (
+                      <p className="text-[11px] text-rose-600 font-medium">{couponError}</p>
+                    )}
+                  </div>
+                ) : (
+                  <div className="p-3 bg-emerald-50/80 border border-emerald-200 rounded-xl flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
+                        <Tag className="w-3.5 h-3.5" />
+                      </div>
+                      <div>
+                        <div className="font-bold text-emerald-900 font-mono tracking-wide">{appliedCoupon.code}</div>
+                        <div className="text-[11px] text-emerald-700">{appliedCoupon.message || `Saved ₹${appliedCoupon.discountAmount}`}</div>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleRemoveCoupon}
+                      className="text-xs font-semibold text-rose-600 hover:text-rose-800 hover:underline cursor-pointer"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                )}
+
+                {/* Payment Gateway Visual Notice */}
+                <div className="p-3 rounded-xl bg-brand-50 border border-brand-200 text-xs text-brand-800 flex items-center gap-2.5">
+                  <ShieldCheck className="w-4 h-4 text-brand-600 shrink-0" />
+                  <span>
+                    Secured payment processing via <strong>{activeGatewayName}</strong>
+                  </span>
+                </div>
+
+                {/* Checkout Trigger */}
+                <button
+                  onClick={handleInitiatePayUCheckout}
+                  disabled={isProcessing}
+                  className="w-full py-3 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-2 shadow-xs transition-all cursor-pointer active:scale-98 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <Lock className="w-3.5 h-3.5" />
+                  <span>Pay ₹{appliedCoupon ? appliedCoupon.finalAmount : selectedTier.totalPriceInr} via PayU</span>
+                </button>
+
+                {/* Statutory Compliance & Terms Acceptance */}
+                <div className="pt-2 text-[11px] text-slate-400 text-center leading-relaxed">
+                  By clicking Pay, you agree to JustGST{' '}
+                  <button
+                    onClick={() => openLegal('terms')}
+                    className="text-brand-600 underline font-semibold cursor-pointer"
+                  >
+                    Terms of Service
+                  </button>
+                  ,{' '}
+                  <button
+                    onClick={() => openLegal('privacy')}
+                    className="text-brand-600 underline font-semibold cursor-pointer"
+                  >
+                    Privacy Policy
+                  </button>{' '}
+                  &amp;{' '}
+                  <button
+                    onClick={() => openLegal('refund')}
+                    className="text-brand-600 underline font-semibold cursor-pointer"
+                  >
+                    7-Day Refund Policy
+                  </button>
+                  . Instant cloud delivery &amp; GST tax invoice provided.
+                </div>
+              </>
+            )}
+
+            {checkoutStep === 'initiating' && (
+              <div className="py-8 text-center space-y-4">
+                <div className="w-12 h-12 mx-auto rounded-full border-4 border-brand-200 border-t-brand-600 animate-spin"></div>
+                <div className="text-xs">
+                  <p className="font-bold text-slate-900">
+                    Preparing Secure PayU Session...
+                  </p>
+                  <p className="text-slate-500 mt-1">
+                    Generating signed transaction checksum and invoice details
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {checkoutStep === 'redirecting' && (
+              <div className="py-8 text-center space-y-4">
+                <div className="w-12 h-12 mx-auto rounded-full border-4 border-emerald-200 border-t-emerald-600 animate-spin"></div>
+                <div className="text-xs">
+                  <p className="font-bold text-slate-900">
+                    Redirecting to PayU Hosted Checkout...
+                  </p>
+                  <p className="text-slate-500 mt-1">
+                    Please complete your payment on the secure PayU gateway.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {checkoutStep === 'error' && (
+              <div className="py-4 text-center space-y-4 animate-in zoom-in-95">
+                <div className="w-12 h-12 mx-auto rounded-full bg-rose-50 border border-rose-200 flex items-center justify-center text-rose-600">
+                  <AlertCircle className="w-6 h-6" />
+                </div>
+                <div>
+                  <h4 className="text-base font-bold text-slate-900">Payment Could Not Start</h4>
+                  <p className="text-xs text-rose-700 mt-1 px-4 leading-relaxed font-medium">
+                    {checkoutError || 'Payment could not be started. Please try again or contact support.'}
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowCheckoutModal(false);
+                      setCheckoutStep('idle');
+                    }}
+                    className="w-1/2 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl text-xs transition-colors cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCheckoutStep('idle');
+                      setCheckoutError('');
+                    }}
+                    className="w-1/2 py-2.5 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-xl text-xs transition-all cursor-pointer"
+                  >
+                    Try Again
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Legal & Policy Center Modal */}
+      <LegalModal
+        isOpen={legalModalOpen}
+        onClose={() => setLegalModalOpen(false)}
+        initialDoc={activeLegalDoc}
+      />
+    </div>
+  );
+};
 
       {/* PayU Hosted Checkout Modal */}
       {showCheckoutModal && (

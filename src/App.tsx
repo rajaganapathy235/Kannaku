@@ -139,14 +139,20 @@ export default function App() {
     KannakuDB.reconcileInvoicesWithLedger();
     reloadAllState();
 
-    // Check for PayU browser return callback query params
-    const urlParams = new URLSearchParams(window.location.search);
+    // Check for PayU browser return callback query params from both search and hash
+    let searchString = window.location.search;
+    if (window.location.hash.includes('?')) {
+      const hashQuery = window.location.hash.split('?')[1];
+      searchString = searchString ? `${searchString}&${hashQuery}` : `?${hashQuery}`;
+    }
+    const urlParams = new URLSearchParams(searchString);
     const pathname = window.location.pathname;
     const paymentStatus = urlParams.get('payment_status') || (pathname.includes('order-success') ? 'success' : pathname.includes('order-failed') ? 'failure' : null);
     const returnTxnId = urlParams.get('txnid');
     const returnError = urlParams.get('error');
 
     if (paymentStatus === 'success') {
+      setActiveTab('subscription');
       confetti({
         particleCount: 100,
         spread: 70,
@@ -161,13 +167,22 @@ export default function App() {
         }
         KannakuDB.syncFromD1().then(() => reloadAllState());
       });
-      const cleanUrl = '/' + window.location.hash;
+      const cleanUrl = '/' + (window.location.hash ? window.location.hash.split('?')[0] : '#subscription');
       window.history.replaceState({}, document.title, cleanUrl);
     } else if (paymentStatus === 'failure') {
-      const errMsg = returnError ? `: ${decodeURIComponent(returnError)}` : '. Please try again.';
+      setActiveTab('subscription');
+      const rawErr = returnError ? decodeURIComponent(returnError) : '';
+      const isUserCancel = rawErr.toLowerCase().includes('cancel') || rawErr.toLowerCase().includes('usercancel');
+      const errMsg = isUserCancel
+        ? ' (Cancelled by user)'
+        : rawErr
+        ? `: ${rawErr}`
+        : '. Please try again or choose another payment option.';
       showToast(`❌ PayU Payment was not completed${errMsg}`);
-      const cleanUrl = '/' + window.location.hash;
+      const cleanUrl = '/' + (window.location.hash ? window.location.hash.split('?')[0] : '#subscription');
       window.history.replaceState({}, document.title, cleanUrl);
+    } else if (window.location.hash.startsWith('#subscription')) {
+      setActiveTab('subscription');
     }
 
     // Auto-sync from Cloudflare D1 and refresh server-side access status on app load if authenticated
