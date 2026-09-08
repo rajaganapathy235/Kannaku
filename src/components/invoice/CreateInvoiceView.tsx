@@ -10,6 +10,7 @@ import {
   FilePlus,
   HelpCircle,
   Lock,
+  Package,
   Percent,
   Plus,
   Printer,
@@ -33,6 +34,7 @@ import {
   Product,
   TaxType,
 } from '../../types';
+import { LineItemProductSelector } from './LineItemProductSelector';
 import { calculateItemTaxAndTotals } from '../../utils/taxEngine';
 import { formatIndianCurrency, formatNumberIndian } from '../../utils/numberToWords';
 import {
@@ -259,28 +261,49 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
   };
 
   // Line item handlers
-  const handleAddItem = () => {
-    const defaultProd = products[0];
+  const handleAddItem = (prod?: Product) => {
+    const isPurchase = invoiceType === InvoiceType.PURCHASE;
+    const selectedProd = prod;
     setItems([
       ...items,
       {
         id: `item_${Date.now()}_${items.length + 1}`,
-        itemId: defaultProd?.id || '',
-        productId: defaultProd?.id || '',
-        name: defaultProd?.name || '',
-        hsnCode: defaultProd?.hsnCode || '85044010',
+        itemId: selectedProd?.id || '',
+        productId: selectedProd?.id || '',
+        name: selectedProd?.name || '',
+        hsnCode: selectedProd?.hsnCode || '85044010',
         qty: 1,
-        unit: defaultProd?.unit || 'Nos',
-        baseRate: defaultProd?.sellingPrice || 1000,
-        mrp: defaultProd?.mrp || 1200,
+        unit: selectedProd?.unit || 'Nos',
+        baseRate: selectedProd
+          ? (isPurchase ? selectedProd.buyingPrice : selectedProd.sellingPrice)
+          : 1000,
+        mrp: selectedProd?.mrp || selectedProd?.sellingPrice || 1200,
         inclusiveOrExclusive: 'exclusive',
         isDiscountApplied: false,
         flatOrPercentage: 'percentage',
         discountRate: 0,
-        taxPercentage: defaultProd?.taxRate || 18,
-        subline1: defaultProd?.subline1 || '',
+        taxPercentage: selectedProd?.taxRate ?? 18,
+        subline1: selectedProd?.subline1 || '',
       },
     ]);
+  };
+
+  const handleSelectProduct = (index: number, prod: Product) => {
+    const next = [...items];
+    const isPurchase = invoiceType === InvoiceType.PURCHASE;
+    next[index] = {
+      ...next[index],
+      name: prod.name,
+      itemId: prod.id,
+      productId: prod.id,
+      hsnCode: prod.hsnCode || '85044010',
+      baseRate: isPurchase ? prod.buyingPrice : prod.sellingPrice,
+      mrp: prod.mrp || prod.sellingPrice || 0,
+      unit: prod.unit || 'Nos',
+      taxPercentage: prod.taxRate ?? 18,
+      subline1: prod.subline1 || '',
+    };
+    setItems(next);
   };
 
   const handleRemoveItem = (index: number) => {
@@ -302,14 +325,14 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
       if (match) {
         next[index].itemId = match.id;
         next[index].productId = match.id;
-        next[index].hsnCode = match.hsnCode;
+        next[index].hsnCode = match.hsnCode || '85044010';
         next[index].baseRate =
           invoiceType === InvoiceType.PURCHASE
             ? match.buyingPrice
             : match.sellingPrice;
-        next[index].mrp = match.mrp;
-        next[index].unit = match.unit;
-        next[index].taxPercentage = match.taxRate;
+        next[index].mrp = match.mrp || match.sellingPrice;
+        next[index].unit = match.unit || 'Nos';
+        next[index].taxPercentage = match.taxRate ?? 18;
         next[index].subline1 = match.subline1 || '';
       } else {
         next[index].itemId = undefined;
@@ -774,18 +797,17 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
           {/* Line Items Table */}
           <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
-                Line Items & Products ({items.length})
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-700">
+                  Line Items & Products
+                </span>
+                <span className="px-2 py-0.5 bg-brand-50 text-brand-700 font-bold text-xs rounded-full border border-brand-100">
+                  {items.length} {items.length === 1 ? 'item' : 'items'}
+                </span>
+              </div>
+              <span className="text-[11px] text-slate-400 hidden sm:inline">
+                Click product search dropdown or type to select from catalog
               </span>
-              <button
-                type="button"
-                id="btn-add-item-row"
-                onClick={handleAddItem}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-brand-700 bg-brand-50 hover:bg-brand-100 rounded-lg transition"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                <span>+ Add Item</span>
-              </button>
             </div>
 
             {/* Items Rows */}
@@ -800,24 +822,17 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
                       {idx + 1}
                     </span>
 
-                    {/* Product Name & Description */}
+                    {/* Product Name Search Dropdown & HSN */}
                     <div className="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-2">
                       <div className="sm:col-span-2">
-                        <input
-                          type="text"
-                          list={`product-list-${idx}`}
+                        <LineItemProductSelector
                           value={item.name}
-                          onChange={(e) =>
-                            handleItemChange(idx, 'name', e.target.value)
-                          }
-                          placeholder="Item Name / Product"
-                          className="w-full text-xs font-bold p-2 bg-white border border-slate-300 rounded-lg focus:border-brand-600 focus:ring-1 focus:ring-brand-500"
+                          onChange={(nameVal) => handleItemChange(idx, 'name', nameVal)}
+                          onSelectProduct={(prod) => handleSelectProduct(idx, prod)}
+                          products={products}
+                          invoiceType={invoiceType}
+                          placeholder="Search product from catalog or type item name..."
                         />
-                        <datalist id={`product-list-${idx}`}>
-                          {products.map((p) => (
-                            <option key={p.id} value={p.name} />
-                          ))}
-                        </datalist>
                       </div>
 
                       <div>
@@ -828,7 +843,7 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
                             handleItemChange(idx, 'hsnCode', e.target.value)
                           }
                           placeholder="HSN/SAC Code"
-                          className="w-full text-xs font-mono p-2 bg-white border border-slate-300 rounded-lg focus:border-brand-600"
+                          className="w-full text-xs font-mono p-2 bg-white border border-slate-300 rounded-lg focus:border-brand-600 focus:ring-1 focus:ring-brand-500"
                         />
                       </div>
                     </div>
@@ -838,7 +853,8 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
                       type="button"
                       onClick={() => handleRemoveItem(idx)}
                       disabled={items.length <= 1}
-                      className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition disabled:opacity-30"
+                      title={items.length <= 1 ? 'At least one item required' : 'Delete item'}
+                      className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition disabled:opacity-30 cursor-pointer"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -970,6 +986,57 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
                   </div>
                 </div>
               ))}
+            </div>
+
+            {/* Bottom Actions: Add Item Row & Quick Catalog Selector */}
+            <div className="pt-2 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100">
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  id="btn-add-item-row"
+                  onClick={() => handleAddItem()}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-brand-700 bg-brand-50 hover:bg-brand-100 active:bg-brand-200 border border-brand-200/70 rounded-xl shadow-xs transition cursor-pointer"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>+ Add Item</span>
+                </button>
+
+                {/* Quick Add Product from Catalog Dropdown */}
+                {products.length > 0 && (
+                  <div className="relative inline-flex items-center">
+                    <select
+                      value=""
+                      onChange={(e) => {
+                        const selected = products.find((p) => p.id === e.target.value);
+                        if (selected) {
+                          handleAddItem(selected);
+                        }
+                      }}
+                      className="text-xs font-semibold py-2 pl-3 pr-8 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-300 rounded-xl transition cursor-pointer appearance-none"
+                    >
+                      <option value="" disabled>
+                        + Select & Add Product from Catalog...
+                      </option>
+                      {products.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.name} (Stock: {p.currentStock ?? 0} {p.unit || 'Nos'} • ₹
+                          {invoiceType === InvoiceType.PURCHASE ? p.buyingPrice : p.sellingPrice})
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 pointer-events-none" />
+                  </div>
+                )}
+              </div>
+
+              <button
+                type="button"
+                onClick={handleAddFreight}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs text-slate-600 hover:text-brand-700 font-semibold bg-slate-100 hover:bg-brand-50 border border-slate-200 rounded-lg transition cursor-pointer"
+              >
+                <Truck className="w-3.5 h-3.5" />
+                <span>+ Add Freight / Extra Charge</span>
+              </button>
             </div>
 
             {/* Extra Charges Section (Freight, Insurance) */}
