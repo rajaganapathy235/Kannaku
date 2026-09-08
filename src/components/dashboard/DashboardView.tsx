@@ -100,35 +100,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     window.open(url, '_blank');
   };
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'PAID':
-        return (
-          <span className="px-2.5 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 text-[11px] font-bold rounded-md uppercase">
-            Paid
-          </span>
-        );
-      case 'PARTIAL':
-        return (
-          <span className="px-2.5 py-0.5 bg-amber-50 text-amber-700 border border-amber-200 text-[11px] font-bold rounded-md uppercase">
-            Pending
-          </span>
-        );
-      case 'UNPAID':
-        return (
-          <span className="px-2.5 py-0.5 bg-rose-50 text-rose-700 border border-rose-200 text-[11px] font-bold rounded-md uppercase">
-            Overdue
-          </span>
-        );
-      default:
-        return (
-          <span className="px-2.5 py-0.5 bg-slate-100 text-slate-700 border border-slate-200 text-[11px] font-bold rounded-md uppercase">
-            Draft
-          </span>
-        );
-    }
-  };
-
   return (
     <div className="space-y-6 pb-12">
       {/* 4 Financial KPI Metric Cards */}
@@ -238,7 +209,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         <div className="p-5 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
           <div>
             <h3 className="font-bold text-base text-slate-900">Recent Transactions</h3>
-            <p className="text-xs text-slate-500">Real-time GST billing records and status</p>
+            <p className="text-xs text-slate-500">Real-time GST billing records</p>
           </div>
           <div className="flex items-center gap-2">
             <button
@@ -279,14 +250,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 <th className="px-6 py-3.5 font-bold text-slate-600 text-xs">Date</th>
                 <th className="px-6 py-3.5 font-bold text-slate-600 text-xs text-right">Tax (GST)</th>
                 <th className="px-6 py-3.5 font-bold text-slate-600 text-xs text-right">Amount</th>
-                <th className="px-6 py-3.5 font-bold text-slate-600 text-xs text-center">Status</th>
                 <th className="px-6 py-3.5 font-bold text-slate-600 text-xs text-right">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {recentInvoices.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-8 text-center text-xs text-slate-400">
+                  <td colSpan={6} className="px-6 py-8 text-center text-xs text-slate-400">
                     No invoices recorded yet. Click "+ New Invoice" to create your first tax invoice.
                   </td>
                 </tr>
@@ -311,9 +281,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     </td>
                     <td className="px-6 py-4 text-right font-black text-slate-900 font-mono text-sm">
                       ₹{formatNumberIndian(inv.calc?.billFigure || 0)}
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                      {getStatusBadge(inv.status)}
                     </td>
                     <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
                       <button
