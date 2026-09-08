@@ -414,7 +414,7 @@ _Generated via JustGST Ledger_`;
                             <span className="font-semibold text-slate-900">
                               {entry.particular || entry.entryType || (isCredit ? 'Purchase' : 'Payment Out')}
                             </span>
-                            {entry.note && (
+                            {entry.note && !entry.note.startsWith('{') && (
                               <span className="text-[10px] text-slate-500 block leading-tight">
                                 {entry.note}
                               </span>

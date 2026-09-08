@@ -89,7 +89,9 @@ export const SupplierLedgerView: React.FC<SupplierLedgerViewProps> = ({
     return payments.filter(
       (p) =>
         p.partyId === party.id ||
-        (p.partyName && p.partyName.toLowerCase() === party.name.toLowerCase())
+        (p.partyName &&
+          p.partyName.toLowerCase() === party.name.toLowerCase() &&
+          (!p.partyType || p.partyType === 'supplier'))
     );
   }, [payments, party]);
 
@@ -791,7 +793,7 @@ _Generated via JustGST_`;
                               <p className="font-semibold text-slate-900 text-xs">
                                 {entry.particular || entryBadge}
                               </p>
-                              {entry.note && (
+                              {entry.note && !entry.note.startsWith('{') && (
                                 <p className="text-[11px] text-slate-500 leading-snug">
                                   {entry.note}
                                 </p>
@@ -970,7 +972,7 @@ _Generated via JustGST_`;
                           {/* Particulars & Narration */}
                           <div className="text-xs text-slate-800 font-medium leading-relaxed">
                             {entry.particular || entryBadge}
-                            {entry.note && (
+                            {entry.note && !entry.note.startsWith('{') && (
                               <p className="text-[11px] text-slate-500 mt-0.5">
                                 {entry.note}
                               </p>

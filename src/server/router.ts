@@ -2869,10 +2869,11 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
         entryType: r.entry_type || '',
         mode: r.mode || 'CASH',
         amount: Number(r.amount) || 0,
-        particular: r.particular || r.notes || '',
+        particular: r.particular || (r.notes && !r.notes.startsWith('{') ? r.notes : '') || '',
         vchNo: r.vch_no || r.reference_number || '',
         referenceNo: r.reference_number || r.vch_no || '',
-        notes: r.notes || '',
+        note: r.notes && !r.notes.startsWith('{') ? r.notes : '',
+        notes: r.notes && !r.notes.startsWith('{') ? r.notes : '',
         createdOn: r.created_at || new Date().toISOString(),
       };
     });
@@ -2939,7 +2940,12 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
           : 'debit';
       const paymentType = body.payment_type || (debitCredit === 'credit' ? 'RECEIPT' : 'PAYMENT');
       const entryType = body.entryType || (debitCredit === 'credit' ? 'Payment In' : 'Payment Out');
-      const particular = body.particular || body.notes || body.note || '';
+      const cleanNote = typeof body.note === 'string' && !body.note.startsWith('{')
+        ? body.note
+        : typeof body.notes === 'string' && !body.notes.startsWith('{')
+        ? body.notes
+        : '';
+      const particular = (typeof body.particular === 'string' && !body.particular.startsWith('{') ? body.particular : '') || cleanNote;
       const vchNo = body.vchNo || body.referenceNo || null;
 
       await execute(
@@ -2970,7 +2976,7 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
         body.mode || 'CASH',
         Number(body.amount),
         body.referenceNo || vchNo || null,
-        body.notes || particular || '',
+        cleanNote,
         entryType,
         particular,
         vchNo,
