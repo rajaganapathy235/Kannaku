@@ -271,7 +271,6 @@ export async function getPlatformSettingsFromDB(db: D1Database): Promise<any> {
     },
     billing: {
       defaultCurrency: 'INR (₹)',
-      trialDurationDays: 15,
       gstTaxPercentage: 18,
       gracePeriodDays: 3,
       invoicePrefix: 'INV-2026-',
