@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "include": [
+    "/api/*"
+  ],
+  "exclude": [
+    "/assets/*",
+    "/favicon.ico",
+    "/manifest.json",
+    "/robots.txt",
+    "/apple-touch-icon.png",
+    "/icon-*.png",
+    "/logo-*.svg",
+    "/icon-mark.svg"
+  ]
+}

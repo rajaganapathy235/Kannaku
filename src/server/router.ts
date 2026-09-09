@@ -137,25 +137,49 @@ export function createOrgAccessDeniedResponse(access: OrgAccessResult): Response
   );
 }
 
-// Helper to parse application/x-www-form-urlencoded or application/json request body
+// Helper to parse application/x-www-form-urlencoded, multipart/form-data, or application/json request body
 async function parseRequestBody(request: Request): Promise<Record<string, any>> {
-  const contentType = request.headers.get('content-type') || '';
-  if (contentType.includes('application/x-www-form-urlencoded')) {
-    const text = await request.text();
-    const params = new URLSearchParams(text);
-    const result: Record<string, any> = {};
-    for (const [key, value] of params.entries()) {
-      result[key] = value;
-    }
-    return result;
-  }
+  const contentType = (request.headers.get('content-type') || '').toLowerCase();
+
   if (contentType.includes('application/json')) {
-    return (await request.json().catch(() => ({}))) as Record<string, any>;
-  }
-  try {
-    const text = await request.text();
     try {
-      return JSON.parse(text);
+      const cloned = request.clone();
+      const json = await cloned.json();
+      if (typeof json === 'object' && json !== null) {
+        return json as Record<string, any>;
+      }
+    } catch {
+      // Continue to fallback
+    }
+  }
+
+  // Handle standard form data (x-www-form-urlencoded and multipart/form-data)
+  try {
+    const cloned = request.clone();
+    const formData = await cloned.formData();
+    const result: Record<string, any> = {};
+    for (const [key, value] of formData.entries()) {
+      result[key] = typeof value === 'string' ? value : (value as any)?.name || '';
+    }
+    if (Object.keys(result).length > 0) {
+      return result;
+    }
+  } catch {
+    // Continue to fallback
+  }
+
+  // Fallback to text parsing as JSON or URLSearchParams
+  try {
+    const cloned = request.clone();
+    const text = await cloned.text();
+    if (!text || !text.trim()) {
+      return {};
+    }
+    try {
+      const parsed = JSON.parse(text);
+      if (typeof parsed === 'object' && parsed !== null) {
+        return parsed;
+      }
     } catch {
       const params = new URLSearchParams(text);
       const result: Record<string, any> = {};
@@ -167,6 +191,7 @@ async function parseRequestBody(request: Request): Promise<Record<string, any>> 
   } catch {
     return {};
   }
+  return {};
 }
 
 // Re-computes and verifies the PayU reverse SHA-512 hash using the secret merchant salt and key
@@ -1321,16 +1346,32 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
   // -------------------------------------------------------------
   // 2.5.1 PAYU WEBHOOK, VERIFY & BROWSER RETURN HANDLERS
   // -------------------------------------------------------------
+  const normalizedPath = path.replace(/\/+$/, '').toLowerCase() || '/';
   const isPayUReturnOrCallbackPath =
-    path === '/api/payments/payu/return' ||
-    path === '/api/payu/return' ||
-    path === '/api/payments/payu/callback' ||
-    path === '/api/payu/callback' ||
-    path === '/api/payments/payu/webhook' ||
-    path === '/api/payu/webhook' ||
-    path === '/api/payu/verify';
+    normalizedPath === '/api/payments/payu/return' ||
+    normalizedPath === '/api/payu/return' ||
+    normalizedPath === '/api/payments/payu/callback' ||
+    normalizedPath === '/api/payu/callback' ||
+    normalizedPath === '/api/payments/payu/webhook' ||
+    normalizedPath === '/api/payu/webhook' ||
+    normalizedPath === '/api/payu/verify';
 
-  if (isPayUReturnOrCallbackPath && (method === 'POST' || method === 'GET' || method === 'OPTIONS')) {
+  if (isPayUReturnOrCallbackPath) {
+    if (method === 'OPTIONS') {
+      return new Response(null, {
+        status: 204,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        },
+      });
+    }
+
+    if (method === 'HEAD') {
+      return new Response(null, { status: 200 });
+    }
+
     // CRITICAL: Determine the actual SaaS application base URL.
     // We MUST NOT use request.headers.get('origin') because on a cross-origin form POST from PayU,
     // request.headers.get('origin') will be 'https://test.payu.in' or 'https://secure.payu.in'!
@@ -1340,9 +1381,9 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
     const appBaseUrl = env.APP_URL || (computedAppOrigin.startsWith('http') ? computedAppOrigin : url.origin) || 'https://justgst.in';
 
     const isWebhookOrJsonApi =
-      path === '/api/payu/verify' ||
-      path === '/api/payu/webhook' ||
-      path === '/api/payments/payu/webhook' ||
+      normalizedPath === '/api/payu/verify' ||
+      normalizedPath === '/api/payu/webhook' ||
+      normalizedPath === '/api/payments/payu/webhook' ||
       (request.headers.get('accept') || '').includes('application/json');
 
     // Helper to render high-reliability redirect (HTTP 303 + instant HTML/JS auto-forward fallback)
@@ -1435,6 +1476,7 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
           'Content-Type': 'text/html; charset=utf-8',
           Location: targetUrl,
           'Cache-Control': 'no-store, no-cache, must-revalidate',
+          'Access-Control-Allow-Origin': '*',
         },
       });
     };
@@ -1460,13 +1502,22 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
 
       // Extract all standard PayU fields
       const txnid = (body.txnid || '').trim();
-      const status = (body.status || '').trim().toLowerCase();
+      const rawStatus = (body.status || '').trim().toLowerCase();
+      const unmappedStatus = (body.unmappedstatus || '').trim().toLowerCase();
+      const status = rawStatus || (unmappedStatus === 'captured' ? 'success' : unmappedStatus === 'usercancelled' ? 'failure' : '');
       const amount = body.amount !== undefined ? String(body.amount).trim() : '0';
       const mihpayid = (body.mihpayid || body.payuMoneyId || body.bank_ref_num || '').trim();
       const firstname = (body.firstname || '').trim();
       const email = (body.email || '').trim();
       const receivedHash = (body.hash || '').trim();
-      const errorMessage = body.error_Message || body.error || body.unmappedstatus || 'Payment could not be completed';
+      
+      let errorMessage = body.error_Message || body.error || body.unmappedstatus || '';
+      if (!errorMessage) {
+        errorMessage = status === 'success' ? '' : 'Payment was not completed';
+      }
+      if (unmappedStatus === 'usercancelled' || rawStatus.includes('cancel') || errorMessage.toLowerCase().includes('cancel')) {
+        errorMessage = 'Payment cancelled by user';
+      }
 
       const udf1 = (body.udf1 || '').trim(); // organizationId
       const udf2 = (body.udf2 || '').trim(); // userId
@@ -1482,7 +1533,7 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
         if (isWebhookOrJsonApi) {
           return errorResponse('PayU Merchant Salt is not configured on server', 500);
         }
-        const failureUrl = `${appBaseUrl}/#subscription?payment_status=failure&txnid=${encodeURIComponent(txnid)}&error=${encodeURIComponent('Payment gateway configuration missing')}`;
+        const failureUrl = `${appBaseUrl}/?payment_status=failure&txnid=${encodeURIComponent(txnid)}&error=${encodeURIComponent('Payment gateway configuration missing')}#subscription`;
         return createRedirectResponse(failureUrl, false, 'Returning to subscription page...');
       }
 
@@ -1519,7 +1570,7 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
           });
         }
 
-        const failureRedirectUrl = `${appBaseUrl}/#subscription?payment_status=failure&txnid=${encodeURIComponent(txnid)}&error=${encodeURIComponent(errorMessage)}`;
+        const failureRedirectUrl = `${appBaseUrl}/?payment_status=failure&txnid=${encodeURIComponent(txnid)}&error=${encodeURIComponent(errorMessage)}#subscription`;
         return createRedirectResponse(failureRedirectUrl, false, 'Payment cancelled. Returning to subscription page...');
       }
 
@@ -1559,7 +1610,7 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
             }, 400);
           }
 
-          const failureUrl = `${appBaseUrl}/#subscription?payment_status=failure&txnid=${encodeURIComponent(txnid)}&error=${encodeURIComponent('Security signature verification failed')}`;
+          const failureUrl = `${appBaseUrl}/?payment_status=failure&txnid=${encodeURIComponent(txnid)}&error=${encodeURIComponent('Security signature verification failed')}#subscription`;
           return createRedirectResponse(failureUrl, false, 'Security verification failed. Returning to subscription...');
         }
       }
@@ -1590,7 +1641,7 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
           });
         }
 
-        const successRedirectUrl = `${appBaseUrl}/#subscription?payment_status=success&txnid=${encodeURIComponent(txnid)}&amount=${encodeURIComponent(amount)}`;
+        const successRedirectUrl = `${appBaseUrl}/?payment_status=success&txnid=${encodeURIComponent(txnid)}&amount=${encodeURIComponent(amount)}#subscription`;
         return createRedirectResponse(successRedirectUrl, true, 'Payment verified! Returning to subscription...');
       }
 
@@ -1719,7 +1770,7 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
         });
       }
 
-      const successRedirectUrl = `${appBaseUrl}/#subscription?payment_status=success&txnid=${encodeURIComponent(txnid)}&amount=${encodeURIComponent(amount)}`;
+      const successRedirectUrl = `${appBaseUrl}/?payment_status=success&txnid=${encodeURIComponent(txnid)}&amount=${encodeURIComponent(amount)}#subscription`;
       return createRedirectResponse(successRedirectUrl, true, 'Payment verified! Returning to subscription page...');
     } catch (err: any) {
       console.error('[PayU Return Handler Error]', err);
@@ -1727,7 +1778,7 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
         return errorResponse('Failed to process PayU callback: ' + (err?.message || 'Server error'), 500);
       }
 
-      const fallbackUrl = `${appBaseUrl}/#subscription?payment_status=failure&error=${encodeURIComponent('Internal server error during return processing')}`;
+      const fallbackUrl = `${appBaseUrl}/?payment_status=failure&error=${encodeURIComponent('Internal server error during return processing')}#subscription`;
       return createRedirectResponse(fallbackUrl, false, 'Returning to subscription page...');
     }
   }
