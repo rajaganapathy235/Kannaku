@@ -681,6 +681,8 @@ export const SEO_ROUTES: Record<string, SEORouteConfig> = {
   },
 };
 
+import { INDUSTRY_SOLUTIONS, getIndustrySEOConfig } from './industry.config';
+
 export function getSEOConfigForPath(pathname: string): SEORouteConfig {
   const clean = pathname.replace(/^\/+|\/+$/g, '').toLowerCase();
   
@@ -696,6 +698,19 @@ export function getSEOConfigForPath(pathname: string): SEORouteConfig {
   if (clean === 'billing-software-for-retail') {
     return SEO_ROUTES.retailBillingSoftware;
   }
+
+  // Check 12 industry solutions dynamically
+  for (const industry of Object.values(INDUSTRY_SOLUTIONS)) {
+    if (
+      clean === industry.slug ||
+      clean === `industries/${industry.id}` ||
+      clean === `billing-software-for-${industry.id}` ||
+      (clean.startsWith('billing-software-for-') && clean.includes(industry.id.toLowerCase()))
+    ) {
+      return getIndustrySEOConfig(industry);
+    }
+  }
+
   if (clean === 'billing-software-for-wholesale') {
     return SEO_ROUTES.wholesaleBillingSoftware;
   }

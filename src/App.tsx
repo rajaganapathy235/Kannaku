@@ -32,8 +32,10 @@ import { LoginPage } from './components/auth/LoginPage';
 import { SignupPage } from './components/auth/SignupPage';
 import { LandingPage } from './components/home/LandingPage';
 import { SolutionLandingPage } from './components/home/SolutionLandingPage';
+import { IndustrySolutionPage } from './components/home/IndustrySolutionPage';
 import { SEOHead } from './components/common/SEOHead';
 import { SEO_ROUTES, getSEOConfigForPath } from './config/seo.config';
+import { INDUSTRY_SOLUTIONS, getIndustrySEOConfig, IndustryData } from './config/industry.config';
 import { SaaSAdminDB } from './utils/adminStorage';
 import { AuthSession } from './types/auth';
 import { TenantOrganizationFull } from './types/admin';
@@ -661,6 +663,47 @@ export default function App() {
 
   // Default to Public Landing or Solution Page if no active session and not explicitly on login/signup
   if (!authSession && authView !== 'login' && authView !== 'signup') {
+    const cleanSlug = publicSlug ? publicSlug.replace(/^\/+|\/+$/g, '').toLowerCase() : '';
+    
+    // Check if the current slug matches one of the 12 industry solutions
+    const matchedIndustry = Object.values(INDUSTRY_SOLUTIONS).find(
+      (ind) =>
+        cleanSlug === ind.slug ||
+        cleanSlug === `billing-software-for-${ind.id}` ||
+        cleanSlug === `industries/${ind.id}` ||
+        (cleanSlug.startsWith('billing-software-for-') && cleanSlug.includes(ind.id.toLowerCase()))
+    );
+
+    if (matchedIndustry) {
+      const industrySeo = getIndustrySEOConfig(matchedIndustry);
+      return (
+        <>
+          <SEOHead seo={industrySeo} />
+          <IndustrySolutionPage
+            data={matchedIndustry}
+            onNavigateSlug={handleNavigatePublicSlug}
+            onGetStarted={() => {
+              setAuthView('signup');
+              window.location.hash = '#signup';
+            }}
+            onSignIn={() => {
+              setAuthView('login');
+              window.location.hash = '#login';
+            }}
+            onOpenSuperAdmin={() => {
+              if (authSession?.user?.role === 'SUPER_ADMIN') {
+                setIsSuperAdminMode(true);
+                setAuthView(null);
+              } else {
+                setAuthView('login');
+                window.location.hash = '#login';
+              }
+            }}
+          />
+        </>
+      );
+    }
+
     const activeSeoConfig = getSEOConfigForPath(publicSlug);
     const isSolutionPage = publicSlug && publicSlug !== '' && publicSlug !== 'home';
 

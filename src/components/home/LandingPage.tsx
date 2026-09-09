@@ -66,33 +66,23 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           {/* Logo & Identity */}
           <div className="flex items-center gap-3">
-            <img
-              src="/logo-horizontal.svg"
-              alt="JustGST"
-              className="w-auto object-contain shrink-0"
-              style={{ height: '40px', minHeight: '36px' }}
-            />
+            <a href="/" className="flex items-center">
+              <img
+                src="/logo-horizontal.svg"
+                alt="JustGST"
+                className="w-auto object-contain shrink-0"
+                style={{ height: '40px', minHeight: '36px' }}
+              />
+            </a>
           </div>
 
-          {/* Navigation Links (Desktop) */}
-          <nav className="hidden md:flex items-center gap-6 text-xs font-semibold text-slate-600">
-            <a href="/gst-billing-software/" className="hover:text-brand-600 transition-colors">
-              GST Invoicing
+          {/* Navigation Links (Desktop) - Lean SaaS Header */}
+          <nav className="hidden md:flex items-center gap-8 text-sm font-semibold text-slate-600">
+            <a href="#features" className="hover:text-brand-600 transition-colors">
+              Features
             </a>
-            <a href="/inventory-management-software/" className="hover:text-brand-600 transition-colors">
-              Inventory
-            </a>
-            <a href="/billing-software-for-retail/" className="hover:text-brand-600 transition-colors">
-              Retail POS
-            </a>
-            <a href="/billing-software-for-wholesale/" className="hover:text-brand-600 transition-colors">
-              Wholesale B2B
-            </a>
-            <a href="/compare/justgst-vs-vyapar/" className="hover:text-brand-600 transition-colors">
-              vs Vyapar
-            </a>
-            <a href="/pricing/" className="hover:text-brand-600 transition-colors">
-              Pricing Plans
+            <a href="#pricing" className="hover:text-brand-600 transition-colors">
+              Pricing
             </a>
             <a href="#faq" className="hover:text-brand-600 transition-colors">
               FAQ
@@ -115,13 +105,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   onClick={onSignIn}
                   className="px-3 py-2 text-xs font-bold text-slate-700 hover:text-slate-900 transition-colors cursor-pointer"
                 >
-                  Sign In
+                  Log In
                 </button>
                 <button
                   onClick={onStartTrial}
                   className="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer active:scale-98"
                 >
-                  <span>14-Day Free Trial</span>
+                  <span>Start Free Trial</span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </button>
               </>
@@ -710,84 +700,170 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           </div>
         </div>
 
-        {/* Solutions & Directory Hub */}
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-6 border-b border-slate-100">
-          <div className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-4">
-            JustGST Solutions &amp; Tools
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-7 gap-4 text-xs text-slate-600">
-            <a href="/gst-billing-software/" className="hover:text-brand-600 transition-colors">
-              <span className="font-semibold text-slate-800 block">GST Invoicing</span>
-              <span className="text-[11px] text-slate-400">B2B/B2C Tax Bills</span>
-            </a>
-            <a href="/inventory-management-software/" className="hover:text-brand-600 transition-colors">
-              <span className="font-semibold text-slate-800 block">Stock &amp; Inventory</span>
-              <span className="text-[11px] text-slate-400">Barcode &amp; Stock Alerts</span>
-            </a>
-            <a href="/billing-software-for-retail/" className="hover:text-brand-600 transition-colors">
-              <span className="font-semibold text-slate-800 block">Retail POS</span>
-              <span className="text-[11px] text-slate-400">Thermal 2"/3" Printing</span>
-            </a>
-            <a href="/billing-software-for-wholesale/" className="hover:text-brand-600 transition-colors">
-              <span className="font-semibold text-slate-800 block">Wholesale B2B</span>
-              <span className="text-[11px] text-slate-400">Party Ledger Khata</span>
-            </a>
-            <a href="/compare/justgst-vs-vyapar/" className="hover:text-brand-600 transition-colors">
-              <span className="font-semibold text-slate-800 block">vs. Vyapar</span>
-              <span className="text-[11px] text-slate-400">Feature Comparison</span>
-            </a>
-            <a href="/compare/justgst-vs-gogst-vs-vyapar-vs-swipe-vs-mybillbook/" className="hover:text-brand-600 transition-colors">
-              <span className="font-semibold text-brand-700 block">5-Way Compare</span>
-              <span className="text-[11px] text-brand-600">vs GoGST/Swipe/etc</span>
-            </a>
-            <a href="/pricing/" className="hover:text-brand-600 transition-colors">
-              <span className="font-semibold text-slate-800 block">Transparent Pricing</span>
-              <span className="text-[11px] text-slate-400">Plans from ₹49/mo</span>
-            </a>
+        {/* Clean 4-Column SaaS Footer */}
+        <div id="industries" className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 border-b border-slate-100">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {/* Column 1: Brand & Tagline */}
+            <div className="space-y-4">
+              <a href="/" className="inline-block">
+                <img
+                  src="/logo-horizontal.svg"
+                  alt="JustGST"
+                  className="w-auto object-contain shrink-0"
+                  style={{ height: '36px' }}
+                />
+              </a>
+              <p className="text-xs text-slate-500 leading-relaxed">
+                Simple, fast 100% cloud GST billing, POS &amp; inventory software for Indian businesses, retailers, and wholesalers at ₹49/month.
+              </p>
+              <div className="text-[11px] text-slate-400">
+                © {new Date().getFullYear()} JustGST. All Rights Reserved.
+              </div>
+            </div>
+
+            {/* Column 2: Product */}
+            <div className="space-y-3">
+              <div className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+                Product
+              </div>
+              <ul className="space-y-2 text-xs text-slate-600">
+                <li>
+                  <a href="#features" className="hover:text-brand-600 transition-colors">
+                    Features
+                  </a>
+                </li>
+                <li>
+                  <a href="#pricing" className="hover:text-brand-600 transition-colors">
+                    Pricing
+                  </a>
+                </li>
+                <li>
+                  <a href="/gst-calculator/" className="hover:text-brand-600 transition-colors">
+                    GST Calculator
+                  </a>
+                </li>
+                <li>
+                  <a href="/gst-invoice-generator/" className="hover:text-brand-600 transition-colors">
+                    GST Invoice Generator
+                  </a>
+                </li>
+                <li>
+                  <a href="/gst-billing-software/" className="hover:text-brand-600 transition-colors">
+                    GST Billing Software
+                  </a>
+                </li>
+                <li>
+                  <a href="/inventory-management-software/" className="hover:text-brand-600 transition-colors">
+                    Inventory Software
+                  </a>
+                </li>
+              </ul>
+            </div>
+
+            {/* Column 3: Industries */}
+            <div className="space-y-3">
+              <div className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+                Industries
+              </div>
+              <ul className="space-y-2 text-xs text-slate-600">
+                <li>
+                  <a href="/billing-software-for-pharmacy/" className="hover:text-brand-600 transition-colors">
+                    Pharmacy
+                  </a>
+                </li>
+                <li>
+                  <a href="/billing-software-for-supermarket/" className="hover:text-brand-600 transition-colors">
+                    Supermarket
+                  </a>
+                </li>
+                <li>
+                  <a href="/billing-software-for-wholesale/" className="hover:text-brand-600 transition-colors">
+                    Wholesale
+                  </a>
+                </li>
+                <li>
+                  <a href="/billing-software-for-hardware/" className="hover:text-brand-600 transition-colors">
+                    Hardware
+                  </a>
+                </li>
+                <li>
+                  <a href="/billing-software-for-apparel/" className="hover:text-brand-600 transition-colors">
+                    Garments &amp; Apparel
+                  </a>
+                </li>
+                <li>
+                  <a href="/billing-software-for-manufacturing/" className="hover:text-brand-600 transition-colors">
+                    Manufacturing
+                  </a>
+                </li>
+              </ul>
+            </div>
+
+            {/* Column 4: Comparisons & Legal */}
+            <div className="space-y-3">
+              <div className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+                Comparisons &amp; Legal
+              </div>
+              <ul className="space-y-2 text-xs text-slate-600">
+                <li>
+                  <a href="/compare/justgst-vs-vyapar/" className="hover:text-brand-600 transition-colors">
+                    vs Vyapar
+                  </a>
+                </li>
+                <li>
+                  <a href="/compare/justgst-vs-gogst-vs-vyapar-vs-swipe-vs-mybillbook/" className="hover:text-brand-600 transition-colors">
+                    5-Way Compare
+                  </a>
+                </li>
+                <li>
+                  <button
+                    onClick={() => openLegal('privacy')}
+                    className="hover:text-brand-600 transition-colors cursor-pointer text-left"
+                  >
+                    Privacy Policy
+                  </button>
+                </li>
+                <li>
+                  <button
+                    onClick={() => openLegal('terms')}
+                    className="hover:text-brand-600 transition-colors cursor-pointer text-left"
+                  >
+                    Terms of Service
+                  </button>
+                </li>
+                <li>
+                  <button
+                    onClick={() => openLegal('refund')}
+                    className="hover:text-brand-600 transition-colors cursor-pointer text-left"
+                  >
+                    Refund Policy
+                  </button>
+                </li>
+                <li>
+                  <button
+                    onClick={() => openLegal('contact')}
+                    className="hover:text-brand-600 transition-colors cursor-pointer text-left"
+                  >
+                    Contact Support
+                  </button>
+                </li>
+              </ul>
+            </div>
           </div>
         </div>
 
-        {/* Footer Bar */}
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* Bottom Copyright & Fast Links */}
-          <div className="flex flex-col lg:flex-row items-center justify-between gap-4 text-[11px] text-slate-400">
-            <p className="text-center lg:text-left">
-              © {new Date().getFullYear()} JustGST. Operated by Rajaganapathy Kamalakannan. All Rights Reserved.
+        {/* Bottom Legal Bar */}
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-slate-400">
+            <p className="text-center sm:text-left">
+              Operated by Rajaganapathy Kamalakannan. All Rights Reserved.
             </p>
             <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-slate-500 font-medium">
-              <button
-                onClick={() => openLegal('terms')}
-                className="hover:text-brand-600 transition-colors cursor-pointer"
-              >
-                Terms of Service
-              </button>
-              <span>•</span>
-              <button
-                onClick={() => openLegal('privacy')}
-                className="hover:text-brand-600 transition-colors cursor-pointer"
-              >
-                Privacy Policy
-              </button>
-              <span>•</span>
-              <button
-                onClick={() => openLegal('refund')}
-                className="hover:text-brand-600 transition-colors cursor-pointer"
-              >
-                Refunds &amp; Returns
-              </button>
-              <span>•</span>
               <button
                 onClick={() => openLegal('shipping')}
                 className="hover:text-brand-600 transition-colors cursor-pointer"
               >
                 SaaS Delivery
-              </button>
-              <span>•</span>
-              <button
-                onClick={() => openLegal('contact')}
-                className="hover:text-brand-600 transition-colors cursor-pointer"
-              >
-                Contact &amp; Support
               </button>
               <span>•</span>
               <button
