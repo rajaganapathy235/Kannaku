@@ -1,3 +1,47 @@
+# ==========================================
+# Robots.txt for JustGST (https://justgst.in)
+# ==========================================
+
 User-agent: *
 Allow: /
-Sitemap: https://kannaku.pages.dev/sitemap.xml
+Allow: /gst-billing-software/
+Allow: /inventory-management-software/
+Allow: /billing-software-for-retail/
+Allow: /billing-software-for-wholesale/
+Allow: /compare/justgst-vs-vyapar/
+Allow: /pricing/
+Allow: /icon-*.png
+Allow: /favicon.*
+Allow: /manifest.json
+Disallow: /api/
+Disallow: /dashboard
+Disallow: /admin
+
+# AI & Answer Engine Search Crawlers (AEO / GEO Enabled)
+User-agent: GPTBot
+Allow: /
+Disallow: /api/
+Disallow: /dashboard
+
+User-agent: PerplexityBot
+Allow: /
+Disallow: /api/
+Disallow: /dashboard
+
+User-agent: Google-Extended
+Allow: /
+Disallow: /api/
+Disallow: /dashboard
+
+User-agent: ClaudeBot
+Allow: /
+Disallow: /api/
+Disallow: /dashboard
+
+User-agent: Applebot-Extended
+Allow: /
+Disallow: /api/
+Disallow: /dashboard
+
+# Production Sitemap
+Sitemap: https://justgst.in/sitemap.xml

@@ -75,14 +75,23 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           </div>
 
           {/* Navigation Links (Desktop) */}
-          <nav className="hidden md:flex items-center gap-7 text-xs font-semibold text-slate-600">
-            <a href="#features" className="hover:text-brand-600 transition-colors">
-              Features
+          <nav className="hidden md:flex items-center gap-6 text-xs font-semibold text-slate-600">
+            <a href="/gst-billing-software/" className="hover:text-brand-600 transition-colors">
+              GST Invoicing
             </a>
-            <a href="#templates" className="hover:text-brand-600 transition-colors">
-              Print Formats
+            <a href="/inventory-management-software/" className="hover:text-brand-600 transition-colors">
+              Inventory
             </a>
-            <a href="#pricing" className="hover:text-brand-600 transition-colors">
+            <a href="/billing-software-for-retail/" className="hover:text-brand-600 transition-colors">
+              Retail POS
+            </a>
+            <a href="/billing-software-for-wholesale/" className="hover:text-brand-600 transition-colors">
+              Wholesale B2B
+            </a>
+            <a href="/compare/justgst-vs-vyapar/" className="hover:text-brand-600 transition-colors">
+              vs Vyapar
+            </a>
+            <a href="/pricing/" className="hover:text-brand-600 transition-colors">
               Pricing Plans
             </a>
             <a href="#faq" className="hover:text-brand-600 transition-colors">
@@ -698,6 +707,43 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+
+        {/* Solutions & Directory Hub */}
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-6 border-b border-slate-100">
+          <div className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-4">
+            JustGST Solutions &amp; Tools
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-7 gap-4 text-xs text-slate-600">
+            <a href="/gst-billing-software/" className="hover:text-brand-600 transition-colors">
+              <span className="font-semibold text-slate-800 block">GST Invoicing</span>
+              <span className="text-[11px] text-slate-400">B2B/B2C Tax Bills</span>
+            </a>
+            <a href="/inventory-management-software/" className="hover:text-brand-600 transition-colors">
+              <span className="font-semibold text-slate-800 block">Stock &amp; Inventory</span>
+              <span className="text-[11px] text-slate-400">Barcode &amp; Stock Alerts</span>
+            </a>
+            <a href="/billing-software-for-retail/" className="hover:text-brand-600 transition-colors">
+              <span className="font-semibold text-slate-800 block">Retail POS</span>
+              <span className="text-[11px] text-slate-400">Thermal 2"/3" Printing</span>
+            </a>
+            <a href="/billing-software-for-wholesale/" className="hover:text-brand-600 transition-colors">
+              <span className="font-semibold text-slate-800 block">Wholesale B2B</span>
+              <span className="text-[11px] text-slate-400">Party Ledger Khata</span>
+            </a>
+            <a href="/compare/justgst-vs-vyapar/" className="hover:text-brand-600 transition-colors">
+              <span className="font-semibold text-slate-800 block">vs. Vyapar</span>
+              <span className="text-[11px] text-slate-400">Feature Comparison</span>
+            </a>
+            <a href="/compare/justgst-vs-gogst-vs-vyapar-vs-swipe-vs-mybillbook/" className="hover:text-brand-600 transition-colors">
+              <span className="font-semibold text-brand-700 block">5-Way Compare</span>
+              <span className="text-[11px] text-brand-600">vs GoGST/Swipe/etc</span>
+            </a>
+            <a href="/pricing/" className="hover:text-brand-600 transition-colors">
+              <span className="font-semibold text-slate-800 block">Transparent Pricing</span>
+              <span className="text-[11px] text-slate-400">Plans from ₹49/mo</span>
+            </a>
           </div>
         </div>
 

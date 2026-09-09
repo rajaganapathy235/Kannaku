@@ -31,6 +31,9 @@ import { AuthService } from './utils/authService';
 import { LoginPage } from './components/auth/LoginPage';
 import { SignupPage } from './components/auth/SignupPage';
 import { LandingPage } from './components/home/LandingPage';
+import { SolutionLandingPage } from './components/home/SolutionLandingPage';
+import { SEOHead } from './components/common/SEOHead';
+import { SEO_ROUTES, getSEOConfigForPath } from './config/seo.config';
 import { SaaSAdminDB } from './utils/adminStorage';
 import { AuthSession } from './types/auth';
 import { TenantOrganizationFull } from './types/admin';
@@ -43,6 +46,18 @@ export default function App() {
   const [authSession, setAuthSession] = useState<AuthSession | null>(() => {
     return AuthService.getSession();
   });
+
+  const getInitialPublicSlug = (): string => {
+    const path = window.location.pathname.replace(/^\/+|\/+$/g, '');
+    if (path) return path;
+    if (window.location.hash && window.location.hash.startsWith('#/')) {
+      return window.location.hash.replace(/^#\/?/, '').replace(/\/+$/, '');
+    }
+    return '';
+  };
+
+  const [publicSlug, setPublicSlug] = useState<string>(getInitialPublicSlug);
+
   const [authView, setAuthView] = useState<'login' | 'signup' | 'home' | null>(() => {
     if (window.location.hash === '#login') return 'login';
     if (window.location.hash === '#signup') return 'signup';
@@ -280,7 +295,16 @@ export default function App() {
     window.addEventListener('kannaku:d1-sync-error', handleD1SyncError);
     window.addEventListener('kannaku:d1-sync-success', handleD1SyncSuccess);
 
-    const handleHashChange = () => {
+    const handleHashOrUrlChange = () => {
+      const path = window.location.pathname.replace(/^\/+|\/+$/g, '');
+      if (path) {
+        setPublicSlug(path);
+      } else if (window.location.hash && window.location.hash.startsWith('#/')) {
+        setPublicSlug(window.location.hash.replace(/^#\/?/, '').replace(/\/+$/, ''));
+      } else {
+        setPublicSlug('');
+      }
+
       if (window.location.hash === '#admin') {
         const session = AuthService.getSession();
         if (session?.user?.role === 'SUPER_ADMIN') {
@@ -305,9 +329,11 @@ export default function App() {
         setAuthView(null);
       }
     };
-    window.addEventListener('hashchange', handleHashChange);
+    window.addEventListener('hashchange', handleHashOrUrlChange);
+    window.addEventListener('popstate', handleHashOrUrlChange);
     return () => {
-      window.removeEventListener('hashchange', handleHashChange);
+      window.removeEventListener('hashchange', handleHashOrUrlChange);
+      window.removeEventListener('popstate', handleHashOrUrlChange);
       window.removeEventListener('kannaku:api-error', handleApiError);
       window.removeEventListener('kannaku:d1-sync-error', handleD1SyncError);
       window.removeEventListener('kannaku:d1-sync-success', handleD1SyncSuccess);
@@ -626,77 +652,110 @@ export default function App() {
     showToast('Company profile updated.');
   };
 
-  // Default to Landing Page if no active session and not explicitly on login/signup
+  const handleNavigatePublicSlug = (slug: string) => {
+    const cleanSlug = slug.replace(/^\/+|\/+$/g, '');
+    setPublicSlug(cleanSlug);
+    const newPath = cleanSlug ? `/${cleanSlug}/` : '/';
+    window.history.pushState({}, '', newPath);
+  };
+
+  // Default to Public Landing or Solution Page if no active session and not explicitly on login/signup
   if (!authSession && authView !== 'login' && authView !== 'signup') {
+    const activeSeoConfig = getSEOConfigForPath(publicSlug);
+    const isSolutionPage = publicSlug && publicSlug !== '' && publicSlug !== 'home';
+
+    if (isSolutionPage) {
+      return (
+        <SolutionLandingPage
+          seo={activeSeoConfig}
+          onOpenLogin={() => {
+            setAuthView('login');
+            window.location.hash = '#login';
+          }}
+          onOpenSignup={() => {
+            setAuthView('signup');
+            window.location.hash = '#signup';
+          }}
+          onNavigateSlug={handleNavigatePublicSlug}
+        />
+      );
+    }
+
     return (
-      <LandingPage
-        session={authSession}
-        onStartTrial={() => {
-          setAuthView('signup');
-          window.location.hash = '#signup';
-        }}
-        onSignIn={() => {
-          setAuthView('login');
-          window.location.hash = '#login';
-        }}
-        onEnterDemoApp={() => {
-          if (authSession) {
-            setAuthView(null);
-            window.location.hash = '';
-            reloadAllState();
-          } else {
+      <>
+        <SEOHead seo={SEO_ROUTES.home} />
+        <LandingPage
+          session={authSession}
+          onStartTrial={() => {
+            setAuthView('signup');
+            window.location.hash = '#signup';
+          }}
+          onSignIn={() => {
             setAuthView('login');
             window.location.hash = '#login';
-          }
-        }}
-        onOpenSuperAdmin={() => {
-          if (authSession?.user?.role === 'SUPER_ADMIN') {
-            setIsSuperAdminMode(true);
-            setAuthView(null);
-            window.location.hash = '#admin';
-          } else {
-            setAuthView('login');
-            window.location.hash = '#login';
-          }
-        }}
-      />
+          }}
+          onEnterDemoApp={() => {
+            if (authSession) {
+              setAuthView(null);
+              window.location.hash = '';
+              reloadAllState();
+            } else {
+              setAuthView('login');
+              window.location.hash = '#login';
+            }
+          }}
+          onOpenSuperAdmin={() => {
+            if (authSession?.user?.role === 'SUPER_ADMIN') {
+              setIsSuperAdminMode(true);
+              setAuthView(null);
+              window.location.hash = '#admin';
+            } else {
+              setAuthView('login');
+              window.location.hash = '#login';
+            }
+          }}
+        />
+      </>
     );
   }
 
   // Explicit Landing Page view
   if (authView === 'home') {
     return (
-      <LandingPage
-        session={authSession}
-        onStartTrial={() => {
-          setAuthView('signup');
-          window.location.hash = '#signup';
-        }}
-        onSignIn={() => {
-          setAuthView('login');
-          window.location.hash = '#login';
-        }}
-        onEnterDemoApp={() => {
-          if (authSession) {
-            setAuthView(null);
-            window.location.hash = '';
-            reloadAllState();
-          } else {
+      <>
+        <SEOHead seo={SEO_ROUTES.home} />
+        <LandingPage
+          session={authSession}
+          onStartTrial={() => {
+            setAuthView('signup');
+            window.location.hash = '#signup';
+          }}
+          onSignIn={() => {
             setAuthView('login');
             window.location.hash = '#login';
-          }
-        }}
-        onOpenSuperAdmin={() => {
-          if (authSession?.user?.role === 'SUPER_ADMIN') {
-            setIsSuperAdminMode(true);
-            setAuthView(null);
-            window.location.hash = '#admin';
-          } else {
-            setAuthView('login');
-            window.location.hash = '#login';
-          }
-        }}
-      />
+          }}
+          onEnterDemoApp={() => {
+            if (authSession) {
+              setAuthView(null);
+              window.location.hash = '';
+              reloadAllState();
+            } else {
+              setAuthView('login');
+              window.location.hash = '#login';
+            }
+          }}
+          onOpenSuperAdmin={() => {
+            if (authSession?.user?.role === 'SUPER_ADMIN') {
+              setIsSuperAdminMode(true);
+              setAuthView(null);
+              window.location.hash = '#admin';
+            } else {
+              setAuthView('login');
+              window.location.hash = '#login';
+            }
+          }}
+        />
+      </>
     );
   }
 
