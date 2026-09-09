@@ -112,6 +112,12 @@ export default function App() {
   // Quick Notification Banner
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [syncErrorBanner, setSyncErrorBanner] = useState<{ action: string; error: string; status?: number } | null>(null);
+  const [paymentResultBanner, setPaymentResultBanner] = useState<{
+    status: 'success' | 'failure';
+    txnId?: string | null;
+    amount?: string | null;
+    error?: string | null;
+  } | null>(null);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -149,10 +155,16 @@ export default function App() {
     const pathname = window.location.pathname;
     const paymentStatus = urlParams.get('payment_status') || (pathname.includes('order-success') ? 'success' : pathname.includes('order-failed') ? 'failure' : null);
     const returnTxnId = urlParams.get('txnid');
+    const returnAmount = urlParams.get('amount');
     const returnError = urlParams.get('error');
 
     if (paymentStatus === 'success') {
       setActiveTab('subscription');
+      setPaymentResultBanner({
+        status: 'success',
+        txnId: returnTxnId,
+        amount: returnAmount,
+      });
       confetti({
         particleCount: 100,
         spread: 70,
@@ -173,6 +185,14 @@ export default function App() {
       setActiveTab('subscription');
       const rawErr = returnError ? decodeURIComponent(returnError) : '';
       const isUserCancel = rawErr.toLowerCase().includes('cancel') || rawErr.toLowerCase().includes('usercancel');
+      const displayErr = isUserCancel
+        ? 'Payment was cancelled by user'
+        : rawErr || 'Payment could not be completed on PayU. Please try again.';
+      setPaymentResultBanner({
+        status: 'failure',
+        txnId: returnTxnId,
+        error: displayErr,
+      });
       const errMsg = isUserCancel
         ? ' (Cancelled by user)'
         : rawErr
@@ -957,6 +977,8 @@ export default function App() {
               <SubscriptionView
                 company={company}
                 subscription={subscription}
+                paymentResult={paymentResultBanner}
+                onDismissPaymentResult={() => setPaymentResultBanner(null)}
               />
             )}
 

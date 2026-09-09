@@ -28,9 +28,19 @@ import { LegalModal, LegalDocType } from '../home/LegalModal';
 import { AuthService } from '../../utils/authService';
 import { ApiService } from '../../utils/apiService';
 
+export interface PaymentResultBannerState {
+  status: 'success' | 'failure';
+  txnId?: string | null;
+  amount?: string | null;
+  error?: string | null;
+  timestamp?: number;
+}
+
 interface SubscriptionViewProps {
   company: CompanyProfile;
   subscription: SubscriptionState;
+  paymentResult?: PaymentResultBannerState | null;
+  onDismissPaymentResult?: () => void;
 }
 
 export type SubscriptionDurationCycle = '1_MONTH' | '6_MONTHS' | '12_MONTHS';
@@ -140,9 +150,47 @@ interface LiveTransactionRecord {
 export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
   company,
   subscription,
+  paymentResult,
+  onDismissPaymentResult,
 }) => {
   const [liveSub, setLiveSub] = useState<LiveSubscriptionData | null>(null);
   const [isLoadingSub, setIsLoadingSub] = useState<boolean>(true);
+
+  // Payment result banner state (from prop or URL parameters)
+  const [paymentBanner, setPaymentBanner] = useState<PaymentResultBannerState | null>(() => {
+    if (paymentResult) return paymentResult;
+    try {
+      let searchString = window.location.search;
+      if (window.location.hash.includes('?')) {
+        const hashQuery = window.location.hash.split('?')[1];
+        searchString = searchString ? `${searchString}&${hashQuery}` : `?${hashQuery}`;
+      }
+      const params = new URLSearchParams(searchString);
+      const status = params.get('payment_status');
+      if (status === 'success' || status === 'failure') {
+        return {
+          status,
+          txnId: params.get('txnid'),
+          amount: params.get('amount'),
+          error: params.get('error'),
+          timestamp: Date.now(),
+        };
+      }
+    } catch {
+      // ignore
+    }
+    return null;
+  });
+
+  useEffect(() => {
+    if (paymentResult) {
+      setPaymentBanner(paymentResult);
+      if (paymentResult.status === 'success') {
+        fetchRealSubscription();
+        fetchRealTransactions();
+      }
+    }
+  }, [paymentResult]);
 
   const [plans, setPlans] = useState<SaaSPlan[]>([]);
   const [planTiers, setPlanTiers] = useState<SubscriptionPlanTier[]>(DEFAULT_PLAN_TIERS);
@@ -480,6 +528,112 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
           </button>
         </div>
       </div>
+
+      {/* Transaction Result Banner (Success / Failure / Cancelled) */}
+      {paymentBanner && (
+        <div
+          id={paymentBanner.status === 'success' ? 'payment-success-banner' : 'payment-failure-banner'}
+          className={`p-5 rounded-2xl border shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all ${
+            paymentBanner.status === 'success'
+              ? 'bg-emerald-50/90 border-emerald-300 text-emerald-950'
+              : 'bg-rose-50/90 border-rose-300 text-rose-950'
+          }`}
+        >
+          <div className="flex items-start gap-3.5">
+            <div
+              className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 shadow-xs ${
+                paymentBanner.status === 'success'
+                  ? 'bg-emerald-600 text-white'
+                  : 'bg-rose-600 text-white'
+              }`}
+            >
+              {paymentBanner.status === 'success' ? (
+                <CheckCircle2 className="w-6 h-6" />
+              ) : (
+                <AlertCircle className="w-6 h-6" />
+              )}
+            </div>
+            <div>
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-sm font-black tracking-tight">
+                  {paymentBanner.status === 'success'
+                    ? 'Payment Successful & Verified!'
+                    : 'Payment Unsuccessful / Cancelled'}
+                </span>
+                <span
+                  className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                    paymentBanner.status === 'success'
+                      ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
+                      : 'bg-rose-100 text-rose-800 border-rose-200'
+                  }`}
+                >
+                  {paymentBanner.status === 'success' ? 'PRO PLAN ACTIVE' : 'TRANSACTION INCOMPLETE'}
+                </span>
+              </div>
+              <p className="text-xs mt-1 leading-relaxed opacity-90">
+                {paymentBanner.status === 'success'
+                  ? 'Your payment has been successfully recorded and verified with PayU India. Your subscription is active and all features are unlocked.'
+                  : paymentBanner.error
+                  ? decodeURIComponent(paymentBanner.error)
+                  : 'The transaction was cancelled or could not be completed on PayU. No amount was charged to your account.'}
+              </p>
+              <div className="flex flex-wrap items-center gap-3 mt-2 text-[11px] font-mono opacity-85">
+                {paymentBanner.txnId && (
+                  <span>
+                    <strong>Txn ID:</strong> {paymentBanner.txnId}
+                  </span>
+                )}
+                {paymentBanner.amount && (
+                  <span>
+                    <strong>Amount:</strong> ₹{paymentBanner.amount}
+                  </span>
+                )}
+                <span>
+                  <strong>Gateway:</strong> PayU India Hosted
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0 self-end md:self-center">
+            {paymentBanner.status === 'success' ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab('history');
+                  fetchRealTransactions();
+                }}
+                className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 cursor-pointer shadow-xs transition-colors"
+              >
+                <Receipt className="w-3.5 h-3.5" />
+                <span>View Receipt</span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  handleOpenSubscribeModal(planTiers[2] || planTiers[0]);
+                }}
+                className="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 cursor-pointer shadow-xs transition-all active:scale-98"
+              >
+                <Zap className="w-3.5 h-3.5 text-amber-300" />
+                <span>Try Payment Again</span>
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => {
+                setPaymentBanner(null);
+                if (onDismissPaymentResult) onDismissPaymentResult();
+              }}
+              className="p-2 text-slate-500 hover:text-slate-800 hover:bg-black/5 rounded-xl transition-colors cursor-pointer"
+              title="Dismiss"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Active Subscription Status Card */}
       {isTrialExpired && (
