@@ -6,11 +6,13 @@
   "exclude": [
     "/assets/*",
     "/favicon.ico",
-    "/manifest.json",
-    "/robots.txt",
+    "/favicon.svg",
+    "/favicon-*.png",
     "/apple-touch-icon.png",
     "/icon-*.png",
+    "/icon-mark.svg",
     "/logo-*.svg",
-    "/icon-mark.svg"
+    "/manifest.json",
+    "/robots.txt"
   ]
 }
