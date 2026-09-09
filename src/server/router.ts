@@ -2010,6 +2010,11 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
         'SELECT * FROM subscription_transactions WHERE organization_id = ? ORDER BY created_at DESC LIMIT 50',
         effectiveOrgId
       );
+      const org = await queryFirst<any>(
+        db,
+        'SELECT name FROM organizations WHERE id = ?',
+        effectiveOrgId
+      );
 
       const merged = [
         ...saasTxns.map((t) => ({

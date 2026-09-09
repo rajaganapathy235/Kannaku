@@ -1472,14 +1472,15 @@ export class KannakuDB {
 
       if (orgRes.success && orgRes.data) {
         localStorage.setItem(this.getTenantKey(STORAGE_KEYS.COMPANY), JSON.stringify(orgRes.data));
-        const subStatus = (orgRes.data.subscriptionStatus || '').toUpperCase();
+        const orgData = orgRes.data as any;
+        const subStatus = (orgData.subscriptionStatus || '').toUpperCase();
         const isSubscribed = subStatus === 'ACTIVE';
         const subState: SubscriptionState = {
           isSubscribed,
           status: (isSubscribed ? 'ACTIVE' : subStatus === 'EXPIRED' ? 'EXPIRED' : 'TRIAL') as any,
-          plan: orgRes.data.plan || 'All-in-One Growth Plan',
-          expiryDate: orgRes.data.renewalDate || orgRes.data.trialEndDate || '',
-          startDate: (orgRes.data as any).createdAt || '',
+          plan: orgData.plan || 'All-in-One Growth Plan',
+          expiryDate: orgData.renewalDate || orgData.trialEndDate || '',
+          startDate: orgData.createdAt || '',
         };
         this.saveSubscription(subState);
       }
