@@ -1997,25 +1997,49 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
     const subStatus = (org.subscription_status || 'TRIAL').toUpperCase();
     const now = Date.now();
     let daysRemaining = 0;
+    let effectiveRenewalDate = org.renewal_date || null;
+    let effectiveTrialEndDate = org.trial_end_date || null;
 
     if (subStatus === 'ACTIVE') {
-      if (org.renewal_date) {
-        const renewalTime = new Date(org.renewal_date).getTime();
-        daysRemaining = !isNaN(renewalTime) ? Math.max(0, Math.ceil((renewalTime - now) / (1000 * 60 * 60 * 24))) : 365;
-      } else {
-        daysRemaining = 365;
+      if (!effectiveRenewalDate) {
+        // Derive from latest transaction or created_at + 1 year (365 days)
+        const lastTxn = await queryFirst<any>(
+          db,
+          `SELECT created_at, billing_cycle FROM saas_transactions WHERE organization_id = ? AND status IN ('SUCCESSFUL', 'SUCCESS') ORDER BY created_at DESC LIMIT 1`,
+          effectiveOrgId
+        );
+        const baseTime = lastTxn?.created_at ? new Date(lastTxn.created_at).getTime() : (org.created_at ? new Date(org.created_at).getTime() : now);
+        let durationDays = 365;
+        if (lastTxn?.billing_cycle === '1_MONTH') durationDays = 30;
+        else if (lastTxn?.billing_cycle === '6_MONTHS') durationDays = 180;
+
+        const renewalTime = (isNaN(baseTime) ? now : baseTime) + durationDays * 24 * 60 * 60 * 1000;
+        effectiveRenewalDate = new Date(renewalTime).toISOString();
+
+        try {
+          await execute(db, 'UPDATE organizations SET renewal_date = ? WHERE id = ?', effectiveRenewalDate, effectiveOrgId);
+        } catch (updateErr: any) {
+          console.warn('[subscription] Failed to persist renewal_date:', updateErr?.message);
+        }
       }
+
+      const renewalTime = new Date(effectiveRenewalDate).getTime();
+      daysRemaining = !isNaN(renewalTime) ? Math.max(0, Math.ceil((renewalTime - now) / (1000 * 60 * 60 * 24))) : 365;
     } else if (subStatus === 'TRIAL') {
-      if (org.trial_end_date) {
-        const trialTime = new Date(org.trial_end_date).getTime();
-        daysRemaining = !isNaN(trialTime) ? Math.max(0, Math.ceil((trialTime - now) / (1000 * 60 * 60 * 24))) : 14;
-      } else if (org.created_at) {
-        const createdTime = new Date(org.created_at).getTime();
-        const trialEndTime = createdTime + 14 * 24 * 60 * 60 * 1000;
-        daysRemaining = Math.max(0, Math.ceil((trialEndTime - now) / (1000 * 60 * 60 * 24)));
-      } else {
-        daysRemaining = 14;
+      if (!effectiveTrialEndDate) {
+        const createdTime = org.created_at ? new Date(org.created_at).getTime() : now;
+        const trialEndTime = (isNaN(createdTime) ? now : createdTime) + 14 * 24 * 60 * 60 * 1000;
+        effectiveTrialEndDate = new Date(trialEndTime).toISOString();
+
+        try {
+          await execute(db, 'UPDATE organizations SET trial_end_date = ? WHERE id = ?', effectiveTrialEndDate, effectiveOrgId);
+        } catch (updateErr: any) {
+          console.warn('[subscription] Failed to persist trial_end_date:', updateErr?.message);
+        }
       }
+
+      const trialTime = new Date(effectiveTrialEndDate).getTime();
+      daysRemaining = !isNaN(trialTime) ? Math.max(0, Math.ceil((trialTime - now) / (1000 * 60 * 60 * 24))) : 14;
     }
 
     const { merchantKey } = await getPayUCredentials(db, env);
@@ -2029,8 +2053,8 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
         planName: org.plan_name || 'All-in-One Growth Plan',
         subscriptionStatus: subStatus,
         accountStatus: org.account_status || 'ACTIVE',
-        renewalDate: org.renewal_date || null,
-        trialEndDate: org.trial_end_date || null,
+        renewalDate: effectiveRenewalDate,
+        trialEndDate: effectiveTrialEndDate,
         paymentProvider: org.payment_provider || 'payu',
         daysRemaining,
         isReadOnly,

@@ -312,6 +312,22 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
   const daysRemaining = liveSub !== null ? liveSub.daysRemaining : (subscription.trialDaysRemaining ?? 14);
   const isTrialExpired = !isLiveActive && (isReadOnly || daysRemaining <= 0 || subStatus === 'EXPIRED');
 
+  const formatSubscriptionDate = (dateStr: string | null, isSubActive: boolean, daysLeft: number) => {
+    let targetDate: Date;
+    if (dateStr) {
+      const parsed = new Date(dateStr);
+      targetDate = isNaN(parsed.getTime()) ? new Date(Date.now() + (isSubActive ? 365 : 14) * 24 * 60 * 60 * 1000) : parsed;
+    } else {
+      targetDate = new Date(Date.now() + (isSubActive ? 365 : 14) * 24 * 60 * 60 * 1000);
+    }
+
+    return targetDate.toLocaleDateString('en-IN', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    });
+  };
+
   const activeGatewayName = liveSub?.activeGateway?.name || 'PayU India Hosted Gateway';
 
   const handleOpenSubscribeModal = (tier: SubscriptionPlanTier) => {
@@ -529,15 +545,19 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
                   : `FREE TRIAL (${daysRemaining} DAYS REMAINING)`}
               </span>
             </div>
-            <p className="text-xs text-slate-500 mt-1">
-              Workspace:{' '}
-              <strong className="text-slate-800">
+            <p className="text-xs text-slate-500 mt-1 flex flex-wrap items-center gap-1.5">
+              <span>Workspace:</span>
+              <strong className="text-slate-800 font-semibold">
                 {workspaceName}
-              </strong>{' '}
-              • Expiry / Renewal:{' '}
-              <strong className="text-brand-600 font-mono">
-                {renewalDate || trialEndDate || 'Continuous Active'}
               </strong>
+              <span className="text-slate-300">•</span>
+              <span>{isLiveActive ? 'Renewal Date:' : 'Trial Expiry:'}</span>
+              <strong className="text-brand-600 font-mono font-bold">
+                {formatSubscriptionDate(renewalDate || trialEndDate, isLiveActive, daysRemaining)}
+              </strong>
+              <span className="text-slate-400 font-medium text-[11px]">
+                ({daysRemaining} {daysRemaining === 1 ? 'day' : 'days'} remaining)
+              </span>
             </p>
           </div>
         </div>
