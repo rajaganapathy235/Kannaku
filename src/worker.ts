@@ -41,10 +41,38 @@ export default {
     // 2. Serve Static Assets via Cloudflare Workers Static Assets
     try {
       const response = await env.ASSETS.fetch(request);
+      const pathname = url.pathname.toLowerCase();
+      const isStaticAsset = /\.(png|ico|svg|jpg|jpeg|gif|webp|json|txt|xml|xslt|css|js|woff2?|ttf|eot)$/.test(pathname);
 
-      // If asset is not found and the route has no file extension (e.g. /login, /dashboard, /invoices),
+      // If a static asset (e.g. /favicon-48x48.png) was requested but the asset binding returned HTML or 404,
+      // prevent returning text/html for image requests.
+      if (isStaticAsset) {
+        const contentType = response.headers.get('content-type') || '';
+        if (contentType.includes('text/html') || response.status === 404) {
+          // Re-try fetching the static asset directly with clean request
+          const cleanAssetRequest = new Request(new URL(url.pathname, request.url), {
+            method: 'GET',
+            headers: request.headers,
+          });
+          const retryResponse = await env.ASSETS.fetch(cleanAssetRequest);
+          const retryContentType = retryResponse.headers.get('content-type') || '';
+
+          if (!retryContentType.includes('text/html') && retryResponse.status === 200) {
+            return retryResponse;
+          }
+
+          // If still returning HTML or 404, do not serve SPA index.html for an image URL
+          return new Response('Asset not found', {
+            status: 404,
+            headers: { 'Content-Type': 'text/plain' },
+          });
+        }
+        return response;
+      }
+
+      // If route has no file extension (e.g. /login, /dashboard, /invoices) and returns 404 or non-ok,
       // perform SPA fallback by serving index.html
-      if (response.status === 404 && !url.pathname.split('/').pop()?.includes('.')) {
+      if (response.status === 404 || (response.status === 200 && !pathname.includes('.'))) {
         const spaRequest = new Request(new URL('/', request.url), request);
         return await env.ASSETS.fetch(spaRequest);
       }

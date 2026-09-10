@@ -1,17 +1,18 @@
 {
   "version": 1,
   "include": [
-    "/api/*"
+    "/*"
   ],
   "exclude": [
     "/assets/*",
+    "/33b13d5b0cd0919125b47e8a4b427abc.txt",
+    "/apple-touch-icon.png",
     "/favicon.ico",
     "/favicon.svg",
     "/favicon-16x16.png",
     "/favicon-32x32.png",
     "/favicon-48x48.png",
     "/favicon-192x192.png",
-    "/apple-touch-icon.png",
     "/icon-192.png",
     "/icon-512.png",
     "/icon-mark.svg",
