@@ -155,7 +155,11 @@ export async function verifyPayUReverseHashPayload(
 
   const txnid = (payload.txnid || '').trim();
   const amount = payload.amount !== undefined ? String(payload.amount).trim() : '';
-  const productinfo = (payload.productinfo || '').trim();
+  // IMPORTANT: Do not .trim() productinfo — PayU's hash is computed over the exact
+  // string originally sent at checkout, which often contains trailing/double spaces
+  // (e.g. "Plan Name  1 Month  Monthly Access  "). Trimming here changes the hash
+  // input and causes genuinely successful payments to fail verification.
+  const productinfo = payload.productinfo || '';
   const firstname = (payload.firstname || '').trim();
   const email = (payload.email || '').trim();
   const status = (payload.status || payload.unmappedstatus || '').trim();
