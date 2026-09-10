@@ -404,6 +404,17 @@ export default function App() {
     }
   }, [isReadOnly, hasAutoPromptedTrialModal, authSession, isSuperAdminMode]);
 
+  // Auto-close the read-only modal the moment access is restored (e.g. right after
+  // a successful payment refreshes the session) — don't make the user close it manually.
+  // Also reset the one-time auto-prompt flag so it can correctly fire again if this
+  // organization ever becomes read-only again later (a future subscription expiry, etc.).
+  useEffect(() => {
+    if (!isReadOnly && trialExpiredModalOpen) {
+      setTrialExpiredModalOpen(false);
+      setHasAutoPromptedTrialModal(false);
+    }
+  }, [isReadOnly]);
+
   // Compute Next Invoice Number
   const getNextInvoiceNumber = (type: InvoiceType): string => {
     const prefix = company.billPrefix || 'INV/2026/';
