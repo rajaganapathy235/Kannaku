@@ -10,7 +10,8 @@
     "deploy": "npm run build && wrangler deploy",
     "preview": "vite preview",
     "clean": "rm -rf dist",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "indexnow": "node scripts/indexnow-submit.js"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",
