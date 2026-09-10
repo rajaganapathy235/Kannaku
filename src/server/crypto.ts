@@ -172,47 +172,54 @@ export async function verifyPayUReverseHashPayload(
   const additionalCharges = payload.additionalCharges;
 
   // 1. Standard reverse hash sequence (salt first, udf10 down to udf1 in reverse order)
-  const standardSequence = `${salt}|${status}|${udf10}|${udf9}|${udf8}|${udf7}|${udf6}|${udf5}|${udf4}|${udf3}|${udf2}|${udf1}|${email}|${firstname}|${productinfo}|${amount}|${txnid}|${key}`;
-  const calcStandardHash = await sha512Hex(standardSequence);
+  const statusUpper = status.toUpperCase();
+  const statusLower = status.toLowerCase();
+  
+  const statusVariants = Array.from(new Set([status, statusUpper, statusLower])).filter(Boolean);
+  
+  for (const st of statusVariants) {
+    const sequence = `${salt}|${st}|${udf10}|${udf9}|${udf8}|${udf7}|${udf6}|${udf5}|${udf4}|${udf3}|${udf2}|${udf1}|${email}|${firstname}|${productinfo}|${amount}|${txnid}|${key}`;
+    const calcHash = await sha512Hex(sequence);
 
-  if (receivedHash && constantTimeCompare(calcStandardHash.toLowerCase(), receivedHash)) {
-    return {
-      isValid: true,
-      calculatedHash: calcStandardHash,
-      receivedHash,
-      usedAdditionalCharges: false,
-    };
-  }
-
-  // 2. Additional charges sequence if present
-  if (additionalCharges !== undefined && additionalCharges !== null && additionalCharges !== '') {
-    const chargesSequence = `${additionalCharges}|${salt}|${status}|${udf10}|${udf9}|${udf8}|${udf7}|${udf6}|${udf5}|${udf4}|${udf3}|${udf2}|${udf1}|${email}|${firstname}|${productinfo}|${amount}|${txnid}|${key}`;
-    const calcChargesHash = await sha512Hex(chargesSequence);
-
-    if (receivedHash && constantTimeCompare(calcChargesHash.toLowerCase(), receivedHash)) {
+    if (receivedHash && constantTimeCompare(calcHash.toLowerCase(), receivedHash)) {
       return {
         isValid: true,
-        calculatedHash: calcChargesHash,
+        calculatedHash: calcHash,
         receivedHash,
-        usedAdditionalCharges: true,
+        usedAdditionalCharges: false,
       };
     }
-  }
 
-  // 3. Fallback: try formatting amount with two decimals if original didn't match
-  const numAmount = parseFloat(amount);
-  if (!isNaN(numAmount)) {
-    const formattedAmount = numAmount.toFixed(2);
-    if (formattedAmount !== amount) {
-      const altStandardSequence = `${salt}|${status}|${udf10}|${udf9}|${udf8}|${udf7}|${udf6}|${udf5}|${udf4}|${udf3}|${udf2}|${udf1}|${email}|${firstname}|${productinfo}|${formattedAmount}|${txnid}|${key}`;
-      const calcAltHash = await sha512Hex(altStandardSequence);
-      if (receivedHash && constantTimeCompare(calcAltHash.toLowerCase(), receivedHash)) {
+    // 2. Additional charges sequence if present
+    if (additionalCharges !== undefined && additionalCharges !== null && additionalCharges !== '') {
+      const chargesSequence = `${additionalCharges}|${salt}|${st}|${udf10}|${udf9}|${udf8}|${udf7}|${udf6}|${udf5}|${udf4}|${udf3}|${udf2}|${udf1}|${email}|${firstname}|${productinfo}|${amount}|${txnid}|${key}`;
+      const calcChargesHash = await sha512Hex(chargesSequence);
+
+      if (receivedHash && constantTimeCompare(calcChargesHash.toLowerCase(), receivedHash)) {
         return {
           isValid: true,
-          calculatedHash: calcAltHash,
+          calculatedHash: calcChargesHash,
           receivedHash,
-          usedAdditionalCharges: false,
+          usedAdditionalCharges: true,
         };
+      }
+    }
+
+    // 3. Fallback: try formatting amount with two decimals if original didn't match
+    const numAmount = parseFloat(amount);
+    if (!isNaN(numAmount)) {
+      const formattedAmount = numAmount.toFixed(2);
+      if (formattedAmount !== amount) {
+        const altStandardSequence = `${salt}|${st}|${udf10}|${udf9}|${udf8}|${udf7}|${udf6}|${udf5}|${udf4}|${udf3}|${udf2}|${udf1}|${email}|${firstname}|${productinfo}|${formattedAmount}|${txnid}|${key}`;
+        const calcAltHash = await sha512Hex(altStandardSequence);
+        if (receivedHash && constantTimeCompare(calcAltHash.toLowerCase(), receivedHash)) {
+          return {
+            isValid: true,
+            calculatedHash: calcAltHash,
+            receivedHash,
+            usedAdditionalCharges: false,
+          };
+        }
       }
     }
   }

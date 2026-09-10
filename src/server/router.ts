@@ -4378,29 +4378,134 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
 
     // 10.5 TRANSACTIONS
     if (path === '/api/admin/transactions' && method === 'GET') {
-      const txns = await queryAll<any>(db, 'SELECT * FROM saas_transactions ORDER BY date DESC LIMIT 100');
-      const parsed = txns.map((t) => ({
+      const saasTxns = await queryAll<any>(db, 'SELECT * FROM saas_transactions ORDER BY date DESC LIMIT 100');
+      const subTxns = await queryAll<any>(db, 'SELECT * FROM subscription_transactions ORDER BY created_at DESC LIMIT 100');
+
+      const orgMap = new Map<string, string>();
+      const orgs = await queryAll<any>(db, 'SELECT id, name FROM organizations');
+      orgs.forEach((o) => orgMap.set(o.id, o.name));
+
+      const existingRefIds = new Set(saasTxns.map((t) => t.gateway_ref_id || t.id));
+
+      const parsedSaas = saasTxns.map((t) => ({
         id: t.id,
         organizationId: t.organization_id,
-        organizationName: t.organization_name,
-        amount: t.amount,
+        organizationName: t.organization_name || orgMap.get(t.organization_id) || 'Workspace Tenant',
+        amount: Number(t.amount) || 0,
         currency: t.currency || 'INR',
-        paymentMethod: t.payment_method,
-        paymentProvider: t.payment_provider,
-        status: t.status,
+        paymentMethod: t.payment_method || 'PayU Hosted',
+        paymentProvider: t.payment_provider || 'PayU',
+        status: t.status || 'SUCCESSFUL',
         date: t.date,
-        invoiceNumber: t.invoice_number,
-        subscriptionId: t.subscription_id,
-        planName: t.plan_name,
-        billingCycle: t.billing_cycle,
+        invoiceNumber: t.invoice_number || `INV-${t.id.slice(-6)}`,
+        subscriptionId: t.subscription_id || `sub_${t.id.slice(-6)}`,
+        planName: t.plan_name || 'All-in-One Growth Plan',
+        billingCycle: t.billing_cycle || '1_MONTH',
         receiptUrl: t.receipt_url,
-        gatewayRefId: t.gateway_ref_id,
+        gatewayRefId: t.gateway_ref_id || t.id,
         failureReason: t.failure_reason,
         refundAmount: t.refund_amount,
         refundDate: t.refund_date,
         customerEmail: t.customer_email,
       }));
-      return jsonResponse(parsed);
+
+      const parsedSub = subTxns
+        .filter((st) => st.txnid && !existingRefIds.has(st.txnid))
+        .map((st) => ({
+          id: st.id || `sub_txn_${st.txnid}`,
+          organizationId: st.organization_id,
+          organizationName: orgMap.get(st.organization_id) || 'Workspace Tenant',
+          amount: Number(st.amount) || 0,
+          currency: st.currency || 'INR',
+          paymentMethod: 'PayU Hosted Checkout',
+          paymentProvider: st.payment_provider ? (st.payment_provider.toUpperCase() === 'PAYU' ? 'PayU' : st.payment_provider) : 'PayU',
+          status: st.payment_status === 'SUCCESS' ? 'SUCCESSFUL' : (st.payment_status === 'FAILED' ? 'FAILED' : 'PENDING'),
+          date: st.created_at || new Date().toISOString(),
+          invoiceNumber: `INV-${st.txnid ? st.txnid.slice(-6) : 'ONLINE'}`,
+          subscriptionId: `sub_${st.txnid || Date.now()}`,
+          planName: st.plan_name || 'All-in-One Growth Plan',
+          billingCycle: st.billing_cycle || '1_MONTH',
+          receiptUrl: null,
+          gatewayRefId: st.txnid || st.payu_payment_id || 'N/A',
+          failureReason: st.payment_status === 'FAILED' ? 'Hash signature verification failed or cancelled by user' : null,
+          refundAmount: null,
+          refundDate: null,
+          customerEmail: st.customer_email || '',
+        }));
+
+      const merged = [...parsedSaas, ...parsedSub].sort(
+        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+      );
+
+      return jsonResponse(merged);
+    }
+
+    if (path === '/api/admin/transactions/approve' && method === 'POST') {
+      try {
+        const body = (await request.json().catch(() => ({}))) as any;
+        const { txnid, organizationId, amount, planName, durationDays = 365 } = body;
+
+        if (!organizationId) {
+          return errorResponse('organizationId is required', 400);
+        }
+
+        // 1. Extend Organization Subscription
+        const renewalDate = new Date(Date.now() + Number(durationDays) * 24 * 60 * 60 * 1000).toISOString();
+        await execute(
+          db,
+          `UPDATE organizations SET
+            subscription_status = 'ACTIVE',
+            account_status = 'ACTIVE',
+            renewal_date = ?,
+            plan_id = 'plan_all_in_one_pro',
+            plan_name = ?,
+            payment_provider = 'payu',
+            last_active = CURRENT_TIMESTAMP
+          WHERE id = ?`,
+          renewalDate,
+          planName || 'All-in-One Growth Plan',
+          organizationId
+        );
+
+        // 2. Update subscription_transactions if txnid provided
+        if (txnid) {
+          await execute(
+            db,
+            `UPDATE subscription_transactions SET
+              payment_status = 'SUCCESS',
+              updated_at = CURRENT_TIMESTAMP
+            WHERE txnid = ?`,
+            txnid
+          );
+        }
+
+        // 3. Insert into saas_transactions ledger
+        const org = await queryFirst<any>(db, 'SELECT name FROM organizations WHERE id = ?', organizationId);
+        const newTxnId = `txn_manual_${Date.now()}`;
+        await execute(
+          db,
+          `INSERT INTO saas_transactions (
+            id, organization_id, organization_name, amount, currency, payment_method, payment_provider,
+            status, date, invoice_number, gateway_ref_id, customer_email, plan_name, billing_cycle
+          ) VALUES (?, ?, ?, ?, 'INR', 'Manual Admin Activation', 'PayU', 'SUCCESSFUL', CURRENT_TIMESTAMP, ?, ?, ?, ?, 'YEARLY')`,
+          newTxnId,
+          organizationId,
+          org?.name || 'Workspace Tenant',
+          Number(amount) || 99,
+          `INV-MANUAL-${Date.now().toString().slice(-6)}`,
+          txnid || `MANUAL-${Date.now()}`,
+          body.customerEmail || 'admin@justgst.in',
+          planName || 'All-in-One Growth Plan'
+        );
+
+        return jsonResponse({
+          success: true,
+          message: 'Subscription manually approved and workspace activated successfully!',
+          renewalDate,
+        });
+      } catch (err: any) {
+        return errorResponse('Failed to approve transaction: ' + (err?.message || 'Server error'), 500);
+      }
     }
 
     if (path === '/api/admin/transactions' && method === 'POST') {

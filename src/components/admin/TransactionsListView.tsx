@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Receipt,
   Search,
@@ -10,20 +10,62 @@ import {
   ExternalLink,
   ShieldCheck,
   CreditCard,
+  RefreshCw,
+  Check,
 } from 'lucide-react';
 import { SaaSAdminDB } from '../../utils/adminStorage';
+import { ApiService } from '../../utils/apiService';
 import { SaaSTransaction } from '../../types/admin';
 
 export const TransactionsListView: React.FC = () => {
   const [transactions, setTransactions] = useState<SaaSTransaction[]>(
     SaaSAdminDB.getTransactions()
   );
+  const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [providerFilter, setProviderFilter] = useState('ALL');
 
-  const reloadData = () => {
-    setTransactions(SaaSAdminDB.getTransactions());
+  const reloadData = async () => {
+    setLoading(true);
+    try {
+      const data = await SaaSAdminDB.getTransactionsAsync();
+      setTransactions(data);
+    } catch (err) {
+      console.error('Failed to load transactions:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    reloadData();
+  }, []);
+
+  const handleApprove = async (txn: SaaSTransaction) => {
+    if (!window.confirm(`Force approve payment & activate workspace for "${txn.organizationName}"?`)) {
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await ApiService.approveAdminTransaction({
+        txnid: txn.gatewayRefId || txn.id,
+        organizationId: txn.organizationId,
+        amount: txn.amount,
+        planName: txn.planName,
+        customerEmail: txn.customerEmail,
+      });
+      if (res.success) {
+        alert('Workspace successfully activated & marked as paid!');
+        await reloadData();
+      } else {
+        alert('Failed to approve transaction: ' + (res.message || 'Unknown error'));
+      }
+    } catch (err: any) {
+      alert('Error approving transaction: ' + (err?.message || err));
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleRefund = (txn: SaaSTransaction) => {
@@ -103,21 +145,32 @@ Status: Official Computer Generated Tax Receipt
           </p>
         </div>
 
-        <button
-          onClick={() => {
-            const csv = SaaSAdminDB.exportEntirePlatformData('CSV', 'transactions');
-            const blob = new Blob([csv], { type: 'text/csv' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `kannaku_transactions_${new Date().toISOString().split('T')[0]}.csv`;
-            a.click();
-          }}
-          className="px-3 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 rounded-xl text-xs font-semibold flex items-center gap-1.5 cursor-pointer"
-        >
-          <Download className="w-4 h-4" />
-          <span>Export Transactions CSV</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={reloadData}
+            disabled={loading}
+            className="px-3 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 rounded-xl text-xs font-semibold flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+            title="Refresh Transactions from Server"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-brand-400' : ''}`} />
+            <span>Sync Ledger</span>
+          </button>
+          <button
+            onClick={() => {
+              const csv = SaaSAdminDB.exportEntirePlatformData('CSV', 'transactions');
+              const blob = new Blob([csv], { type: 'text/csv' });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = `kannaku_transactions_${new Date().toISOString().split('T')[0]}.csv`;
+              a.click();
+            }}
+            className="px-3 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 rounded-xl text-xs font-semibold flex items-center gap-1.5 cursor-pointer"
+          >
+            <Download className="w-4 h-4" />
+            <span>Export CSV</span>
+          </button>
+        </div>
       </div>
 
       {/* Filter Toolbar */}
@@ -217,6 +270,16 @@ Status: Official Computer Generated Tax Receipt
                     </td>
                     <td className="py-3.5 px-4 text-right">
                       <div className="flex items-center justify-end gap-1.5">
+                        {txn.status !== 'SUCCESSFUL' && (
+                          <button
+                            onClick={() => handleApprove(txn)}
+                            className="px-2.5 py-1 bg-emerald-950 hover:bg-emerald-900 text-emerald-300 border border-emerald-800/80 rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer transition-colors shadow-sm"
+                            title="Force Approve Payment & Activate Workspace Subscription"
+                          >
+                            <Check className="w-3.5 h-3.5 text-emerald-400" />
+                            <span>Approve & Activate</span>
+                          </button>
+                        )}
                         <button
                           onClick={() => handleDownloadReceipt(txn)}
                           className="p-1.5 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white rounded-lg transition-colors cursor-pointer"

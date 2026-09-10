@@ -440,6 +440,23 @@ export class ApiService {
     });
   }
 
+  static async approveAdminTransaction(params: {
+    txnid?: string;
+    organizationId: string;
+    amount?: number;
+    planName?: string;
+    durationDays?: number;
+    customerEmail?: string;
+  }) {
+    return this.request<{ success: boolean; message: string; renewalDate?: string }>(
+      '/api/admin/transactions/approve',
+      {
+        method: 'POST',
+        body: JSON.stringify(params),
+      }
+    );
+  }
+
   static async getAdminCoupons() {
     return this.request<any[]>('/api/admin/coupons');
   }
