@@ -332,12 +332,223 @@ export const PublicLayout: React.FC<PublicLayoutProps> = ({
       {/* Main Page Content Body */}
       <main className="flex-1 w-full">{children}</main>
 
-      {/* Unified 4-Column Minimalist Footer */}
+      {/* Minimalist Footer */}
       <footer className="bg-white border-t border-slate-200 mt-auto">
-        <div id="industries" className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 border-b border-slate-100">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {/* Column 1: Brand & Tagline */}
-            <div className="space-y-4">
+        {/* On subpages / solutions, show the 4-column directory. On the homepage, keep it clean without the directory lists. */}
+        {!isHome && (
+          <div id="industries" className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 border-b border-slate-100">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+              {/* Column 1: Brand & Tagline */}
+              <div className="space-y-4">
+                <a
+                  href="/"
+                  onClick={(e) => handleNav(e, '')}
+                  className="inline-block cursor-pointer"
+                >
+                  <img
+                    src="/logo-horizontal.svg"
+                    alt="JustGST"
+                    className="w-auto object-contain shrink-0"
+                    style={{ height: '36px' }}
+                  />
+                </a>
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  Simple, fast 100% cloud GST billing, POS &amp; inventory software for Indian businesses, retailers, and wholesalers at ₹49/month.
+                </p>
+                <div className="text-[11px] text-slate-400">
+                  © {new Date().getFullYear()} JustGST. All Rights Reserved.
+                </div>
+              </div>
+
+              {/* Column 2: Product */}
+              <div className="space-y-3">
+                <div className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+                  Product
+                </div>
+                <ul className="space-y-2 text-xs text-slate-600">
+                  <li>
+                    <a
+                      href="/#features"
+                      onClick={(e) => {
+                        if (!isHome) handleNav(e, '');
+                      }}
+                      className="hover:text-brand-600 transition-colors"
+                    >
+                      Features
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      href="/pricing/"
+                      onClick={(e) => handleNav(e, 'pricing')}
+                      className="hover:text-brand-600 transition-colors"
+                    >
+                      Pricing Plans
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      href="/gst-billing-software/"
+                      onClick={(e) => handleNav(e, 'gst-billing-software')}
+                      className="hover:text-brand-600 transition-colors"
+                    >
+                      GST Billing Software
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      href="/inventory-management-software/"
+                      onClick={(e) => handleNav(e, 'inventory-management-software')}
+                      className="hover:text-brand-600 transition-colors"
+                    >
+                      Inventory &amp; Stock
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      href="/billing-software-for-retail/"
+                      onClick={(e) => handleNav(e, 'billing-software-for-retail')}
+                      className="hover:text-brand-600 transition-colors"
+                    >
+                      Retail POS &amp; Thermal
+                    </a>
+                  </li>
+                </ul>
+              </div>
+
+              {/* Column 3: Industries */}
+              <div className="space-y-3">
+                <div className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+                  Industries
+                </div>
+                <ul className="space-y-2 text-xs text-slate-600">
+                  <li>
+                    <a
+                      href="/billing-software-for-pharmacy/"
+                      onClick={(e) => handleNav(e, 'billing-software-for-pharmacy')}
+                      className="hover:text-brand-600 transition-colors"
+                    >
+                      Pharmacies &amp; Chemists
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      href="/billing-software-for-supermarket/"
+                      onClick={(e) => handleNav(e, 'billing-software-for-supermarket')}
+                      className="hover:text-brand-600 transition-colors"
+                    >
+                      Supermarkets &amp; Kirana
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      href="/billing-software-for-wholesale/"
+                      onClick={(e) => handleNav(e, 'billing-software-for-wholesale')}
+                      className="hover:text-brand-600 transition-colors"
+                    >
+                      Wholesale &amp; Distribution
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      href="/billing-software-for-hardware/"
+                      onClick={(e) => handleNav(e, 'billing-software-for-hardware')}
+                      className="hover:text-brand-600 transition-colors"
+                    >
+                      Hardware &amp; Sanitary
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      href="/billing-software-for-apparel/"
+                      onClick={(e) => handleNav(e, 'billing-software-for-apparel')}
+                      className="hover:text-brand-600 transition-colors"
+                    >
+                      Garments &amp; Apparel
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      href="/billing-software-for-manufacturing/"
+                      onClick={(e) => handleNav(e, 'billing-software-for-manufacturing')}
+                      className="hover:text-brand-600 transition-colors"
+                    >
+                      Manufacturing &amp; Factories
+                    </a>
+                  </li>
+                </ul>
+              </div>
+
+              {/* Column 4: Comparisons & Legal */}
+              <div className="space-y-3">
+                <div className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+                  Comparisons &amp; Legal
+                </div>
+                <ul className="space-y-2 text-xs text-slate-600">
+                  <li>
+                    <a
+                      href="/compare/justgst-vs-vyapar/"
+                      onClick={(e) => handleNav(e, 'compare/justgst-vs-vyapar')}
+                      className="hover:text-brand-600 transition-colors"
+                    >
+                      vs Vyapar
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      href="/compare/justgst-vs-gogst-vs-vyapar-vs-swipe-vs-mybillbook/"
+                      onClick={(e) => handleNav(e, 'compare/justgst-vs-gogst-vs-vyapar-vs-swipe-vs-mybillbook')}
+                      className="hover:text-brand-600 transition-colors"
+                    >
+                      5-Way Compare
+                    </a>
+                  </li>
+                  <li>
+                    <button
+                      type="button"
+                      onClick={() => openLegal('privacy')}
+                      className="hover:text-brand-600 transition-colors cursor-pointer text-left"
+                    >
+                      Privacy Policy
+                    </button>
+                  </li>
+                  <li>
+                    <button
+                      type="button"
+                      onClick={() => openLegal('terms')}
+                      className="hover:text-brand-600 transition-colors cursor-pointer text-left"
+                    >
+                      Terms of Service
+                    </button>
+                  </li>
+                  <li>
+                    <button
+                      type="button"
+                      onClick={() => openLegal('refund')}
+                      className="hover:text-brand-600 transition-colors cursor-pointer text-left"
+                    >
+                      Refund Policy
+                    </button>
+                  </li>
+                  <li>
+                    <button
+                      type="button"
+                      onClick={() => openLegal('contact')}
+                      className="hover:text-brand-600 transition-colors cursor-pointer text-left"
+                    >
+                      Contact Support
+                    </button>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Bottom Legal Sub-Bar */}
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-slate-400">
+            <div className="flex items-center gap-3">
               <a
                 href="/"
                 onClick={(e) => handleNav(e, '')}
@@ -347,208 +558,38 @@ export const PublicLayout: React.FC<PublicLayoutProps> = ({
                   src="/logo-horizontal.svg"
                   alt="JustGST"
                   className="w-auto object-contain shrink-0"
-                  style={{ height: '36px' }}
+                  style={{ height: '28px' }}
                 />
               </a>
-              <p className="text-xs text-slate-500 leading-relaxed">
-                Simple, fast 100% cloud GST billing, POS &amp; inventory software for Indian businesses, retailers, and wholesalers at ₹49/month.
+              <p className="text-center sm:text-left">
+                © {new Date().getFullYear()} JustGST. Operated by Rajaganapathy Kamalakannan. All Rights Reserved.
               </p>
-              <div className="text-[11px] text-slate-400">
-                © {new Date().getFullYear()} JustGST. All Rights Reserved.
-              </div>
             </div>
-
-            {/* Column 2: Product */}
-            <div className="space-y-3">
-              <div className="text-xs font-bold text-slate-900 uppercase tracking-wider">
-                Product
-              </div>
-              <ul className="space-y-2 text-xs text-slate-600">
-                <li>
-                  <a
-                    href="/#features"
-                    onClick={(e) => {
-                      if (!isHome) handleNav(e, '');
-                    }}
-                    className="hover:text-brand-600 transition-colors"
-                  >
-                    Features
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="/pricing/"
-                    onClick={(e) => handleNav(e, 'pricing')}
-                    className="hover:text-brand-600 transition-colors"
-                  >
-                    Pricing Plans
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="/gst-billing-software/"
-                    onClick={(e) => handleNav(e, 'gst-billing-software')}
-                    className="hover:text-brand-600 transition-colors"
-                  >
-                    GST Billing Software
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="/inventory-management-software/"
-                    onClick={(e) => handleNav(e, 'inventory-management-software')}
-                    className="hover:text-brand-600 transition-colors"
-                  >
-                    Inventory &amp; Stock
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="/billing-software-for-retail/"
-                    onClick={(e) => handleNav(e, 'billing-software-for-retail')}
-                    className="hover:text-brand-600 transition-colors"
-                  >
-                    Retail POS &amp; Thermal
-                  </a>
-                </li>
-              </ul>
-            </div>
-
-            {/* Column 3: Industries */}
-            <div className="space-y-3">
-              <div className="text-xs font-bold text-slate-900 uppercase tracking-wider">
-                Industries
-              </div>
-              <ul className="space-y-2 text-xs text-slate-600">
-                <li>
-                  <a
-                    href="/billing-software-for-pharmacy/"
-                    onClick={(e) => handleNav(e, 'billing-software-for-pharmacy')}
-                    className="hover:text-brand-600 transition-colors"
-                  >
-                    Pharmacies &amp; Chemists
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="/billing-software-for-supermarket/"
-                    onClick={(e) => handleNav(e, 'billing-software-for-supermarket')}
-                    className="hover:text-brand-600 transition-colors"
-                  >
-                    Supermarkets &amp; Kirana
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="/billing-software-for-wholesale/"
-                    onClick={(e) => handleNav(e, 'billing-software-for-wholesale')}
-                    className="hover:text-brand-600 transition-colors"
-                  >
-                    Wholesale &amp; Distribution
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="/billing-software-for-hardware/"
-                    onClick={(e) => handleNav(e, 'billing-software-for-hardware')}
-                    className="hover:text-brand-600 transition-colors"
-                  >
-                    Hardware &amp; Sanitary
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="/billing-software-for-apparel/"
-                    onClick={(e) => handleNav(e, 'billing-software-for-apparel')}
-                    className="hover:text-brand-600 transition-colors"
-                  >
-                    Garments &amp; Apparel
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="/billing-software-for-manufacturing/"
-                    onClick={(e) => handleNav(e, 'billing-software-for-manufacturing')}
-                    className="hover:text-brand-600 transition-colors"
-                  >
-                    Manufacturing &amp; Factories
-                  </a>
-                </li>
-              </ul>
-            </div>
-
-            {/* Column 4: Comparisons & Legal */}
-            <div className="space-y-3">
-              <div className="text-xs font-bold text-slate-900 uppercase tracking-wider">
-                Comparisons &amp; Legal
-              </div>
-              <ul className="space-y-2 text-xs text-slate-600">
-                <li>
-                  <a
-                    href="/compare/justgst-vs-vyapar/"
-                    onClick={(e) => handleNav(e, 'compare/justgst-vs-vyapar')}
-                    className="hover:text-brand-600 transition-colors"
-                  >
-                    vs Vyapar
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="/compare/justgst-vs-gogst-vs-vyapar-vs-swipe-vs-mybillbook/"
-                    onClick={(e) => handleNav(e, 'compare/justgst-vs-gogst-vs-vyapar-vs-swipe-vs-mybillbook')}
-                    className="hover:text-brand-600 transition-colors"
-                  >
-                    5-Way Compare
-                  </a>
-                </li>
-                <li>
-                  <button
-                    type="button"
-                    onClick={() => openLegal('privacy')}
-                    className="hover:text-brand-600 transition-colors cursor-pointer text-left"
-                  >
-                    Privacy Policy
-                  </button>
-                </li>
-                <li>
-                  <button
-                    type="button"
-                    onClick={() => openLegal('terms')}
-                    className="hover:text-brand-600 transition-colors cursor-pointer text-left"
-                  >
-                    Terms of Service
-                  </button>
-                </li>
-                <li>
-                  <button
-                    type="button"
-                    onClick={() => openLegal('refund')}
-                    className="hover:text-brand-600 transition-colors cursor-pointer text-left"
-                  >
-                    Refund Policy
-                  </button>
-                </li>
-                <li>
-                  <button
-                    type="button"
-                    onClick={() => openLegal('contact')}
-                    className="hover:text-brand-600 transition-colors cursor-pointer text-left"
-                  >
-                    Contact Support
-                  </button>
-                </li>
-              </ul>
-            </div>
-          </div>
-        </div>
-
-        {/* Bottom Legal Sub-Bar */}
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-slate-400">
-            <p className="text-center sm:text-left">
-              Operated by Rajaganapathy Kamalakannan. All Rights Reserved.
-            </p>
             <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-slate-500 font-medium">
+              <button
+                type="button"
+                onClick={() => openLegal('privacy')}
+                className="hover:text-brand-600 transition-colors cursor-pointer"
+              >
+                Privacy Policy
+              </button>
+              <span>•</span>
+              <button
+                type="button"
+                onClick={() => openLegal('terms')}
+                className="hover:text-brand-600 transition-colors cursor-pointer"
+              >
+                Terms of Service
+              </button>
+              <span>•</span>
+              <button
+                type="button"
+                onClick={() => openLegal('refund')}
+                className="hover:text-brand-600 transition-colors cursor-pointer"
+              >
+                Refund Policy
+              </button>
+              <span>•</span>
               <button
                 type="button"
                 onClick={() => openLegal('shipping')}

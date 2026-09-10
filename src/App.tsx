@@ -105,9 +105,11 @@ export default function App() {
     ) || allPlans[0];
 
   const trialDurationDays =
-    activeOrg?.trialDurationDays ||
-    activePlan?.trialDurationDays ||
-    15;
+    activeOrg?.trialDurationDays !== undefined && activeOrg?.trialDurationDays !== null
+      ? activeOrg.trialDurationDays
+      : activePlan?.trialDurationDays !== undefined && activePlan?.trialDurationDays !== null
+      ? activePlan.trialDurationDays
+      : 15;
 
   // Read-Only Modal State
   const [trialExpiredModalOpen, setTrialExpiredModalOpen] = useState<boolean>(false);

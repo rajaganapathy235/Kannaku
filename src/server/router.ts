@@ -863,13 +863,18 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
         "SELECT trial_duration_days, billing_type FROM saas_plans WHERE id = 'plan_all_in_one_pro'"
       );
       const trialDays =
-        adminTrialDays !== undefined && adminTrialDays !== null && Number(adminTrialDays) > 0
+        adminTrialDays !== undefined && adminTrialDays !== null && !isNaN(Number(adminTrialDays)) && Number(adminTrialDays) >= 0
           ? Number(adminTrialDays)
-          : assignedPlan && assignedPlan.trial_duration_days != null && Number(assignedPlan.trial_duration_days) > 0
+          : assignedPlan && assignedPlan.trial_duration_days != null && !isNaN(Number(assignedPlan.trial_duration_days)) && Number(assignedPlan.trial_duration_days) >= 0
           ? Number(assignedPlan.trial_duration_days)
           : 15;
       const trialEndDate = new Date(Date.now() + trialDays * 24 * 60 * 60 * 1000).toISOString();
       const planBillingType = assignedPlan?.billing_type || 'ONE_TIME';
+
+      // Determine initial read-only status (if trialDays is 0, trial expires immediately)
+      const isInitialReadOnly = trialDays === 0;
+      const initialCode = isInitialReadOnly ? 'TRIAL_EXPIRED' : null;
+      const initialReason = isInitialReadOnly ? 'TRIAL_EXPIRED' : null;
 
       // Create Organization with Free Trial status
       await execute(
@@ -926,9 +931,9 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
             email: email.trim(),
             phone: mobile,
             role: 'OWNER',
-            isReadOnly: false,
-            code: null,
-            readOnlyReason: null,
+            isReadOnly: isInitialReadOnly,
+            code: initialCode,
+            readOnlyReason: initialReason,
           },
           organization: {
             id: orgId,
@@ -939,13 +944,13 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
             accountStatus: 'ACTIVE',
             trialEndDate,
             trialDurationDays: trialDays,
-            isReadOnly: false,
-            code: null,
-            readOnlyReason: null,
+            isReadOnly: isInitialReadOnly,
+            code: initialCode,
+            readOnlyReason: initialReason,
           },
-          isReadOnly: false,
-          code: null,
-          readOnlyReason: null,
+          isReadOnly: isInitialReadOnly,
+          code: initialCode,
+          readOnlyReason: initialReason,
         },
         201,
         { 'Set-Cookie': sessionCookie }
@@ -979,7 +984,7 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
         threeMonthPriceInr: Number(p.three_month_price_inr) || 237,
         yearlyPriceInr: Number(p.yearly_price_inr) || 588,
         trialDurationDays:
-          p.trial_duration_days !== null && p.trial_duration_days !== undefined && Number(p.trial_duration_days) > 0
+          p.trial_duration_days !== null && p.trial_duration_days !== undefined && !isNaN(Number(p.trial_duration_days)) && Number(p.trial_duration_days) >= 0
             ? Number(p.trial_duration_days)
             : 15,
         billingType: p.billing_type || 'ONE_TIME',
@@ -1061,6 +1066,10 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
       const monthlyPrice = flagship.monthlyPriceInr || 99;
       const sixMonthTotal = flagship.sixMonthPriceInr || 474;
       const yearlyTotal = flagship.yearlyPriceInr || 588;
+      const flagshipTrialDays =
+        flagship.trialDurationDays !== undefined && flagship.trialDurationDays !== null && !isNaN(Number(flagship.trialDurationDays)) && Number(flagship.trialDurationDays) >= 0
+          ? Number(flagship.trialDurationDays)
+          : 15;
 
       const dynamicTiers = [
         {
@@ -1077,7 +1086,7 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
           description: 'Billed every 30 days. Perfect for new stores testing the software.',
           savingsBadge: null,
           isPopular: false,
-          trialDurationDays: flagship.trialDurationDays || 15,
+          trialDurationDays: flagshipTrialDays,
           billingType: flagship.billingType || 'ONE_TIME',
         },
         {
@@ -1094,7 +1103,7 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
           description: 'Billed semi-annually. Ideal for regular retail and GST traders.',
           savingsBadge: 'Save 20%',
           isPopular: false,
-          trialDurationDays: flagship.trialDurationDays || 15,
+          trialDurationDays: flagshipTrialDays,
           billingType: flagship.billingType || 'ONE_TIME',
         },
         {
@@ -1111,7 +1120,7 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
           description: 'Billed ₹588 annually. Maximum savings with 1-year continuous access.',
           savingsBadge: 'Save 50% • Best Value',
           isPopular: true,
-          trialDurationDays: flagship.trialDurationDays || 15,
+          trialDurationDays: flagshipTrialDays,
           billingType: flagship.billingType || 'ONE_TIME',
         },
       ];
@@ -4280,7 +4289,7 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
         threeMonthPriceInr: p.three_month_price_inr,
         yearlyPriceInr: p.yearly_price_inr,
         trialDurationDays:
-          p.trial_duration_days !== null && p.trial_duration_days !== undefined && Number(p.trial_duration_days) > 0
+          p.trial_duration_days !== null && p.trial_duration_days !== undefined && !isNaN(Number(p.trial_duration_days)) && Number(p.trial_duration_days) >= 0
             ? Number(p.trial_duration_days)
             : 15,
         billingType: p.billing_type || 'ONE_TIME',

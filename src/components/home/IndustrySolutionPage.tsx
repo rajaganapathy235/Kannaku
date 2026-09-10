@@ -155,7 +155,7 @@ export const IndustrySolutionPage: React.FC<IndustrySolutionPageProps> = ({
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {data.painPoints.map((item, idx) => (
+            {(data.keyPainPointsSolved || []).map((item, idx) => (
               <div
                 key={idx}
                 className="bg-slate-50 border border-slate-200 rounded-2xl p-6 flex flex-col justify-between shadow-xs"
@@ -195,7 +195,7 @@ export const IndustrySolutionPage: React.FC<IndustrySolutionPageProps> = ({
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {data.features.map((feat, idx) => (
+          {(data.tailoredFeatures || []).map((feat, idx) => (
             <div
               key={idx}
               className="bg-white border border-slate-200 hover:border-slate-300 rounded-2xl p-6 transition-all shadow-xs"
@@ -226,7 +226,7 @@ export const IndustrySolutionPage: React.FC<IndustrySolutionPageProps> = ({
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 relative">
-            {data.workflowSteps.map((step, idx) => (
+            {(data.workflowSteps || []).map((step, idx) => (
               <div
                 key={idx}
                 className="bg-slate-50 border border-slate-200 rounded-2xl p-6 relative overflow-hidden shadow-xs"
@@ -260,7 +260,7 @@ export const IndustrySolutionPage: React.FC<IndustrySolutionPageProps> = ({
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {data.hardwareChecklist.map((hw, idx) => (
+          {(data.hardwareChecklist || []).map((hw, idx) => (
             <div
               key={idx}
               className="bg-white border border-slate-200 rounded-2xl p-5 flex flex-col justify-between shadow-xs"
@@ -297,7 +297,7 @@ export const IndustrySolutionPage: React.FC<IndustrySolutionPageProps> = ({
           </div>
 
           <div className="space-y-3">
-            {data.faqs.map((faq, idx) => (
+            {(data.faqs || []).map((faq, idx) => (
               <div
                 key={idx}
                 className="border border-slate-200 rounded-xl bg-slate-50/60 overflow-hidden transition-colors"

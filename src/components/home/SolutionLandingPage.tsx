@@ -40,12 +40,12 @@ export const SolutionLandingPage: React.FC<SolutionLandingPageProps> = ({
   const isVyaparComparison = (seo.slug.includes('compare') || seo.slug.includes('vyapar')) && !isMultiComparison;
   const isPricing = seo.slug === 'pricing';
 
-  const breadcrumbs = seo.breadcrumbs
+  const breadcrumbs = seo.breadcrumbs && Array.isArray(seo.breadcrumbs)
     ? seo.breadcrumbs.map((b) => ({
         name: b.name,
-        slug: b.url.replace('https://justgst.in/', '').replace(/\/$/, ''),
+        slug: (b.url || '').replace('https://justgst.in/', '').replace(/\/$/, ''),
       }))
-    : [{ name: 'Home', slug: '' }, { name: seo.title, slug: seo.slug }];
+    : [{ name: 'Home', slug: '' }, { name: seo.title || 'Solution', slug: seo.slug || '' }];
 
   return (
     <PublicLayout
@@ -538,7 +538,7 @@ export const SolutionLandingPage: React.FC<SolutionLandingPageProps> = ({
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {seo.features.map((feat, idx) => (
+          {(seo.features || []).map((feat, idx) => (
             <div
               key={idx}
               className="bg-white border border-slate-200 hover:border-slate-300 p-6 rounded-2xl transition-all shadow-xs flex flex-col justify-between"
@@ -568,7 +568,7 @@ export const SolutionLandingPage: React.FC<SolutionLandingPageProps> = ({
           </div>
 
           <div className="space-y-3">
-            {seo.faqs.map((faq, idx) => {
+            {(seo.faqs || []).map((faq, idx) => {
               const isOpen = openFaqIndex === idx;
               return (
                 <div
