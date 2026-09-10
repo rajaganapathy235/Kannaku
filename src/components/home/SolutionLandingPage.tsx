@@ -398,128 +398,151 @@ export const SolutionLandingPage: React.FC<SolutionLandingPageProps> = ({
 
       {/* Pricing Comparison Grid (Special layout for /pricing/) */}
       {isPricing && (
-        <section className="py-16 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto w-full">
-          <div className="text-center mb-12">
-            <span className="text-xs font-bold text-brand-700 uppercase tracking-widest">
-              Straightforward Pricing
+        <section id="pricing" className="py-16 sm:py-20 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12 w-full">
+          <div className="text-center max-w-2xl mx-auto space-y-2">
+            <span className="text-xs font-bold text-brand-600 uppercase tracking-wider">
+              Clear, Transparent Pricing
             </span>
-            <h2 className="text-2xl sm:text-3xl font-black text-slate-900 mt-2">
-              Transparent Plans. No Hidden Commissions.
+            <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+              JustGST All-in-One Pro Subscription
             </h2>
-            <p className="text-sm text-slate-600 mt-2">
-              Start with a 14-day free trial. Upgrade only when you are satisfied.
+            <p className="text-xs sm:text-sm text-slate-600">
+              No hidden tiers or locked features. All plans include 100% of GST invoicing, WhatsApp sharing, stock tracking, and print layouts.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Starter Plan */}
-            <div className="bg-white border border-slate-200 rounded-2xl p-6 flex flex-col justify-between shadow-xs">
-              <div>
-                <span className="text-xs font-bold text-slate-500 uppercase">Starter</span>
-                <div className="mt-4 mb-2">
-                  <span className="text-3xl font-black text-slate-900">₹49</span>
-                  <span className="text-xs text-slate-500"> / month</span>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+            {/* 1 Month */}
+            <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-2xs flex flex-col justify-between space-y-6">
+              <div className="space-y-4">
+                <div>
+                  <span className="text-xs font-bold text-slate-800">1 Month Duration</span>
+                  <p className="text-[11px] text-slate-500 mt-0.5">Flexible monthly billing</p>
                 </div>
-                <p className="text-xs text-slate-600 mb-6">
-                  Ideal for small retail counters and freelancers starting their GST billing.
-                </p>
-                <ul className="space-y-3 text-xs text-slate-700">
-                  <li className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600" /> Full GST Invoicing
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600" /> Inventory &amp; Stock Control
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600" /> Thermal 2" &amp; 3" Printing
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600" /> Dynamic UPI QR Codes
-                  </li>
-                </ul>
-              </div>
-              <button
-                type="button"
-                onClick={onOpenSignup}
-                className="mt-8 w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs rounded-xl transition-colors cursor-pointer"
-              >
-                Start Free Trial
-              </button>
-            </div>
 
-            {/* Pro Annual (Popular) */}
-            <div className="bg-white border-2 border-brand-600 rounded-2xl p-6 flex flex-col justify-between relative shadow-lg shadow-brand-600/10">
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-brand-600 text-white text-[10px] font-black uppercase tracking-wider px-3 py-0.5 rounded-full shadow-xs">
-                Most Popular
-              </div>
-              <div>
-                <span className="text-xs font-bold text-brand-700 uppercase">Pro Annual</span>
-                <div className="mt-4 mb-2">
-                  <span className="text-3xl font-black text-slate-900">₹588</span>
-                  <span className="text-xs text-slate-500"> / year (₹49/mo)</span>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-3xl font-black text-slate-900 font-mono">₹99</span>
+                  <span className="text-xs text-slate-500">/ month</span>
                 </div>
-                <p className="text-xs text-slate-600 mb-6">
-                  Complete billing, wholesale ledgers, and unlimited stock control for growing businesses.
-                </p>
-                <ul className="space-y-3 text-xs text-slate-700">
-                  <li className="flex items-center gap-2 font-medium">
-                    <CheckCircle2 className="w-4 h-4 text-brand-600" /> Unlimited GST Tax Invoices
-                  </li>
-                  <li className="flex items-center gap-2 font-medium">
-                    <CheckCircle2 className="w-4 h-4 text-brand-600" /> Real-time Stock &amp; Low Alerts
-                  </li>
-                  <li className="flex items-center gap-2 font-medium">
-                    <CheckCircle2 className="w-4 h-4 text-brand-600" /> Party Khata &amp; WhatsApp Reminders
-                  </li>
-                  <li className="flex items-center gap-2 font-medium">
-                    <CheckCircle2 className="w-4 h-4 text-brand-600" /> Excel Import &amp; JSON GSTR Exports
-                  </li>
-                  <li className="flex items-center gap-2 font-medium">
-                    <CheckCircle2 className="w-4 h-4 text-brand-600" /> Priority Cloud Synchronization
-                  </li>
-                </ul>
+
+                <div className="text-xs text-slate-600 space-y-2 pt-3 border-t border-slate-100">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>Unlimited GST Invoices</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>All 6 Print Formats &amp; Thermal POS</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>Dynamic UPI QR Payments</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>Client &amp; Supplier Ledger</span>
+                  </div>
+                </div>
               </div>
+
               <button
                 type="button"
                 onClick={onOpenSignup}
-                className="mt-8 w-full py-3 bg-brand-600 hover:bg-brand-700 text-white font-black text-xs rounded-xl transition-all shadow-md shadow-brand-600/20 active:scale-98 cursor-pointer"
+                className="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold rounded-xl text-xs transition-colors cursor-pointer"
               >
                 Start 14-Day Free Trial
               </button>
             </div>
 
-            {/* Enterprise / Multi-Store */}
-            <div className="bg-white border border-slate-200 rounded-2xl p-6 flex flex-col justify-between shadow-xs">
-              <div>
-                <span className="text-xs font-bold text-slate-500 uppercase">Multi-Branch</span>
-                <div className="mt-4 mb-2">
-                  <span className="text-3xl font-black text-slate-900">₹1,499</span>
-                  <span className="text-xs text-slate-500"> / year</span>
-                </div>
-                <p className="text-xs text-slate-600 mb-6">
-                  Designed for multi-branch wholesalers, distributors, and high-volume operations.
-                </p>
-                <ul className="space-y-3 text-xs text-slate-700">
-                  <li className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600" /> Everything in Pro Annual
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600" /> Multi-Company &amp; Multi-Branch
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600" /> Advanced GSTR Tax Reports
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600" /> Dedicated Fast Support
-                  </li>
-                </ul>
+            {/* 6 Months */}
+            <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-2xs flex flex-col justify-between space-y-6 relative">
+              <div className="absolute -top-3 right-4 px-2.5 py-0.5 bg-brand-600 text-white text-[10px] font-bold rounded-full uppercase tracking-wider">
+                Save 20%
               </div>
+
+              <div className="space-y-4">
+                <div>
+                  <span className="text-xs font-bold text-brand-700">6 Months (Semi-Annual)</span>
+                  <p className="text-[11px] text-slate-500 mt-0.5">Billed ₹474 every 6 months</p>
+                </div>
+
+                <div className="flex items-baseline gap-1">
+                  <span className="text-3xl font-black text-brand-600 font-mono">₹79</span>
+                  <span className="text-xs text-slate-500">/ month (₹474 total)</span>
+                </div>
+
+                <div className="text-xs text-slate-600 space-y-2 pt-3 border-t border-slate-100">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>Unlimited GST Invoices</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>Inventory &amp; Low-Stock Alerts</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>GSTR-1 Excel Tax Breakdown</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>WhatsApp Invoice Dispatch</span>
+                  </div>
+                </div>
+              </div>
+
               <button
                 type="button"
                 onClick={onOpenSignup}
-                className="mt-8 w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs rounded-xl transition-colors cursor-pointer"
+                className="w-full py-2.5 bg-brand-50 hover:bg-brand-100 text-brand-700 font-bold rounded-xl text-xs transition-colors cursor-pointer border border-brand-200"
               >
-                Get Started
+                Start 14-Day Free Trial
+              </button>
+            </div>
+
+            {/* 12 Months (Best Value) */}
+            <div className="p-6 rounded-2xl bg-white border-2 border-brand-600 shadow-md flex flex-col justify-between space-y-6 relative">
+              <div className="absolute -top-3 right-4 px-2.5 py-0.5 bg-emerald-600 text-white text-[10px] font-bold rounded-full uppercase tracking-wider">
+                Save 50% • Best Value
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <span className="text-xs font-bold text-slate-900">12 Months (Annual Plan)</span>
+                  <p className="text-[11px] text-slate-500 mt-0.5">Billed ₹588 annually</p>
+                </div>
+
+                <div className="flex items-baseline gap-1">
+                  <span className="text-3xl font-black text-emerald-600 font-mono">₹49</span>
+                  <span className="text-xs text-slate-500">/ month (₹588 total)</span>
+                </div>
+
+                <div className="text-xs text-slate-600 space-y-2 pt-3 border-t border-slate-100">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span className="font-semibold text-slate-800">1 Full Year of Uninterrupted Access</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>All Invoicing, Inventory &amp; Reports</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>Priority Updates &amp; Continuous Backups</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>Multi-Device Browser Access</span>
+                  </div>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={onOpenSignup}
+                className="w-full py-2.5 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-xl text-xs transition-colors cursor-pointer shadow-xs active:scale-98"
+              >
+                Claim 14-Day Free Trial
               </button>
             </div>
           </div>

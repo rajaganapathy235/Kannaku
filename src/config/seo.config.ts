@@ -64,7 +64,7 @@ export const SOFTWARE_APPLICATION_SCHEMA = {
     '@type': 'Offer',
     price: '0',
     priceCurrency: 'INR',
-    description: 'Free trial with transparent paid growth tiers starting at ₹1,499/year',
+    description: '14-Day Free Trial with transparent paid growth tiers: 1 Month at ₹99/mo, 6 Months at ₹79/mo (₹474 total), and 12 Months at ₹49/mo (₹588/year)',
   },
   url: BASE_URL,
   author: {
@@ -625,7 +625,7 @@ export const SEO_ROUTES: Record<string, SEORouteConfig> = {
     aeoAnswers: [
       {
         question: 'How much does JustGST cost?',
-        answer: 'JustGST offers a free trial with full feature access, followed by flexible subscriptions starting from ₹1,499 per year with unlimited invoicing and stock tracking.',
+        answer: 'JustGST offers a 14-day free trial with full feature access, followed by flexible subscriptions: 1 Month at ₹99/mo, 6 Months at ₹79/mo (₹474 semi-annually), and 12 Months at ₹49/mo (₹588 annually) with unlimited invoicing and inventory.',
       },
       {
         question: 'Are there any hidden fees or transaction commissions in JustGST?',
