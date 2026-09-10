@@ -1055,19 +1055,22 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
       const body = await parseRequestBody(request);
 
       const effectiveOrgId = session?.organizationId || body.organizationId || body.orgId || 'org_demo_hytex';
+      const org = await queryFirst<any>(db, 'SELECT * FROM organizations WHERE id = ?', effectiveOrgId);
       
-      // Dynamic live pricing: fetch the active plan from D1 saas_plans table
-      const requestedPlanId = body.planId || 'plan_all_in_one_pro';
+      // Determine plan ID: body.planId, or org's assigned plan, defaulting to plan_all_in_one_pro
+      const requestedPlanId = body.planId || org?.plan_id || org?.planId || 'plan_all_in_one_pro';
+
+      // Always look up the plan's authoritative current price server-side from saas_plans
       let planRecord = await queryFirst<any>(
         db,
-        `SELECT * FROM saas_plans WHERE (id = ? OR id = 'plan_all_in_one_pro') AND is_archived = 0 ORDER BY CASE WHEN id = ? THEN 0 ELSE 1 END LIMIT 1`,
+        `SELECT id, name, code, monthly_price_inr, three_month_price_inr, six_month_price_inr, yearly_price_inr, billing_type FROM saas_plans WHERE (id = ? OR id = 'plan_all_in_one_pro') AND is_archived = 0 ORDER BY CASE WHEN id = ? THEN 0 ELSE 1 END LIMIT 1`,
         requestedPlanId,
         requestedPlanId
       );
       if (!planRecord) {
         planRecord = await queryFirst<any>(
           db,
-          `SELECT * FROM saas_plans WHERE is_archived = 0 ORDER BY monthly_price_inr ASC LIMIT 1`
+          `SELECT id, name, code, monthly_price_inr, three_month_price_inr, six_month_price_inr, yearly_price_inr, billing_type FROM saas_plans WHERE is_archived = 0 ORDER BY monthly_price_inr ASC LIMIT 1`
         );
       }
 
@@ -1085,10 +1088,23 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
         );
       }
 
-      // Determine billing duration cycle & amount dynamically
-      const reqCycle = String(body.billingCycle || '').toUpperCase();
-      const isSixMonths = requestedPlanId === 'plan_6_months' || reqCycle === '6_MONTHS' || reqCycle === 'HALF_YEARLY' || reqCycle === '6_MONTH';
-      const isTwelveMonths = requestedPlanId === 'plan_12_months' || reqCycle === '12_MONTHS' || reqCycle === 'YEARLY' || reqCycle === 'ANNUAL' || reqCycle === '12_MONTH';
+      /**
+       * SPLIT RESPONSIBILITY ARCHITECTURE FOR SUBSCRIPTION PRICING & ACTIVATION:
+       * 1. Checkout Initiation (Here): Always looks up live, current plan pricing from `saas_plans` in D1
+       *    (SELECT monthly_price_inr, three_month_price_inr, six_month_price_inr, yearly_price_inr FROM saas_plans WHERE id = ?)
+       *    and computes the actual charge amount based on `body.billingCycle`. Client-provided `body.amount` is
+       *    completely ignored as the source of truth (though logged for diagnostic comparison), eliminating price tampering
+       *    and stale client-side price risks.
+       * 2. Subscription Activation (Webhooks / Return Handlers): Always activates access based strictly on the locked
+       *    `subscription_transactions` snapshot recorded at this initiation moment.
+       *
+       * This separation guarantees that whatever the admin configures in Plans & Pricing is immediately what new checkouts charge,
+       * while in-flight checkouts remain safely locked to their initiation snapshot and protected from admin price edits mid-flow.
+       */
+      const reqCycle = String(body.billingCycle || '').toUpperCase().trim();
+      const isThreeMonths = requestedPlanId === 'plan_3_months' || reqCycle === '3_MONTHS' || reqCycle === '3_MONTH' || reqCycle === 'QUARTERLY' || reqCycle === 'THREE_MONTHS';
+      const isSixMonths = requestedPlanId === 'plan_6_months' || reqCycle === '6_MONTHS' || reqCycle === 'HALF_YEARLY' || reqCycle === '6_MONTH' || reqCycle === 'SEMESTER';
+      const isTwelveMonths = requestedPlanId === 'plan_12_months' || reqCycle === '12_MONTHS' || reqCycle === 'YEARLY' || reqCycle === 'ANNUAL' || reqCycle === '12_MONTH' || reqCycle === '1_YEAR';
 
       let billingCycle = '1_MONTH';
       let durationDays = 30;
@@ -1099,15 +1115,24 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
         billingCycle = '12_MONTHS';
         durationDays = 365;
         durationTitle = '12 Months (Annual Access)';
-        amount = Number(planRecord?.yearly_price_inr) || 588.00;
+        amount = Number(planRecord?.yearly_price_inr) || (Number(planRecord?.monthly_price_inr) * 12) || 588.00;
       } else if (isSixMonths) {
         billingCycle = '6_MONTHS';
         durationDays = 180;
         durationTitle = '6 Months (Half-Yearly Access)';
-        amount = Number(planRecord?.six_month_price_inr) || 474.00;
+        amount = Number(planRecord?.six_month_price_inr) || (Number(planRecord?.monthly_price_inr) * 6) || 474.00;
+      } else if (isThreeMonths) {
+        billingCycle = '3_MONTHS';
+        durationDays = 90;
+        durationTitle = '3 Months (Quarterly Access)';
+        amount = Number(planRecord?.three_month_price_inr) || (Number(planRecord?.monthly_price_inr) * 3) || 279.00;
       }
 
-      const org = await queryFirst<any>(db, 'SELECT * FROM organizations WHERE id = ?', effectiveOrgId);
+      // Diagnostic comparison: log client-submitted amount if present without trusting it
+      const clientSubmittedAmount = Number(body.amount);
+      if (!isNaN(clientSubmittedAmount) && clientSubmittedAmount > 0 && Math.abs(clientSubmittedAmount - amount) > 0.01) {
+        console.info(`[PayU Checkout] Client submitted amount: ${clientSubmittedAmount}, but using authoritative server plan price: ${amount} for plan ${activePlanId} (${billingCycle})`);
+      }
       
       // Check coupon code discount if provided
       const couponCode = (body.couponCode || '').toUpperCase().trim();
@@ -1636,7 +1661,7 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
           planName,
           orgId
         );
-        orgUpdated = Boolean(result && (result.changes === undefined || result.changes > 0));
+        orgUpdated = Boolean(result);
       } catch (orgUpdateErr: any) {
         console.error(`[PayU Return] CRITICAL: Organization update SQL thrown for org ${orgId}:`, orgUpdateErr?.message || orgUpdateErr);
         orgUpdated = false;
@@ -4512,8 +4537,8 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
           ) VALUES (?, ?, ?, ?, 'SUPER_ADMIN', 'MANUAL_ACTIVATION', ?, ?, 'SUBSCRIPTION', ?)`,
           `audit_${Date.now()}`,
           targetOrgId,
-          authContext?.userId || 'admin_super',
-          authContext?.userEmail || 'Super Admin',
+          session?.userId || 'admin_super',
+          session?.email || 'Super Admin',
           txnid || targetOrgId,
           `Manual Activation: ${targetPlanName} (${adminNote})`,
           request.headers.get('cf-connecting-ip') || '127.0.0.1'

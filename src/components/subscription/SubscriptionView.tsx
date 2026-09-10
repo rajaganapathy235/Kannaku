@@ -187,7 +187,7 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
       fetchRealSubscription();
       fetchRealTransactions();
       // Re-fetch /api/auth/me to update session and release read-only mode based on server state
-      apiService.getMe().catch((err) => console.error('Error refreshing session after payment success:', err));
+      ApiService.getMe().catch((err) => console.error('Error refreshing session after payment success:', err));
     }
   }, [paymentBanner]);
 

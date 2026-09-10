@@ -59,7 +59,7 @@ export const TransactionsListView: React.FC = () => {
         alert('Workspace successfully activated & marked as paid!');
         await reloadData();
       } else {
-        alert('Failed to approve transaction: ' + (res.message || 'Unknown error'));
+        alert('Failed to approve transaction: ' + ((res as any).message || res.error || 'Unknown error'));
       }
     } catch (err: any) {
       alert('Error approving transaction: ' + (err?.message || err));

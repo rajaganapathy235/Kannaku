@@ -205,14 +205,14 @@ async function runPayUTests() {
 
   // --- Test K: Failed PayU Payment ---
   {
-    const payloadStatus = 'failure';
+    const payloadStatus: string = 'failure';
     const isSuccess = payloadStatus === 'success' || payloadStatus === 'captured';
     assert(isSuccess === false, 'Test K: Failed PayU payment recorded as FAILED');
   }
 
   // --- Test L: Cancelled PayU Payment ---
   {
-    const payloadStatus = 'usercancelled';
+    const payloadStatus: string = 'usercancelled';
     const isSuccess = payloadStatus === 'success' || payloadStatus === 'captured';
     assert(isSuccess === false, 'Test L: Cancelled PayU payment recorded as FAILED');
   }
