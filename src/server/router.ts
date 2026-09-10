@@ -1612,6 +1612,7 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
       const durationDays = parseInt(String(existingTxn.duration_days || udf4 || 365), 10);
       const planId = existingTxn.plan_id || udf5 || 'plan_all_in_one_pro';
       const planName = existingTxn.plan_name || 'All-in-One Growth Plan';
+      const billingCycle = existingTxn.billing_cycle || udf3 || '1_MONTH';
 
       if (!orgId) {
         console.error(`[PayU Return] Unable to resolve organization_id for txnid: ${txnid}`);
@@ -1653,12 +1654,14 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
             renewal_date = ?,
             plan_id = ?,
             plan_name = ?,
+            billing_cycle = ?,
             payment_provider = 'payu',
             last_active = CURRENT_TIMESTAMP
           WHERE id = ?`,
           renewalDate,
           planId,
           planName,
+          billingCycle,
           orgId
         );
         orgUpdated = Boolean(result);
