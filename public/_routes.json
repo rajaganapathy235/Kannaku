@@ -7,12 +7,20 @@
     "/assets/*",
     "/favicon.ico",
     "/favicon.svg",
-    "/favicon-*.png",
+    "/favicon-16x16.png",
+    "/favicon-32x32.png",
+    "/favicon-48x48.png",
+    "/favicon-192x192.png",
     "/apple-touch-icon.png",
-    "/icon-*.png",
+    "/icon-192.png",
+    "/icon-512.png",
     "/icon-mark.svg",
-    "/logo-*.svg",
+    "/logo-horizontal.svg",
+    "/logo-horizontal-light.svg",
     "/manifest.json",
-    "/robots.txt"
+    "/robots.txt",
+    "/sitemap.xml",
+    "/sitemap.xsl",
+    "/llms.txt"
   ]
 }
