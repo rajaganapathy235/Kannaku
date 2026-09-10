@@ -319,7 +319,7 @@ export async function getPayUCredentials(db: D1Database, env: RequestContext['en
     explicitEnv = 'TEST';
   }
 
-  // 2. Query database configuration
+  // 2. Query database configuration (both app_settings and payment_gateway_config)
   let dbConfig: any = null;
   try {
     const row = await queryFirst<any>(db, "SELECT * FROM app_settings WHERE config_key = 'payu_config'");
@@ -335,6 +335,18 @@ export async function getPayUCredentials(db: D1Database, env: RequestContext['en
     console.warn('[PayU Config] Error querying app_settings:', err?.message || err);
   }
 
+  let gwRow: any = null;
+  try {
+    gwRow = await queryFirst<any>(db, "SELECT * FROM payment_gateway_config WHERE UPPER(provider) = 'PAYU'");
+  } catch {}
+
+  let gwConfigJson: any = null;
+  if (gwRow?.config_json) {
+    try {
+      gwConfigJson = typeof gwRow.config_json === 'string' ? JSON.parse(gwRow.config_json) : gwRow.config_json;
+    } catch {}
+  }
+
   // 3. Resolve final PayU Environment (payuEnv)
   let payuEnv: 'TEST' | 'LIVE' = 'TEST';
   if (explicitEnv) {
@@ -345,47 +357,79 @@ export async function getPayUCredentials(db: D1Database, env: RequestContext['en
     } else if (dbConfig.isTestMode !== undefined && dbConfig.isTestMode !== null) {
       payuEnv = dbConfig.isTestMode ? 'TEST' : 'LIVE';
     }
-  } else {
-    try {
-      const gwRow = await queryFirst<any>(db, "SELECT * FROM payment_gateway_config WHERE UPPER(provider) = 'PAYU'");
-      if (gwRow && gwRow.is_test_mode !== undefined && gwRow.is_test_mode !== null) {
-        payuEnv = gwRow.is_test_mode ? 'TEST' : 'LIVE';
-      }
-    } catch {}
+  } else if (gwRow && gwRow.is_test_mode !== undefined && gwRow.is_test_mode !== null) {
+    payuEnv = gwRow.is_test_mode ? 'TEST' : 'LIVE';
   }
 
   const isTestMode = payuEnv === 'TEST';
   const activeMode: 'test' | 'live' = isTestMode ? 'test' : 'live';
   const endpoint = isTestMode ? 'https://test.payu.in/_payment' : 'https://secure.payu.in/_payment';
 
+  // Extract flat fallback credentials from DB or process.env
+  const flatDbKey = String(dbConfig?.merchantKey || dbConfig?.payuMerchantKey || dbConfig?.key || gwConfigJson?.merchantKey || gwRow?.merchant_key || gwRow?.api_key || '').trim();
+  const flatDbSalt = String(dbConfig?.merchantSalt || dbConfig?.payuMerchantSalt || dbConfig?.salt || gwConfigJson?.merchantSalt || gwRow?.merchant_salt || gwRow?.api_secret || '').trim();
+  const flatDbHeader = String(dbConfig?.headerAuthKey || dbConfig?.payuHeaderAuthKey || gwConfigJson?.headerAuthKey || gwRow?.header_auth_key || '').trim();
+
+  const envGeneralKey = String(env.PAYU_MERCHANT_KEY || env.PAYU_KEY || (typeof process !== 'undefined' ? process.env?.PAYU_MERCHANT_KEY || process.env?.PAYU_KEY : '') || '').trim();
+  const envGeneralSalt = String(env.PAYU_MERCHANT_SALT || env.PAYU_SALT || (typeof process !== 'undefined' ? process.env?.PAYU_MERCHANT_SALT || process.env?.PAYU_SALT : '') || '').trim();
+
   let testSlot = {
-    merchantKey: String(dbConfig?.test?.merchantKey || env.PAYU_TEST_KEY || env.PAYU_MERCHANT_KEY_TEST || '').trim(),
-    merchantSalt: String(dbConfig?.test?.merchantSalt || env.PAYU_TEST_SALT || env.PAYU_MERCHANT_SALT_TEST || '').trim(),
-    headerAuthKey: String(dbConfig?.test?.headerAuthKey || env.PAYU_TEST_HEADER_AUTH_KEY || '').trim(),
+    merchantKey: String(
+      dbConfig?.test?.merchantKey ||
+      dbConfig?.test?.payuMerchantKey ||
+      dbConfig?.test?.key ||
+      gwConfigJson?.test?.merchantKey ||
+      (isTestMode ? flatDbKey : '') ||
+      env.PAYU_TEST_KEY ||
+      env.PAYU_KEY_TEST ||
+      env.PAYU_MERCHANT_KEY_TEST ||
+      (isTestMode ? envGeneralKey : '')
+    ).trim(),
+    merchantSalt: String(
+      dbConfig?.test?.merchantSalt ||
+      dbConfig?.test?.payuMerchantSalt ||
+      dbConfig?.test?.salt ||
+      gwConfigJson?.test?.merchantSalt ||
+      (isTestMode ? flatDbSalt : '') ||
+      env.PAYU_TEST_SALT ||
+      env.PAYU_SALT_TEST ||
+      env.PAYU_MERCHANT_SALT_TEST ||
+      (isTestMode ? envGeneralSalt : '')
+    ).trim(),
+    headerAuthKey: String(dbConfig?.test?.headerAuthKey || gwConfigJson?.test?.headerAuthKey || env.PAYU_TEST_HEADER_AUTH_KEY || (isTestMode ? flatDbHeader : '')).trim(),
     endpoint: 'https://test.payu.in/_payment',
   };
 
   let liveSlot = {
-    merchantKey: String(dbConfig?.live?.merchantKey || env.PAYU_LIVE_KEY || env.PAYU_MERCHANT_KEY_LIVE || '').trim(),
-    merchantSalt: String(dbConfig?.live?.merchantSalt || env.PAYU_LIVE_SALT || env.PAYU_MERCHANT_SALT_LIVE || '').trim(),
-    headerAuthKey: String(dbConfig?.live?.headerAuthKey || env.PAYU_LIVE_HEADER_AUTH_KEY || '').trim(),
+    merchantKey: String(
+      dbConfig?.live?.merchantKey ||
+      dbConfig?.live?.payuMerchantKey ||
+      dbConfig?.live?.key ||
+      gwConfigJson?.live?.merchantKey ||
+      (!isTestMode ? flatDbKey : '') ||
+      env.PAYU_LIVE_KEY ||
+      env.PAYU_KEY_LIVE ||
+      env.PAYU_MERCHANT_KEY_LIVE ||
+      (!isTestMode ? envGeneralKey : '')
+    ).trim(),
+    merchantSalt: String(
+      dbConfig?.live?.merchantSalt ||
+      dbConfig?.live?.payuMerchantSalt ||
+      dbConfig?.live?.salt ||
+      gwConfigJson?.live?.merchantSalt ||
+      (!isTestMode ? flatDbSalt : '') ||
+      env.PAYU_LIVE_SALT ||
+      env.PAYU_SALT_LIVE ||
+      env.PAYU_MERCHANT_SALT_LIVE ||
+      (!isTestMode ? envGeneralSalt : '')
+    ).trim(),
+    headerAuthKey: String(dbConfig?.live?.headerAuthKey || gwConfigJson?.live?.headerAuthKey || env.PAYU_LIVE_HEADER_AUTH_KEY || (!isTestMode ? flatDbHeader : '')).trim(),
     endpoint: 'https://secure.payu.in/_payment',
   };
 
-  let merchantKey = '';
-  let merchantSalt = '';
-  let headerAuthKey = '';
-
-  // Extract credentials STRICTLY for the selected environment
-  if (payuEnv === 'LIVE') {
-    merchantKey = liveSlot.merchantKey || (dbConfig?.activeMode === 'live' ? dbConfig?.merchantKey : '') || env.PAYU_MERCHANT_KEY || '';
-    merchantSalt = liveSlot.merchantSalt || (dbConfig?.activeMode === 'live' ? dbConfig?.merchantSalt : '') || env.PAYU_MERCHANT_SALT || '';
-    headerAuthKey = liveSlot.headerAuthKey;
-  } else {
-    merchantKey = testSlot.merchantKey || (dbConfig?.activeMode === 'test' ? dbConfig?.merchantKey : '') || env.PAYU_MERCHANT_KEY || '';
-    merchantSalt = testSlot.merchantSalt || (dbConfig?.activeMode === 'test' ? dbConfig?.merchantSalt : '') || env.PAYU_MERCHANT_SALT || '';
-    headerAuthKey = testSlot.headerAuthKey;
-  }
+  let merchantKey = isTestMode ? testSlot.merchantKey : liveSlot.merchantKey;
+  let merchantSalt = isTestMode ? testSlot.merchantSalt : liveSlot.merchantSalt;
+  let headerAuthKey = isTestMode ? testSlot.headerAuthKey : liveSlot.headerAuthKey;
 
   merchantKey = String(merchantKey || '').trim();
   merchantSalt = String(merchantSalt || '').trim();
