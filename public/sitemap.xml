@@ -110,10 +110,24 @@
     <priority>0.8</priority>
   </url>
 
-  <!-- Competitor Comparison (JustGST vs Vyapar) -->
+  <!-- Competitor Comparisons -->
   <url>
     <loc>https://justgst.in/compare/justgst-vs-vyapar/</loc>
-    <lastmod>2026-09-09</lastmod>
+    <lastmod>2026-09-10</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://justgst.in/compare/justgst-vs-mybillbook/</loc>
+    <lastmod>2026-09-10</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://justgst.in/compare/justgst-vs-tally/</loc>
+    <lastmod>2026-09-10</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
@@ -121,7 +135,7 @@
   <!-- Mega 5-Way Competitor Comparison -->
   <url>
     <loc>https://justgst.in/compare/justgst-vs-gogst-vs-vyapar-vs-swipe-vs-mybillbook/</loc>
-    <lastmod>2026-09-09</lastmod>
+    <lastmod>2026-09-10</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>

@@ -34,6 +34,7 @@ import { LandingPage } from './components/home/LandingPage';
 import { SolutionLandingPage } from './components/home/SolutionLandingPage';
 import { IndustrySolutionPage } from './components/home/IndustrySolutionPage';
 import { FreeGstCalculatorPage } from './components/home/FreeGstCalculatorPage';
+import { CompetitorComparisonPage } from './components/home/CompetitorComparisonPage';
 import { SEOHead } from './components/common/SEOHead';
 import { SEO_ROUTES, getSEOConfigForPath } from './config/seo.config';
 import { INDUSTRY_SOLUTIONS, getIndustrySEOConfig, IndustryData } from './config/industry.config';
@@ -719,6 +720,46 @@ export default function App() {
       return (
         <FreeGstCalculatorPage
           seo={activeSeoConfig}
+          onOpenLogin={() => {
+            setAuthView('login');
+            window.location.hash = '#login';
+          }}
+          onOpenSignup={() => {
+            setAuthView('signup');
+            window.location.hash = '#signup';
+          }}
+          onNavigateSlug={handleNavigatePublicSlug}
+          onOpenSuperAdmin={() => {
+            if (authSession?.user?.role === 'SUPER_ADMIN') {
+              setIsSuperAdminMode(true);
+              setAuthView(null);
+              window.location.hash = '#admin';
+            } else {
+              setAuthView('login');
+              window.location.hash = '#login';
+            }
+          }}
+        />
+      );
+    }
+
+    if (
+      cleanSlug === 'compare/justgst-vs-vyapar' ||
+      cleanSlug === 'justgst-vs-vyapar' ||
+      cleanSlug === 'compare/justgst-vs-mybillbook' ||
+      cleanSlug === 'justgst-vs-mybillbook' ||
+      cleanSlug === 'compare/justgst-vs-tally' ||
+      cleanSlug === 'justgst-vs-tally' ||
+      (cleanSlug.startsWith('compare/justgst-vs-') && !cleanSlug.includes('swipe') && !cleanSlug.includes('gogst'))
+    ) {
+      let targetComp = 'vyapar';
+      if (cleanSlug.includes('mybillbook')) targetComp = 'mybillbook';
+      else if (cleanSlug.includes('tally')) targetComp = 'tally';
+      else if (cleanSlug.includes('vyapar')) targetComp = 'vyapar';
+
+      return (
+        <CompetitorComparisonPage
+          competitorId={targetComp}
           onOpenLogin={() => {
             setAuthView('login');
             window.location.hash = '#login';

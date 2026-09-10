@@ -507,6 +507,116 @@ export const SEO_ROUTES: Record<string, SEORouteConfig> = {
     },
   },
 
+  compareMybillbook: {
+    slug: 'compare/justgst-vs-mybillbook',
+    title: 'JustGST vs myBillBook: Comparison & Best Alternative (2026)',
+    metaTitle: 'JustGST vs myBillBook (2026): Why SMBs Switch to ₹49/mo Cloud Billing',
+    description: 'Compare JustGST with myBillBook. Discover why retailers and distributors choose JustGST for unlimited desktop and mobile cloud billing at just ₹49/month.',
+    canonical: `${BASE_URL}/compare/justgst-vs-mybillbook/`,
+    h1: 'JustGST vs myBillBook: Why Small Businesses are Switching in 2026',
+    subtitle: 'Why pay ₹1,899+ for mobile apps with locked desktop tiers? Get true cloud billing on all devices for ₹49/month.',
+    badge: '100% Cloud Billing • Instant 14-Day Free Trial',
+    keywords: ['JustGST vs myBillBook', 'myBillBook alternative', 'best billing software India', 'cloud billing app', 'myBillBook pricing review'],
+    breadcrumbs: [
+      { name: 'Home', url: `${BASE_URL}/` },
+      { name: 'Comparison', url: `${BASE_URL}/compare/justgst-vs-mybillbook/` },
+    ],
+    aeoAnswers: [
+      {
+        question: 'Why choose JustGST over myBillBook?',
+        answer: 'JustGST offers complete, unrestricted cloud billing across laptops, phones, and tablets for ₹49/month with zero locked desktop paywalls.',
+      },
+    ],
+    features: [
+      {
+        title: 'Full Desktop & Mobile Access Included',
+        description: 'No Silver or Gold tier paywalls just to bill from your counter computer.',
+      },
+    ],
+    faqs: [
+      {
+        question: 'Can I import my data from myBillBook to JustGST?',
+        answer: 'Yes! Export your party master and stock lists from myBillBook into Excel and upload into JustGST in under 1 minute.',
+      },
+    ],
+    jsonLd: {
+      '@context': 'https://schema.org',
+      '@graph': [
+        ORGANIZATION_SCHEMA,
+        SOFTWARE_APPLICATION_SCHEMA,
+        {
+          '@type': 'WebPage',
+          '@id': `${BASE_URL}/compare/justgst-vs-mybillbook/`,
+          url: `${BASE_URL}/compare/justgst-vs-mybillbook/`,
+          name: 'JustGST vs myBillBook Comparison (2026)',
+          description: 'Compare JustGST with myBillBook for cloud invoicing, inventory, and WhatsApp payment links.',
+        },
+        {
+          '@type': 'BreadcrumbList',
+          itemListElement: [
+            { '@type': 'ListItem', position: 1, name: 'Home', item: `${BASE_URL}/` },
+            { '@type': 'ListItem', position: 2, name: 'JustGST vs myBillBook', item: `${BASE_URL}/compare/justgst-vs-mybillbook/` },
+          ],
+        },
+      ],
+    },
+  },
+
+  compareTally: {
+    slug: 'compare/justgst-vs-tally',
+    title: 'JustGST vs Tally: Fast Cloud Billing vs Heavy Accounting (2026)',
+    metaTitle: 'JustGST vs Tally Prime (2026): Modern Cloud Billing for Small Business',
+    description: 'Compare JustGST with Tally Prime. Save ₹17,000+ per year with instant 3-second billing, WhatsApp invoices, and no specialized accounting training required.',
+    canonical: `${BASE_URL}/compare/justgst-vs-tally/`,
+    h1: 'JustGST vs Tally: Why Retailers & Traders Prefer Fast Cloud Billing',
+    subtitle: 'Stop paying ₹18,000+ for complex desktop accounting. Generate instant GST bills on any phone or laptop for ₹49/month.',
+    badge: '100% Cloud Billing • Instant 14-Day Free Trial',
+    keywords: ['JustGST vs Tally', 'Tally alternative for billing', 'simple GST billing vs Tally', 'Tally Prime alternative'],
+    breadcrumbs: [
+      { name: 'Home', url: `${BASE_URL}/` },
+      { name: 'Comparison', url: `${BASE_URL}/compare/justgst-vs-tally/` },
+    ],
+    aeoAnswers: [
+      {
+        question: 'Is JustGST a replacement for Tally?',
+        answer: 'For day-to-day GST tax invoicing, thermal POS counter billing, WhatsApp payment links, and inventory management, JustGST is 10x faster and simpler than Tally for only ₹49/month.',
+      },
+    ],
+    features: [
+      {
+        title: 'Zero Accounting Knowledge Required',
+        description: 'Any shop staff or cashier can learn JustGST in 2 minutes without debit/credit journal voucher complexity.',
+      },
+    ],
+    faqs: [
+      {
+        question: 'Can I share GSTR-1 reports with my Chartered Accountant?',
+        answer: 'Yes! JustGST provides instant 1-click GSTR-1 Excel reports that your CA can directly import into their tax software.',
+      },
+    ],
+    jsonLd: {
+      '@context': 'https://schema.org',
+      '@graph': [
+        ORGANIZATION_SCHEMA,
+        SOFTWARE_APPLICATION_SCHEMA,
+        {
+          '@type': 'WebPage',
+          '@id': `${BASE_URL}/compare/justgst-vs-tally/`,
+          url: `${BASE_URL}/compare/justgst-vs-tally/`,
+          name: 'JustGST vs Tally Prime Comparison (2026)',
+          description: 'Compare JustGST with Tally Prime for speed, ease of use, cloud accessibility, and annual savings.',
+        },
+        {
+          '@type': 'BreadcrumbList',
+          itemListElement: [
+            { '@type': 'ListItem', position: 1, name: 'Home', item: `${BASE_URL}/` },
+            { '@type': 'ListItem', position: 2, name: 'JustGST vs Tally', item: `${BASE_URL}/compare/justgst-vs-tally/` },
+          ],
+        },
+      ],
+    },
+  },
+
   compareMulti: {
     slug: 'compare/justgst-vs-gogst-vs-vyapar-vs-swipe-vs-mybillbook',
     title: 'JustGST vs GoGST vs Vyapar vs Swipe vs myBillBook | Comparison',
@@ -832,12 +942,29 @@ export function getSEOConfigForPath(pathname: string): SEORouteConfig {
     clean === 'compare/justgst-vs-gogst-vs-vyapar-vs-swipe-vs-mybillbook' ||
     clean === 'justgst-vs-gogst-vs-vyapar-vs-swipe-vs-mybillbook' ||
     clean.includes('gogst') ||
-    clean.includes('swipe') ||
-    clean.includes('mybillbook')
+    clean.includes('swipe')
   ) {
     return SEO_ROUTES.compareMulti;
   }
-  if (clean === 'compare/justgst-vs-vyapar' || clean === 'justgst-vs-vyapar' || clean.includes('vyapar')) {
+  if (
+    clean === 'compare/justgst-vs-mybillbook' ||
+    clean === 'justgst-vs-mybillbook' ||
+    clean === 'mybillbook'
+  ) {
+    return SEO_ROUTES.compareMybillbook;
+  }
+  if (
+    clean === 'compare/justgst-vs-tally' ||
+    clean === 'justgst-vs-tally' ||
+    clean === 'tally'
+  ) {
+    return SEO_ROUTES.compareTally;
+  }
+  if (
+    clean === 'compare/justgst-vs-vyapar' ||
+    clean === 'justgst-vs-vyapar' ||
+    clean.includes('vyapar')
+  ) {
     return SEO_ROUTES.compareVyapar;
   }
   if (clean === 'pricing') {

@@ -375,6 +375,24 @@ export const PublicLayout: React.FC<PublicLayoutProps> = ({
                   </li>
                   <li>
                     <a
+                      href="/compare/justgst-vs-mybillbook/"
+                      onClick={(e) => handleNav(e, 'compare/justgst-vs-mybillbook')}
+                      className="hover:text-brand-600 transition-colors"
+                    >
+                      vs myBillBook
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      href="/compare/justgst-vs-tally/"
+                      onClick={(e) => handleNav(e, 'compare/justgst-vs-tally')}
+                      className="hover:text-brand-600 transition-colors"
+                    >
+                      vs Tally Prime
+                    </a>
+                  </li>
+                  <li>
+                    <a
                       href="/compare/justgst-vs-gogst-vs-vyapar-vs-swipe-vs-mybillbook/"
                       onClick={(e) => handleNav(e, 'compare/justgst-vs-gogst-vs-vyapar-vs-swipe-vs-mybillbook')}
                       className="hover:text-brand-600 transition-colors"
