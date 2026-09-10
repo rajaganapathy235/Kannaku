@@ -181,6 +181,9 @@ export default function App() {
 
     if (paymentStatus === 'success') {
       setActiveTab('subscription');
+      setIsReadOnly(false);
+      setTrialExpiredModalOpen(false);
+      setReadOnlyReason(null);
       setPaymentResultBanner({
         status: 'success',
         txnId: returnTxnId,
@@ -195,8 +198,14 @@ export default function App() {
       AuthService.refreshSessionAsync().then((updatedSession) => {
         if (updatedSession?.user) {
           setAuthSession(updatedSession);
-          setIsReadOnly(Boolean(updatedSession.user.isReadOnly));
-          setReadOnlyReason((updatedSession.user.code || updatedSession.user.reason || updatedSession.user.readOnlyReason || null) as ReadOnlyReasonType);
+          const isReadOnlyNow = Boolean(updatedSession.user.isReadOnly);
+          setIsReadOnly(isReadOnlyNow);
+          if (!isReadOnlyNow) {
+            setTrialExpiredModalOpen(false);
+            setReadOnlyReason(null);
+          } else {
+            setReadOnlyReason((updatedSession.user.code || updatedSession.user.reason || updatedSession.user.readOnlyReason || null) as ReadOnlyReasonType);
+          }
         }
         KannakuDB.syncFromD1().then(() => reloadAllState());
       });
@@ -401,6 +410,8 @@ export default function App() {
     if (isReadOnly && !hasAutoPromptedTrialModal && authSession && !isSuperAdminMode) {
       setTrialExpiredModalOpen(true);
       setHasAutoPromptedTrialModal(true);
+    } else if (!isReadOnly) {
+      setTrialExpiredModalOpen(false);
     }
   }, [isReadOnly, hasAutoPromptedTrialModal, authSession, isSuperAdminMode]);
 
@@ -1311,7 +1322,7 @@ export default function App() {
 
       {/* Read-Only Access & Subscription Denial Modal */}
       <TrialExpiredModal
-        isOpen={trialExpiredModalOpen}
+        isOpen={trialExpiredModalOpen && isReadOnly}
         onClose={() => setTrialExpiredModalOpen(false)}
         onUpgrade={() => {
           setTrialExpiredModalOpen(false);
