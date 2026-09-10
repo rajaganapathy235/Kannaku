@@ -146,17 +146,20 @@ export async function verifyPayUReverseHashPayload(
   receivedHash: string;
   usedAdditionalCharges: boolean;
 }> {
-  if (!salt) {
+  const cleanSalt = (salt || '').trim();
+  const cleanKey = (payload.key || configuredKey || '').trim();
+
+  if (!cleanSalt) {
     return { isValid: false, calculatedHash: '', receivedHash: '', usedAdditionalCharges: false };
   }
 
-  const key = (payload.key || configuredKey || '').trim();
   const txnid = (payload.txnid || '').trim();
   const amount = payload.amount !== undefined ? String(payload.amount).trim() : '';
   const productinfo = (payload.productinfo || '').trim();
   const firstname = (payload.firstname || '').trim();
   const email = (payload.email || '').trim();
-  const status = (payload.status || '').trim();
+  const rawStatus = (payload.status || '').trim();
+  const unmappedStatus = (payload.unmappedstatus || '').trim();
   const receivedHash = (payload.hash || '').trim().toLowerCase();
 
   const udf1 = payload.udf1 || '';
@@ -171,53 +174,57 @@ export async function verifyPayUReverseHashPayload(
   const udf10 = payload.udf10 || '';
   const additionalCharges = payload.additionalCharges;
 
-  // 1. Standard reverse hash sequence (salt first, udf10 down to udf1 in reverse order)
-  const statusUpper = status.toUpperCase();
-  const statusLower = status.toLowerCase();
-  
-  const statusVariants = Array.from(new Set([status, statusUpper, statusLower])).filter(Boolean);
-  
+  const statusVariants = Array.from(
+    new Set([
+      rawStatus,
+      rawStatus.toUpperCase(),
+      rawStatus.toLowerCase(),
+      unmappedStatus,
+      unmappedStatus.toUpperCase(),
+      unmappedStatus.toLowerCase(),
+      'success',
+      'SUCCESS',
+    ])
+  ).filter(Boolean);
+
+  const numAmount = parseFloat(amount);
+  const amountVariants = Array.from(
+    new Set([
+      amount,
+      !isNaN(numAmount) ? numAmount.toFixed(2) : null,
+    ])
+  ).filter((v): v is string => v !== null && v !== '');
+
+  let lastCalculatedHash = '';
+
   for (const st of statusVariants) {
-    const sequence = `${salt}|${st}|${udf10}|${udf9}|${udf8}|${udf7}|${udf6}|${udf5}|${udf4}|${udf3}|${udf2}|${udf1}|${email}|${firstname}|${productinfo}|${amount}|${txnid}|${key}`;
-    const calcHash = await sha512Hex(sequence);
+    for (const amtVal of amountVariants) {
+      // 1. Standard reverse hash sequence
+      const sequence = `${cleanSalt}|${st}|${udf10}|${udf9}|${udf8}|${udf7}|${udf6}|${udf5}|${udf4}|${udf3}|${udf2}|${udf1}|${email}|${firstname}|${productinfo}|${amtVal}|${txnid}|${cleanKey}`;
+      const calcHash = await sha512Hex(sequence);
+      lastCalculatedHash = calcHash;
 
-    if (receivedHash && constantTimeCompare(calcHash.toLowerCase(), receivedHash)) {
-      return {
-        isValid: true,
-        calculatedHash: calcHash,
-        receivedHash,
-        usedAdditionalCharges: false,
-      };
-    }
-
-    // 2. Additional charges sequence if present
-    if (additionalCharges !== undefined && additionalCharges !== null && additionalCharges !== '') {
-      const chargesSequence = `${additionalCharges}|${salt}|${st}|${udf10}|${udf9}|${udf8}|${udf7}|${udf6}|${udf5}|${udf4}|${udf3}|${udf2}|${udf1}|${email}|${firstname}|${productinfo}|${amount}|${txnid}|${key}`;
-      const calcChargesHash = await sha512Hex(chargesSequence);
-
-      if (receivedHash && constantTimeCompare(calcChargesHash.toLowerCase(), receivedHash)) {
+      if (receivedHash && constantTimeCompare(calcHash.toLowerCase(), receivedHash)) {
         return {
           isValid: true,
-          calculatedHash: calcChargesHash,
+          calculatedHash: calcHash,
           receivedHash,
-          usedAdditionalCharges: true,
+          usedAdditionalCharges: false,
         };
       }
-    }
 
-    // 3. Fallback: try formatting amount with two decimals if original didn't match
-    const numAmount = parseFloat(amount);
-    if (!isNaN(numAmount)) {
-      const formattedAmount = numAmount.toFixed(2);
-      if (formattedAmount !== amount) {
-        const altStandardSequence = `${salt}|${st}|${udf10}|${udf9}|${udf8}|${udf7}|${udf6}|${udf5}|${udf4}|${udf3}|${udf2}|${udf1}|${email}|${firstname}|${productinfo}|${formattedAmount}|${txnid}|${key}`;
-        const calcAltHash = await sha512Hex(altStandardSequence);
-        if (receivedHash && constantTimeCompare(calcAltHash.toLowerCase(), receivedHash)) {
+      // 2. Additional charges sequence if present
+      if (additionalCharges !== undefined && additionalCharges !== null && additionalCharges !== '') {
+        const chargesSequence = `${additionalCharges}|${cleanSalt}|${st}|${udf10}|${udf9}|${udf8}|${udf7}|${udf6}|${udf5}|${udf4}|${udf3}|${udf2}|${udf1}|${email}|${firstname}|${productinfo}|${amtVal}|${txnid}|${cleanKey}`;
+        const calcChargesHash = await sha512Hex(chargesSequence);
+        lastCalculatedHash = calcChargesHash;
+
+        if (receivedHash && constantTimeCompare(calcChargesHash.toLowerCase(), receivedHash)) {
           return {
             isValid: true,
-            calculatedHash: calcAltHash,
+            calculatedHash: calcChargesHash,
             receivedHash,
-            usedAdditionalCharges: false,
+            usedAdditionalCharges: true,
           };
         }
       }
@@ -226,7 +233,7 @@ export async function verifyPayUReverseHashPayload(
 
   return {
     isValid: false,
-    calculatedHash: calcStandardHash,
+    calculatedHash: lastCalculatedHash,
     receivedHash,
     usedAdditionalCharges: false,
   };

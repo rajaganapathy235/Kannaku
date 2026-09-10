@@ -295,250 +295,114 @@ export async function getPlatformSettingsFromDB(db: D1Database): Promise<any> {
 export async function getPayUCredentials(db: D1Database, env: RequestContext['env']): Promise<{
   merchantKey: string;
   merchantSalt: string;
+  payuEnv: 'TEST' | 'LIVE';
   isTestMode: boolean;
   endpoint: string;
   headerAuthKey?: string;
   activeMode: 'test' | 'live';
+  configured: boolean;
   test?: { merchantKey: string; merchantSalt: string; headerAuthKey?: string; endpoint: string };
   live?: { merchantKey: string; merchantSalt: string; headerAuthKey?: string; endpoint: string };
 }> {
-  let merchantKey = '';
-  let merchantSalt = '';
-  let isTestMode = true;
-  let endpoint = '';
-  let headerAuthKey = '';
-  let activeMode: 'test' | 'live' = 'test';
-  let testSlot = {
-    merchantKey: '',
-    merchantSalt: '',
-    headerAuthKey: '',
-    endpoint: 'https://test.payu.in/_payment',
-  };
-  let liveSlot = {
-    merchantKey: '',
-    merchantSalt: '',
-    headerAuthKey: '',
-    endpoint: 'https://secure.payu.in/_payment',
-  };
+  // 1. Check for explicit environment selection via PAYU_ENV or PAYU_MODE
+  const explicitEnvVar = (
+    env.PAYU_ENV ||
+    env.PAYU_MODE ||
+    (typeof process !== 'undefined' ? process.env?.PAYU_ENV || process.env?.PAYU_MODE : '') ||
+    ''
+  ).toUpperCase().trim();
 
-  // 1. Primary DB Source: Dynamically query Cloudflare D1 from 'app_settings' table where config_key = 'payu_config'
+  let explicitEnv: 'TEST' | 'LIVE' | null = null;
+  if (['LIVE', 'PRODUCTION', 'PROD'].includes(explicitEnvVar)) {
+    explicitEnv = 'LIVE';
+  } else if (['TEST', 'SANDBOX', 'DEV', 'DEVELOPMENT'].includes(explicitEnvVar)) {
+    explicitEnv = 'TEST';
+  }
+
+  // 2. Query database configuration
+  let dbConfig: any = null;
   try {
-    const row = await queryFirst<any>(
-      db,
-      "SELECT * FROM app_settings WHERE config_key = 'payu_config'"
-    );
-
+    const row = await queryFirst<any>(db, "SELECT * FROM app_settings WHERE config_key = 'payu_config'");
     if (row) {
       const rawJson = row.config_value || row.value || row.settings_json;
-      let parsed: any = null;
-
       if (typeof rawJson === 'string') {
-        try {
-          parsed = JSON.parse(rawJson);
-        } catch (jsonErr) {
-          console.warn('[PayU Config] Failed to parse JSON from app_settings config_value:', jsonErr);
-        }
+        try { dbConfig = JSON.parse(rawJson); } catch {}
       } else if (typeof rawJson === 'object' && rawJson !== null) {
-        parsed = rawJson;
-      }
-
-      if (parsed) {
-        // Check if config is in the structured dual-slot shape (has .test or .live sub-objects)
-        const isStructured = Boolean(
-          (parsed.test && typeof parsed.test === 'object') ||
-          (parsed.live && typeof parsed.live === 'object')
-        );
-
-        if (isStructured) {
-          activeMode = (String(parsed.activeMode || '').toLowerCase() === 'live') ? 'live' : 'test';
-          isTestMode = activeMode === 'test';
-
-          if (parsed.test && typeof parsed.test === 'object') {
-            testSlot = {
-              merchantKey: String(parsed.test.merchantKey || '').trim(),
-              merchantSalt: String(parsed.test.merchantSalt || '').trim(),
-              headerAuthKey: String(parsed.test.headerAuthKey || '').trim(),
-              endpoint: String(parsed.test.endpoint || 'https://test.payu.in/_payment').trim(),
-            };
-          }
-
-          if (parsed.live && typeof parsed.live === 'object') {
-            liveSlot = {
-              merchantKey: String(parsed.live.merchantKey || '').trim(),
-              merchantSalt: String(parsed.live.merchantSalt || '').trim(),
-              headerAuthKey: String(parsed.live.headerAuthKey || '').trim(),
-              endpoint: String(parsed.live.endpoint || 'https://secure.payu.in/_payment').trim(),
-            };
-          }
-
-          const activeSlot = activeMode === 'live' ? liveSlot : testSlot;
-          merchantKey = activeSlot.merchantKey;
-          merchantSalt = activeSlot.merchantSalt;
-          headerAuthKey = activeSlot.headerAuthKey;
-          endpoint = activeSlot.endpoint;
-        } else {
-          // Automatic In-Place One-Time Migration from old flat shape:
-          const flatKey = String(
-            parsed.merchantKey ||
-            parsed.merchant_key ||
-            parsed.payuMerchantKey ||
-            parsed.payu_merchant_key ||
-            parsed.key ||
-            parsed.apiKey ||
-            parsed.PAYU_MERCHANT_KEY ||
-            ''
-          ).trim();
-
-          const flatSalt = String(
-            parsed.merchantSalt ||
-            parsed.merchant_salt ||
-            parsed.payuMerchantSalt ||
-            parsed.payu_merchant_salt ||
-            parsed.salt ||
-            parsed.apiSecret ||
-            parsed.PAYU_MERCHANT_SALT ||
-            ''
-          ).trim();
-
-          const flatHeader = String(
-            parsed.headerAuthKey ||
-            parsed.header_auth_key ||
-            parsed.payuHeaderAuthKey ||
-            ''
-          ).trim();
-
-          const flatEndpoint = String(
-            parsed.endpoint ||
-            parsed.actionUrl ||
-            parsed.action_url ||
-            parsed.paymentUrl ||
-            ''
-          ).trim();
-
-          let flatIsTest = true;
-          if (parsed.isTestMode !== undefined && parsed.isTestMode !== null) {
-            flatIsTest = Boolean(parsed.isTestMode);
-          } else if (parsed.is_test_mode !== undefined && parsed.is_test_mode !== null) {
-            flatIsTest = Boolean(parsed.is_test_mode);
-          } else if (parsed.mode) {
-            flatIsTest = !['production', 'live'].includes(String(parsed.mode).toLowerCase());
-          }
-
-          activeMode = flatIsTest ? 'test' : 'live';
-          isTestMode = flatIsTest;
-
-          testSlot = {
-            merchantKey: activeMode === 'test' ? flatKey : '',
-            merchantSalt: activeMode === 'test' ? flatSalt : '',
-            headerAuthKey: activeMode === 'test' ? flatHeader : '',
-            endpoint: activeMode === 'test' ? (flatEndpoint || 'https://test.payu.in/_payment') : 'https://test.payu.in/_payment',
-          };
-
-          liveSlot = {
-            merchantKey: activeMode === 'live' ? flatKey : '',
-            merchantSalt: activeMode === 'live' ? flatSalt : '',
-            headerAuthKey: activeMode === 'live' ? flatHeader : '',
-            endpoint: activeMode === 'live' ? (flatEndpoint || 'https://secure.payu.in/_payment') : 'https://secure.payu.in/_payment',
-          };
-
-          const migratedConfig = {
-            activeMode,
-            isEnabled: parsed.isEnabled !== undefined ? Boolean(parsed.isEnabled) : true,
-            test: testSlot,
-            live: liveSlot,
-            name: parsed.name || 'PayU India Hosted Gateway',
-            currency: parsed.currency || 'INR',
-            supportedMethods: parsed.supportedMethods || ['UPI', 'NET_BANKING', 'CARDS'],
-            updatedAt: new Date().toISOString(),
-          };
-
-          // Save migrated shape back to app_settings transparently
-          try {
-            await execute(
-              db,
-              `INSERT INTO app_settings (config_key, config_value, updated_at)
-               VALUES ('payu_config', ?, CURRENT_TIMESTAMP)
-               ON CONFLICT(config_key) DO UPDATE SET
-                 config_value = excluded.config_value,
-                 updated_at = CURRENT_TIMESTAMP`,
-              JSON.stringify(migratedConfig)
-            );
-            console.log('[PayU Config] Transparently migrated legacy flat config to dual-slot test/live structure in app_settings');
-          } catch (migErr) {
-            console.warn('[PayU Config] Failed to persist migrated config in app_settings:', migErr);
-          }
-
-          const activeSlot = activeMode === 'live' ? liveSlot : testSlot;
-          merchantKey = activeSlot.merchantKey;
-          merchantSalt = activeSlot.merchantSalt;
-          headerAuthKey = activeSlot.headerAuthKey;
-          endpoint = activeSlot.endpoint;
-        }
+        dbConfig = rawJson;
       }
     }
   } catch (err: any) {
-    console.warn('[PayU Config] Error querying app_settings table:', err?.message || err);
+    console.warn('[PayU Config] Error querying app_settings:', err?.message || err);
   }
 
-  // 2. Secondary DB Source: Query payment_gateway_config table if credentials still missing
-  if (!merchantKey || !merchantSalt) {
+  // 3. Resolve final PayU Environment (payuEnv)
+  let payuEnv: 'TEST' | 'LIVE' = 'TEST';
+  if (explicitEnv) {
+    payuEnv = explicitEnv;
+  } else if (dbConfig) {
+    if (dbConfig.activeMode) {
+      payuEnv = String(dbConfig.activeMode).toUpperCase() === 'LIVE' ? 'LIVE' : 'TEST';
+    } else if (dbConfig.isTestMode !== undefined && dbConfig.isTestMode !== null) {
+      payuEnv = dbConfig.isTestMode ? 'TEST' : 'LIVE';
+    }
+  } else {
     try {
-      const gwRow = await queryFirst<any>(
-        db,
-        "SELECT * FROM payment_gateway_config WHERE UPPER(provider) = 'PAYU'"
-      );
-      if (gwRow) {
-        if (!merchantKey && gwRow.merchant_key) merchantKey = String(gwRow.merchant_key).trim();
-        if (!merchantSalt && gwRow.merchant_salt) merchantSalt = String(gwRow.merchant_salt).trim();
-        if (gwRow.is_test_mode !== undefined && gwRow.is_test_mode !== null) {
-          isTestMode = Boolean(gwRow.is_test_mode);
-          activeMode = isTestMode ? 'test' : 'live';
-        }
-        if (!endpoint && gwRow.endpoint) {
-          endpoint = String(gwRow.endpoint).trim();
-        }
-        if (!headerAuthKey && gwRow.header_auth_key) {
-          headerAuthKey = String(gwRow.header_auth_key).trim();
-        }
+      const gwRow = await queryFirst<any>(db, "SELECT * FROM payment_gateway_config WHERE UPPER(provider) = 'PAYU'");
+      if (gwRow && gwRow.is_test_mode !== undefined && gwRow.is_test_mode !== null) {
+        payuEnv = gwRow.is_test_mode ? 'TEST' : 'LIVE';
       }
-    } catch (gwErr: any) {
-      console.warn('[PayU Config] Error querying payment_gateway_config table:', gwErr?.message || gwErr);
-    }
+    } catch {}
   }
 
-  // 3. Fallback to Environment Variables only if missing from D1
-  if (!merchantKey) {
-    merchantKey =
-      env.PAYU_MERCHANT_KEY ||
-      (typeof process !== 'undefined' ? process.env?.PAYU_MERCHANT_KEY : '') ||
-      '';
+  const isTestMode = payuEnv === 'TEST';
+  const activeMode: 'test' | 'live' = isTestMode ? 'test' : 'live';
+  const endpoint = isTestMode ? 'https://test.payu.in/_payment' : 'https://secure.payu.in/_payment';
+
+  let testSlot = {
+    merchantKey: String(dbConfig?.test?.merchantKey || env.PAYU_TEST_KEY || env.PAYU_MERCHANT_KEY_TEST || '').trim(),
+    merchantSalt: String(dbConfig?.test?.merchantSalt || env.PAYU_TEST_SALT || env.PAYU_MERCHANT_SALT_TEST || '').trim(),
+    headerAuthKey: String(dbConfig?.test?.headerAuthKey || env.PAYU_TEST_HEADER_AUTH_KEY || '').trim(),
+    endpoint: 'https://test.payu.in/_payment',
+  };
+
+  let liveSlot = {
+    merchantKey: String(dbConfig?.live?.merchantKey || env.PAYU_LIVE_KEY || env.PAYU_MERCHANT_KEY_LIVE || '').trim(),
+    merchantSalt: String(dbConfig?.live?.merchantSalt || env.PAYU_LIVE_SALT || env.PAYU_MERCHANT_SALT_LIVE || '').trim(),
+    headerAuthKey: String(dbConfig?.live?.headerAuthKey || env.PAYU_LIVE_HEADER_AUTH_KEY || '').trim(),
+    endpoint: 'https://secure.payu.in/_payment',
+  };
+
+  let merchantKey = '';
+  let merchantSalt = '';
+  let headerAuthKey = '';
+
+  // Extract credentials STRICTLY for the selected environment
+  if (payuEnv === 'LIVE') {
+    merchantKey = liveSlot.merchantKey || (dbConfig?.activeMode === 'live' ? dbConfig?.merchantKey : '') || env.PAYU_MERCHANT_KEY || '';
+    merchantSalt = liveSlot.merchantSalt || (dbConfig?.activeMode === 'live' ? dbConfig?.merchantSalt : '') || env.PAYU_MERCHANT_SALT || '';
+    headerAuthKey = liveSlot.headerAuthKey;
+  } else {
+    merchantKey = testSlot.merchantKey || (dbConfig?.activeMode === 'test' ? dbConfig?.merchantKey : '') || env.PAYU_MERCHANT_KEY || '';
+    merchantSalt = testSlot.merchantSalt || (dbConfig?.activeMode === 'test' ? dbConfig?.merchantSalt : '') || env.PAYU_MERCHANT_SALT || '';
+    headerAuthKey = testSlot.headerAuthKey;
   }
 
-  if (!merchantSalt) {
-    merchantSalt =
-      env.PAYU_MERCHANT_SALT ||
-      (typeof process !== 'undefined' ? process.env?.PAYU_MERCHANT_SALT : '') ||
-      '';
-  }
+  merchantKey = String(merchantKey || '').trim();
+  merchantSalt = String(merchantSalt || '').trim();
+  const configured = Boolean(merchantKey && merchantSalt);
 
-  if (!merchantKey && !merchantSalt) {
-    const envMode = env.PAYU_ENV || (typeof process !== 'undefined' ? process.env?.PAYU_ENV : '') || '';
-    if (envMode) {
-      isTestMode = envMode.toLowerCase() !== 'production';
-      activeMode = isTestMode ? 'test' : 'live';
-    }
-  }
-
-  // Clean strings
-  merchantKey = (merchantKey || '').trim();
-  merchantSalt = (merchantSalt || '').trim();
-
-  // Resolve final endpoint
-  if (!endpoint) {
-    endpoint = isTestMode ? 'https://test.payu.in/_payment' : 'https://secure.payu.in/_payment';
-  }
-
-  return { merchantKey, merchantSalt, isTestMode, endpoint, headerAuthKey, activeMode, test: testSlot, live: liveSlot };
+  return {
+    merchantKey,
+    merchantSalt,
+    payuEnv,
+    isTestMode,
+    endpoint,
+    headerAuthKey,
+    activeMode,
+    configured,
+    test: testSlot,
+    live: liveSlot,
+  };
 }
 
 export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
@@ -1533,15 +1397,16 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
       const udf4 = (body.udf4 || '').trim(); // durationDays
       const udf5 = (body.udf5 || '').trim(); // planId
 
-      // 2. Multi-Tier Credential Resolution
-      const { merchantKey: payuKey, merchantSalt: payuSalt } = await getPayUCredentials(db, env);
+      // 2. Strict Environment-Specific Credential Resolution
+      const payuCreds = await getPayUCredentials(db, env);
+      const { merchantKey: payuKey, merchantSalt: payuSalt, payuEnv } = payuCreds;
 
-      if (!payuSalt && status === 'success') {
-        console.error('[PayU Return] PAYU_MERCHANT_SALT is not configured in D1 app_settings, payment_gateway_config, or env');
+      if ((!payuSalt || !payuKey) && status === 'success') {
+        console.error(`[PayU Return] Configured PayU ${payuEnv} credentials (key/salt) are missing for environment ${payuEnv}`);
         if (isWebhookOrJsonApi) {
-          return errorResponse('PayU Merchant Salt is not configured on server', 500);
+          return errorResponse(`PayU ${payuEnv} Merchant Credentials are not configured on server`, 500);
         }
-        const failureUrl = `${appBaseUrl}/?payment_status=failure&txnid=${encodeURIComponent(txnid)}&error=${encodeURIComponent('Payment gateway configuration missing')}#subscription`;
+        const failureUrl = `${appBaseUrl}/?payment_status=failure&txnid=${encodeURIComponent(txnid)}&error=${encodeURIComponent(`Payment gateway configuration missing for ${payuEnv} environment`)}#subscription`;
         return createRedirectResponse(failureUrl, false, 'Returning to subscription page...');
       }
 
@@ -1582,12 +1447,12 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
         return createRedirectResponse(failureRedirectUrl, false, 'Payment cancelled. Returning to subscription page...');
       }
 
-      // 4. Reverse SHA-512 Hash Verification for successful payments
+      // 4. Reverse SHA-512 Hash Verification strictly using active environment salt & key
       if (payuSalt) {
-        const { isValid, calculatedHash } = await verifyPayUReverseHash(body, payuSalt, payuKey);
+        const { isValid, calculatedHash } = await verifyPayUReverseHashPayload(body, payuSalt, payuKey);
 
         if (!isValid && receivedHash) {
-          console.warn(`[PayU Return] Reverse hash mismatch for txnid: ${txnid}. Calculated: ${calculatedHash}, Received: ${receivedHash}`);
+          console.warn(`[PayU Return] Reverse hash verification failed for txnid: ${txnid} in ${payuEnv} environment.`);
 
           // Update transaction status to FAILED in database
           if (txnid) {
@@ -1605,16 +1470,14 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
                 txnid
               );
             } catch (dbErr) {
-              console.error('[PayU Return] Failed to update tampered transaction in DB:', dbErr);
+              console.error('[PayU Return] Failed to update transaction in DB:', dbErr);
             }
           }
 
           if (isWebhookOrJsonApi) {
             return jsonResponse({
-              error: 'Hash verification failed: invalid signature',
+              error: `Hash verification failed: invalid signature for ${payuEnv} environment`,
               success: false,
-              calculatedHash,
-              receivedHash,
             }, 400);
           }
 
@@ -1623,11 +1486,7 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
         }
       }
 
-      // 5. Idempotent Order & Subscription Fulfillment for Successful Payments
-      const orgId = udf1;
-      const durationDays = parseInt(udf4, 10) || 365;
-
-      // Query existing transaction record for idempotency check (wrapped in try/catch to never block fulfillment)
+      // 5. Query existing transaction record for idempotency check & fallback values
       let existingTxn: any = null;
       if (txnid) {
         try {
@@ -1636,6 +1495,10 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
           console.error('[PayU Return] Error looking up subscription_transactions for txnid:', txnid, lookupErr?.message || lookupErr);
         }
       }
+
+      const orgId = udf1 || existingTxn?.organization_id || '';
+      const durationDays = parseInt(udf4, 10) || existingTxn?.duration_days || 365;
+      const planId = udf5 || existingTxn?.plan_id || 'plan_all_in_one_pro';
 
       if (existingTxn && existingTxn.payment_status === 'SUCCESS') {
         // Idempotent no-op: already verified and fulfilled
