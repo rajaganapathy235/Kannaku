@@ -4,11 +4,9 @@ import {
   CheckCircle2,
   ChevronDown,
   ChevronRight,
-  Shield,
   Zap,
   Sparkles,
   Printer,
-  Smartphone,
   Check,
   Building2,
   Factory,
@@ -23,6 +21,9 @@ import {
   HelpCircle,
 } from 'lucide-react';
 import { IndustryData, INDUSTRY_SOLUTIONS } from '../../config/industry.config';
+import { getSEOConfigForPath } from '../../config/seo.config';
+import { SEOHead } from '../common/SEOHead';
+import { PublicLayout } from '../layout/PublicLayout';
 
 interface IndustrySolutionPageProps {
   data: IndustryData;
@@ -37,6 +38,7 @@ export const IndustrySolutionPage: React.FC<IndustrySolutionPageProps> = ({
   onNavigateSlug,
   onGetStarted,
   onSignIn,
+  onOpenSuperAdmin,
 }) => {
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
 
@@ -67,343 +69,192 @@ export const IndustrySolutionPage: React.FC<IndustrySolutionPageProps> = ({
     }
   };
 
+  const seoEntry = getSEOConfigForPath(data.slug);
+
+  const breadcrumbs = [
+    { name: 'Home', slug: '' },
+    { name: 'Industries', slug: '' },
+    { name: data.industryName, slug: data.slug },
+  ];
+
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col selection:bg-emerald-500 selection:text-white">
-      {/* Sticky Header */}
-      <header className="sticky top-0 z-40 bg-slate-950/85 backdrop-blur-md border-b border-slate-800/80">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <button
-            type="button"
-            onClick={() => onNavigateSlug('')}
-            className="flex items-center gap-2.5 cursor-pointer text-left group"
-          >
-            <div className="w-8 h-8 rounded-lg bg-emerald-500 flex items-center justify-center text-slate-950 font-black text-base shadow-sm group-hover:bg-emerald-400 transition-colors">
-              ₹
-            </div>
-            <span className="font-extrabold text-lg text-white tracking-tight">
-              Just<span className="text-emerald-400">GST</span>
-            </span>
-          </button>
-
-          {/* Industry Navigation Bar (Desktop) */}
-          <nav className="hidden xl:flex items-center gap-4 text-xs font-semibold text-slate-300">
-            <button
-              type="button"
-              onClick={() => onNavigateSlug('billing-software-for-wholesale')}
-              className={`hover:text-emerald-400 transition-colors cursor-pointer ${
-                data.id === 'wholesale' ? 'text-emerald-400 font-bold' : ''
-              }`}
-            >
-              Wholesale
-            </button>
-            <button
-              type="button"
-              onClick={() => onNavigateSlug('billing-software-for-manufacturing')}
-              className={`hover:text-emerald-400 transition-colors cursor-pointer ${
-                data.id === 'manufacturing' ? 'text-emerald-400 font-bold' : ''
-              }`}
-            >
-              Manufacturing
-            </button>
-            <button
-              type="button"
-              onClick={() => onNavigateSlug('billing-software-for-traders')}
-              className={`hover:text-emerald-400 transition-colors cursor-pointer ${
-                data.id === 'traders' ? 'text-emerald-400 font-bold' : ''
-              }`}
-            >
-              Traders
-            </button>
-            <button
-              type="button"
-              onClick={() => onNavigateSlug('billing-software-for-pharmacy')}
-              className={`hover:text-emerald-400 transition-colors cursor-pointer ${
-                data.id === 'pharmacy' ? 'text-emerald-400 font-bold' : ''
-              }`}
-            >
-              Pharmacy
-            </button>
-            <button
-              type="button"
-              onClick={() => onNavigateSlug('billing-software-for-supermarket')}
-              className={`hover:text-emerald-400 transition-colors cursor-pointer ${
-                data.id === 'supermarket' ? 'text-emerald-400 font-bold' : ''
-              }`}
-            >
-              Supermarket
-            </button>
-            <button
-              type="button"
-              onClick={() => onNavigateSlug('billing-software-for-apparel')}
-              className={`hover:text-emerald-400 transition-colors cursor-pointer ${
-                data.id === 'apparel' ? 'text-emerald-400 font-bold' : ''
-              }`}
-            >
-              Apparel
-            </button>
-            <button
-              type="button"
-              onClick={() => onNavigateSlug('billing-software-for-hardware')}
-              className={`hover:text-emerald-400 transition-colors cursor-pointer ${
-                data.id === 'hardware' ? 'text-emerald-400 font-bold' : ''
-              }`}
-            >
-              Hardware
-            </button>
-            <button
-              type="button"
-              onClick={() => onNavigateSlug('billing-software-for-electronics')}
-              className={`hover:text-emerald-400 transition-colors cursor-pointer ${
-                data.id === 'electronics' ? 'text-emerald-400 font-bold' : ''
-              }`}
-            >
-              Electronics
-            </button>
-            <button
-              type="button"
-              onClick={() => onNavigateSlug('billing-software-for-auto-parts')}
-              className={`hover:text-emerald-400 transition-colors cursor-pointer ${
-                data.id === 'autoParts' ? 'text-emerald-400 font-bold' : ''
-              }`}
-            >
-              Auto Parts
-            </button>
-            <button
-              type="button"
-              onClick={() => onNavigateSlug('billing-software-for-footwear')}
-              className={`hover:text-emerald-400 transition-colors cursor-pointer ${
-                data.id === 'footwear' ? 'text-emerald-400 font-bold' : ''
-              }`}
-            >
-              Footwear
-            </button>
-            <button
-              type="button"
-              onClick={() => onNavigateSlug('billing-software-for-restaurants')}
-              className={`hover:text-emerald-400 transition-colors cursor-pointer ${
-                data.id === 'restaurants' ? 'text-emerald-400 font-bold' : ''
-              }`}
-            >
-              Restaurants
-            </button>
-            <button
-              type="button"
-              onClick={() => onNavigateSlug('billing-software-for-services')}
-              className={`hover:text-emerald-400 transition-colors cursor-pointer ${
-                data.id === 'services' ? 'text-emerald-400 font-bold' : ''
-              }`}
-            >
-              Services
-            </button>
-          </nav>
-
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={onSignIn}
-              className="px-3 py-1.5 text-xs font-semibold text-slate-300 hover:text-white transition-colors cursor-pointer"
-            >
-              Sign In
-            </button>
-            <button
-              type="button"
-              onClick={onGetStarted}
-              className="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 rounded-xl text-xs font-bold transition-all shadow-md shadow-emerald-500/10 flex items-center gap-1.5 cursor-pointer active:scale-98"
-            >
-              <span>Start Free Trial</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        </div>
-      </header>
+    <PublicLayout
+      currentSlug={data.slug}
+      breadcrumbs={breadcrumbs}
+      onNavigateSlug={onNavigateSlug}
+      onSignIn={onSignIn}
+      onStartTrial={onGetStarted}
+      onOpenSuperAdmin={onOpenSuperAdmin}
+    >
+      {seoEntry && <SEOHead seo={seoEntry} />}
 
       {/* Hero Section */}
-      <section className="relative pt-12 pb-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
-        <div className="flex flex-col items-center text-center max-w-4xl mx-auto">
-          {/* Badge */}
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-950/80 border border-emerald-800/60 text-emerald-300 text-xs font-semibold mb-6">
-            {getIndustryIcon(data.iconName)}
-            <span>{data.badge}</span>
-            <span className="text-emerald-500">•</span>
-            <span className="text-emerald-200">₹49/month (₹588/year)</span>
-          </div>
-
-          <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight leading-[1.15]">
-            {data.heroHeadline}
-          </h1>
-
-          <p className="mt-5 text-base sm:text-lg text-slate-300 max-w-2xl leading-relaxed">
-            {data.heroDescription}
-          </p>
-
-          {/* CTA Group */}
-          <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4 w-full sm:w-auto">
-            <button
-              type="button"
-              onClick={onGetStarted}
-              className="w-full sm:w-auto px-8 py-3.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 rounded-xl font-bold text-sm transition-all shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 cursor-pointer active:scale-98"
-            >
-              <span>Start 14-Day Free Trial</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
-            <button
-              type="button"
-              onClick={() => onNavigateSlug('pricing')}
-              className="w-full sm:w-auto px-6 py-3.5 bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-700/80 rounded-xl font-semibold text-sm transition-all cursor-pointer"
-            >
-              View Transparent Pricing (₹49/mo)
-            </button>
-          </div>
-
-          {/* Trust Highlights */}
-          <div className="mt-6 flex flex-wrap items-center justify-center gap-6 text-xs text-slate-400">
-            <span className="flex items-center gap-1.5">
-              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-              100% Cloud Access (No Install)
-            </span>
-            <span className="flex items-center gap-1.5">
-              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-              Thermal 2"/3" &amp; A4/A5 Printing
-            </span>
-            <span className="flex items-center gap-1.5">
-              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-              Dynamic UPI Payment QR
-            </span>
-          </div>
+      <section className="relative pt-12 pb-16 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto w-full text-center">
+        {/* Badge */}
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-brand-50 border border-brand-200 text-brand-800 text-xs font-semibold mb-6 shadow-2xs">
+          {getIndustryIcon(data.iconName)}
+          <span>{data.badge}</span>
+          <span className="text-brand-400">•</span>
+          <span className="text-brand-700 font-bold">₹49/month (₹588/year)</span>
         </div>
 
-        {/* AEO Direct Answer Summary Box (Engineered for AI Citations) */}
-        <div className="mt-12 max-w-3xl mx-auto bg-slate-900/90 border border-emerald-500/30 rounded-2xl p-5 sm:p-6 shadow-xl relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 rounded-full blur-2xl pointer-events-none" />
-          <div className="flex items-start gap-3">
-            <div className="w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center shrink-0 mt-0.5">
-              <Sparkles className="w-4 h-4" />
-            </div>
-            <div>
-              <div className="text-xs font-mono uppercase tracking-wider text-emerald-400 font-bold mb-1">
-                Direct Answer / Key Takeaway
-              </div>
-              <h2 className="text-sm sm:text-base font-bold text-white mb-2">
-                {data.aeoSummary.question}
-              </h2>
-              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-                {data.aeoSummary.answer}
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
+        <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-slate-900 tracking-tight leading-[1.15]">
+          {data.heroHeadline}
+        </h1>
 
-      {/* Pain Points Solved Section */}
-      <section className="py-14 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full border-t border-slate-800/80">
-        <div className="text-center mb-10">
-          <span className="text-xs font-mono text-emerald-400 uppercase font-bold tracking-widest">
-            Tailored Industry Solutions
+        <p className="mt-5 text-base sm:text-lg text-slate-600 max-w-2xl mx-auto leading-relaxed">
+          {data.heroDescription}
+        </p>
+
+        {/* CTA Group */}
+        <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3 w-full sm:w-auto">
+          <button
+            type="button"
+            onClick={onGetStarted}
+            className="w-full sm:w-auto px-8 py-3.5 bg-brand-600 hover:bg-brand-700 text-white rounded-xl font-bold text-sm transition-all shadow-md shadow-brand-600/20 flex items-center justify-center gap-2 cursor-pointer active:scale-98"
+          >
+            <span>Start 14-Day Free Trial</span>
+            <ArrowRight className="w-4 h-4" />
+          </button>
+          <button
+            type="button"
+            onClick={() => onNavigateSlug('pricing')}
+            className="w-full sm:w-auto px-6 py-3.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded-xl font-bold text-sm transition-all cursor-pointer shadow-2xs"
+          >
+            View Pricing (₹49/mo)
+          </button>
+        </div>
+
+        {/* Trust Highlights */}
+        <div className="mt-6 flex flex-wrap items-center justify-center gap-6 text-xs text-slate-500 font-medium">
+          <span className="flex items-center gap-1.5">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600" /> 14-Day Free Trial Included
           </span>
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-white mt-2">
-            Eliminate Common {data.industryName} Headaches
-          </h2>
-          <p className="text-xs sm:text-sm text-slate-400 mt-2 max-w-2xl mx-auto">
-            JustGST is engineered to resolve the exact daily hurdles faced by Indian {data.industryName.toLowerCase()}.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {data.keyPainPointsSolved.map((item, idx) => (
-            <div
-              key={idx}
-              className="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 relative flex flex-col justify-between"
-            >
-              <div>
-                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-rose-950/60 border border-rose-800/40 text-rose-300 text-[11px] font-semibold mb-3">
-                  <span>❌ Challenge</span>
-                </div>
-                <h3 className="text-sm font-bold text-white mb-2 leading-snug">{item.problem}</h3>
-              </div>
-              <div className="mt-4 pt-4 border-t border-slate-800">
-                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-950/60 border border-emerald-800/40 text-emerald-300 text-[11px] font-semibold mb-2">
-                  <span>✅ JustGST Solution</span>
-                </div>
-                <p className="text-xs text-slate-300 leading-relaxed">{item.solution}</p>
-              </div>
-            </div>
-          ))}
+          <span className="flex items-center gap-1.5">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600" /> 100% CBIC Compliant
+          </span>
+          <span className="flex items-center gap-1.5">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600" /> Zero Software Installation
+          </span>
         </div>
       </section>
 
-      {/* Tailored Core Features Grid */}
-      <section className="py-14 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full border-t border-slate-800/80">
+      {/* Pain Points vs JustGST Solutions */}
+      <section className="py-14 bg-white border-y border-slate-200 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-12">
+            <span className="text-xs font-bold text-brand-700 uppercase tracking-widest">
+              Industry Challenges Solved
+            </span>
+            <h2 className="text-2xl sm:text-3xl font-black text-slate-900 mt-2">
+              Why Generic Billing Fails for {data.industryName}
+            </h2>
+            <p className="text-xs sm:text-sm text-slate-600 mt-2 max-w-2xl mx-auto">
+              We built specialized workflows tailored specifically to how {data.industryName.toLowerCase()} operate every day.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {data.painPoints.map((item, idx) => (
+              <div
+                key={idx}
+                className="bg-slate-50 border border-slate-200 rounded-2xl p-6 flex flex-col justify-between shadow-xs"
+              >
+                <div>
+                  <div className="text-xs font-bold text-rose-600 uppercase tracking-wider mb-2 flex items-center gap-1">
+                    <span>Problem #{idx + 1}</span>
+                  </div>
+                  <h3 className="text-sm font-bold text-slate-900 mb-2 leading-snug">
+                    {item.problem}
+                  </h3>
+                  <div className="pt-3 border-t border-slate-200 mt-3">
+                    <div className="text-xs font-bold text-brand-700 uppercase tracking-wider mb-1 flex items-center gap-1">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>JustGST Solution</span>
+                    </div>
+                    <p className="text-xs text-slate-600 leading-relaxed font-medium">
+                      {item.solution}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Key Industry Features */}
+      <section className="py-16 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto w-full">
         <div className="text-center mb-12">
-          <span className="text-xs font-mono text-emerald-400 uppercase font-bold tracking-widest">
-            Key Capabilities
+          <span className="text-xs font-bold text-brand-700 uppercase tracking-widest">
+            Specialized Features
           </span>
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-white mt-2">
-            Built for {data.industryName}
+          <h2 className="text-2xl sm:text-3xl font-black text-slate-900 mt-2">
+            Built Directly for {data.industryName}
           </h2>
-          <p className="text-xs sm:text-sm text-slate-400 mt-2 max-w-2xl mx-auto">
-            Everything you need for lightning-fast billing, stock tracking, and party ledger management.
-          </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {data.tailoredFeatures.map((feat, idx) => (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {data.features.map((feat, idx) => (
             <div
               key={idx}
-              className="bg-slate-900/70 border border-slate-800 hover:border-emerald-500/40 rounded-2xl p-6 transition-all group"
+              className="bg-white border border-slate-200 hover:border-slate-300 rounded-2xl p-6 transition-all shadow-xs"
             >
-              <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center mb-4 group-hover:bg-emerald-500/20 transition-colors">
+              <div className="w-10 h-10 rounded-xl bg-brand-50 text-brand-700 border border-brand-200 flex items-center justify-center mb-4">
                 <Zap className="w-5 h-5" />
               </div>
-              <h3 className="text-base font-bold text-white mb-2">{feat.title}</h3>
-              <p className="text-xs text-slate-400 leading-relaxed">{feat.description}</p>
+              <h3 className="text-base font-bold text-slate-900 mb-2">{feat.title}</h3>
+              <p className="text-xs text-slate-600 leading-relaxed">{feat.description}</p>
             </div>
           ))}
         </div>
       </section>
 
       {/* Step-by-Step 3-Second Billing Workflow */}
-      <section className="py-14 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full border-t border-slate-800/80">
-        <div className="text-center mb-12">
-          <span className="text-xs font-mono text-emerald-400 uppercase font-bold tracking-widest">
-            Workflow Architecture
-          </span>
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-white mt-2">
-            3-Step Billing in Under 5 Seconds
-          </h2>
-          <p className="text-xs sm:text-sm text-slate-400 mt-2 max-w-2xl mx-auto">
-            Clean, keyboard-friendly interface designed for rapid counter operations with zero lag.
-          </p>
-        </div>
+      <section className="py-14 bg-white border-t border-slate-200 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-12">
+            <span className="text-xs font-bold text-brand-700 uppercase tracking-widest">
+              Workflow Architecture
+            </span>
+            <h2 className="text-2xl sm:text-3xl font-black text-slate-900 mt-2">
+              3-Step Billing in Under 5 Seconds
+            </h2>
+            <p className="text-xs sm:text-sm text-slate-600 mt-2 max-w-2xl mx-auto">
+              Clean, keyboard-friendly interface designed for rapid counter operations with zero lag.
+            </p>
+          </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 relative">
-          {data.workflowSteps.map((step, idx) => (
-            <div
-              key={idx}
-              className="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 relative overflow-hidden"
-            >
-              <div className="text-3xl font-black text-emerald-500/20 absolute top-4 right-6 select-none font-mono">
-                {step.stepNumber}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 relative">
+            {data.workflowSteps.map((step, idx) => (
+              <div
+                key={idx}
+                className="bg-slate-50 border border-slate-200 rounded-2xl p-6 relative overflow-hidden shadow-xs"
+              >
+                <div className="text-3xl font-black text-slate-200 absolute top-4 right-6 select-none font-mono">
+                  {step.stepNumber}
+                </div>
+                <div className="w-8 h-8 rounded-lg bg-brand-100 text-brand-700 font-bold text-xs flex items-center justify-center mb-4">
+                  {step.stepNumber}
+                </div>
+                <h3 className="text-base font-bold text-slate-900 mb-2">{step.title}</h3>
+                <p className="text-xs text-slate-600 leading-relaxed">{step.description}</p>
               </div>
-              <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-400 font-bold text-xs flex items-center justify-center mb-4">
-                {step.stepNumber}
-              </div>
-              <h3 className="text-base font-bold text-white mb-2">{step.title}</h3>
-              <p className="text-xs text-slate-400 leading-relaxed">{step.description}</p>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </section>
 
       {/* Hardware Compatibility Checklist */}
-      <section className="py-14 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full border-t border-slate-800/80">
+      <section className="py-14 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto w-full">
         <div className="text-center mb-10">
-          <span className="text-xs font-mono text-emerald-400 uppercase font-bold tracking-widest">
+          <span className="text-xs font-bold text-brand-700 uppercase tracking-widest">
             Hardware Plug &amp; Play
           </span>
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-white mt-2">
+          <h2 className="text-2xl sm:text-3xl font-black text-slate-900 mt-2">
             Compatible with 100% of Your Existing Equipment
           </h2>
-          <p className="text-xs sm:text-sm text-slate-400 mt-2 max-w-2xl mx-auto">
+          <p className="text-xs sm:text-sm text-slate-600 mt-2 max-w-2xl mx-auto">
             Zero proprietary hardware lock-in. JustGST works immediately with any printer, scanner, or device you already own.
           </p>
         </div>
@@ -412,70 +263,72 @@ export const IndustrySolutionPage: React.FC<IndustrySolutionPageProps> = ({
           {data.hardwareChecklist.map((hw, idx) => (
             <div
               key={idx}
-              className="bg-slate-900/60 border border-slate-800 rounded-2xl p-5 flex flex-col justify-between"
+              className="bg-white border border-slate-200 rounded-2xl p-5 flex flex-col justify-between shadow-xs"
             >
               <div>
                 <div className="flex items-center justify-between mb-3">
-                  <div className="w-8 h-8 rounded-lg bg-slate-800 text-emerald-400 flex items-center justify-center">
+                  <div className="w-8 h-8 rounded-lg bg-slate-100 text-brand-600 flex items-center justify-center">
                     <Printer className="w-4 h-4" />
                   </div>
-                  <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded-full border border-emerald-800/40">
+                  <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
                     <Check className="w-3 h-3" />
                     Supported
                   </span>
                 </div>
-                <h3 className="text-sm font-bold text-white mb-1">{hw.device}</h3>
-                <p className="text-[11px] text-slate-400 font-mono mb-2">{hw.spec}</p>
+                <h3 className="text-sm font-bold text-slate-900 mb-1">{hw.device}</h3>
+                <p className="text-[11px] text-slate-500 font-mono mb-2">{hw.spec}</p>
               </div>
-              <p className="text-xs text-slate-300 pt-3 border-t border-slate-800/60">{hw.recommendation}</p>
+              <p className="text-xs text-slate-600 pt-3 border-t border-slate-100">{hw.recommendation}</p>
             </div>
           ))}
         </div>
       </section>
 
       {/* Industry FAQ Accordion */}
-      <section className="py-14 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto w-full border-t border-slate-800/80">
-        <div className="text-center mb-10">
-          <span className="text-xs font-mono text-emerald-400 uppercase font-bold tracking-widest">
-            Got Questions?
-          </span>
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-white mt-2">
-            Frequently Asked Questions for {data.industryName}
-          </h2>
-        </div>
+      <section className="py-14 bg-white border-t border-slate-200 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-10">
+            <span className="text-xs font-bold text-brand-700 uppercase tracking-widest">
+              Got Questions?
+            </span>
+            <h2 className="text-2xl sm:text-3xl font-black text-slate-900 mt-2">
+              Frequently Asked Questions for {data.industryName}
+            </h2>
+          </div>
 
-        <div className="space-y-3">
-          {data.faqs.map((faq, idx) => (
-            <div
-              key={idx}
-              className="border border-slate-800 rounded-xl bg-slate-900/60 overflow-hidden transition-colors"
-            >
-              <button
-                type="button"
-                onClick={() => toggleFaq(idx)}
-                className="w-full py-4 px-5 text-left flex items-center justify-between gap-4 cursor-pointer hover:bg-slate-850/60 transition-colors"
+          <div className="space-y-3">
+            {data.faqs.map((faq, idx) => (
+              <div
+                key={idx}
+                className="border border-slate-200 rounded-xl bg-slate-50/60 overflow-hidden transition-colors"
               >
-                <span className="text-sm font-bold text-slate-200">{faq.question}</span>
-                <ChevronDown
-                  className={`w-4 h-4 text-slate-400 shrink-0 transition-transform duration-200 ${
-                    openFaqIndex === idx ? 'rotate-180 text-emerald-400' : ''
-                  }`}
-                />
-              </button>
-              {openFaqIndex === idx && (
-                <div className="px-5 pb-5 pt-1 text-xs sm:text-sm text-slate-300 leading-relaxed border-t border-slate-800/60">
-                  {faq.answer}
-                </div>
-              )}
-            </div>
-          ))}
+                <button
+                  type="button"
+                  onClick={() => toggleFaq(idx)}
+                  className="w-full py-4 px-5 text-left flex items-center justify-between gap-4 cursor-pointer hover:bg-slate-100/60 transition-colors"
+                >
+                  <span className="text-sm font-bold text-slate-800">{faq.question}</span>
+                  <ChevronDown
+                    className={`w-4 h-4 text-slate-400 shrink-0 transition-transform duration-200 ${
+                      openFaqIndex === idx ? 'rotate-180 text-brand-600' : ''
+                    }`}
+                  />
+                </button>
+                {openFaqIndex === idx && (
+                  <div className="px-5 pb-5 pt-1 text-xs sm:text-sm text-slate-600 leading-relaxed border-t border-slate-200">
+                    {faq.answer}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
       {/* Conversion CTA Block */}
-      <section className="py-16 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto w-full">
-        <div className="bg-gradient-to-br from-emerald-900/40 via-slate-900 to-slate-950 border border-emerald-500/40 rounded-3xl p-8 sm:p-12 text-center relative overflow-hidden shadow-2xl">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-bold mb-4">
+      <section className="py-16 bg-slate-950 px-4 sm:px-6 lg:px-8 text-center text-white">
+        <div className="max-w-4xl mx-auto">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand-500/20 text-brand-300 text-xs font-bold mb-4">
             <Sparkles className="w-3.5 h-3.5" />
             <span>Join 1,000+ Indian Businesses</span>
           </div>
@@ -485,11 +338,11 @@ export const IndustrySolutionPage: React.FC<IndustrySolutionPageProps> = ({
           <p className="text-sm sm:text-base text-slate-300 mt-3 max-w-xl mx-auto">
             14-day free trial. No credit card required. Instant cloud setup in under 30 seconds.
           </p>
-          <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
+          <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
             <button
               type="button"
               onClick={onGetStarted}
-              className="w-full sm:w-auto px-8 py-4 bg-emerald-500 hover:bg-emerald-400 text-slate-950 rounded-xl font-bold text-sm transition-all shadow-lg shadow-emerald-500/25 flex items-center justify-center gap-2 cursor-pointer active:scale-98"
+              className="w-full sm:w-auto px-8 py-3.5 bg-brand-500 hover:bg-brand-400 text-slate-950 rounded-xl font-black text-sm transition-all shadow-lg shadow-brand-500/25 flex items-center justify-center gap-2 cursor-pointer active:scale-98"
             >
               <span>Get Started Free</span>
               <ArrowRight className="w-4 h-4" />
@@ -497,7 +350,7 @@ export const IndustrySolutionPage: React.FC<IndustrySolutionPageProps> = ({
             <button
               type="button"
               onClick={() => onNavigateSlug('pricing')}
-              className="w-full sm:w-auto px-6 py-4 bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-700 rounded-xl font-semibold text-sm transition-all cursor-pointer"
+              className="w-full sm:w-auto px-6 py-3.5 bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-700 rounded-xl font-semibold text-sm transition-all cursor-pointer"
             >
               Compare All Pricing Plans
             </button>
@@ -505,42 +358,39 @@ export const IndustrySolutionPage: React.FC<IndustrySolutionPageProps> = ({
         </div>
       </section>
 
-      {/* Explore All 12 Industries Directory Footer */}
-      <section className="py-10 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full border-t border-slate-800/80">
-        <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
-          <Layers className="w-3.5 h-3.5 text-emerald-400" />
-          <span>Explore JustGST Industry Solutions</span>
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 text-xs">
-          {Object.values(INDUSTRY_SOLUTIONS).map((ind) => (
-            <button
-              key={ind.id}
-              type="button"
-              onClick={() => onNavigateSlug(ind.slug)}
-              className={`p-3 rounded-xl border text-left transition-all cursor-pointer group ${
-                ind.id === data.id
-                  ? 'bg-emerald-950/40 border-emerald-500/60 text-emerald-300'
-                  : 'bg-slate-900/60 hover:bg-slate-850 border-slate-800 text-slate-300'
-              }`}
-            >
-              <div className="flex items-center justify-between">
-                <span className="font-bold text-[11px] truncate group-hover:text-emerald-400">
-                  {ind.industryName.split('&')[0]}
+      {/* Explore All 12 Industries Directory */}
+      <section className="py-12 bg-white border-t border-slate-200 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-4 flex items-center gap-2">
+            <Layers className="w-3.5 h-3.5 text-brand-600" />
+            <span>Explore All 12 JustGST Industry Solutions</span>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 text-xs">
+            {Object.values(INDUSTRY_SOLUTIONS).map((ind) => (
+              <button
+                key={ind.id}
+                type="button"
+                onClick={() => onNavigateSlug(ind.slug)}
+                className={`p-3 rounded-xl border text-left transition-all cursor-pointer group ${
+                  ind.id === data.id
+                    ? 'bg-brand-50 border-brand-300 text-brand-700 font-bold'
+                    : 'bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-700'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-[11px] truncate group-hover:text-brand-600">
+                    {ind.industryName.split('&')[0]}
+                  </span>
+                  <ChevronRight className="w-3 h-3 text-slate-400 group-hover:text-brand-600 shrink-0" />
+                </div>
+                <span className="text-[10px] text-slate-500 block mt-0.5 truncate">
+                  {ind.tagline.split(' ')[0]} Billing
                 </span>
-                <ChevronRight className="w-3 h-3 text-slate-500 group-hover:text-emerald-400 shrink-0" />
-              </div>
-              <span className="text-[10px] text-slate-500 block mt-0.5 truncate">
-                {ind.tagline.split(' ')[0]} Billing
-              </span>
-            </button>
-          ))}
+              </button>
+            ))}
+          </div>
         </div>
       </section>
-
-      {/* Bottom Copyright */}
-      <footer className="py-6 px-4 border-t border-slate-900 text-center text-xs text-slate-500">
-        <p>© {new Date().getFullYear()} JustGST. Simple, Fast GST Billing &amp; Inventory Suite.</p>
-      </footer>
-    </div>
+    </PublicLayout>
   );
 };

@@ -29,7 +29,7 @@ import {
   ExternalLink,
 } from 'lucide-react';
 import { AuthSession } from '../../types/auth';
-import { LegalModal, LegalDocType } from './LegalModal';
+import { PublicLayout } from '../layout/PublicLayout';
 
 interface LandingPageProps {
   onStartTrial: () => void;
@@ -37,6 +37,7 @@ interface LandingPageProps {
   onEnterDemoApp: () => void;
   onOpenSuperAdmin: () => void;
   session: AuthSession | null;
+  onNavigateSlug?: (slug: string) => void;
 }
 
 export const LandingPage: React.FC<LandingPageProps> = ({
@@ -45,80 +46,24 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   onEnterDemoApp,
   onOpenSuperAdmin,
   session,
+  onNavigateSlug,
 }) => {
   const [activeFaq, setActiveFaq] = useState<number | null>(null);
-  const [legalModalOpen, setLegalModalOpen] = useState(false);
-  const [activeLegalDoc, setActiveLegalDoc] = useState<LegalDocType>('terms');
-
-  const openLegal = (doc: LegalDocType) => {
-    setActiveLegalDoc(doc);
-    setLegalModalOpen(true);
-  };
 
   const toggleFaq = (index: number) => {
     setActiveFaq(activeFaq === index ? null : index);
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans antialiased selection:bg-brand-600 selection:text-white">
-      {/* Top Navigation */}
-      <header className="sticky top-0 z-40 w-full bg-white/95 backdrop-blur-md border-b border-slate-200">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          {/* Logo & Identity */}
-          <div className="flex items-center gap-3">
-            <a href="/" className="flex items-center">
-              <img
-                src="/logo-horizontal.svg"
-                alt="JustGST"
-                className="w-auto object-contain shrink-0"
-                style={{ height: '40px', minHeight: '36px' }}
-              />
-            </a>
-          </div>
-
-          {/* Navigation Links (Desktop) - Lean SaaS Header */}
-          <nav className="hidden md:flex items-center gap-8 text-sm font-semibold text-slate-600">
-            <a href="#features" className="hover:text-brand-600 transition-colors">
-              Features
-            </a>
-            <a href="#pricing" className="hover:text-brand-600 transition-colors">
-              Pricing
-            </a>
-            <a href="#faq" className="hover:text-brand-600 transition-colors">
-              FAQ
-            </a>
-          </nav>
-
-          {/* Action CTAs */}
-          <div className="flex items-center gap-3">
-            {session ? (
-              <button
-                onClick={onEnterDemoApp}
-                className="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer active:scale-98"
-              >
-                <span>Go to Workspace</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
-            ) : (
-              <>
-                <button
-                  onClick={onSignIn}
-                  className="px-3 py-2 text-xs font-bold text-slate-700 hover:text-slate-900 transition-colors cursor-pointer"
-                >
-                  Log In
-                </button>
-                <button
-                  onClick={onStartTrial}
-                  className="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer active:scale-98"
-                >
-                  <span>Start Free Trial</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </button>
-              </>
-            )}
-          </div>
-        </div>
-      </header>
+    <PublicLayout
+      currentSlug=""
+      session={session}
+      onNavigateSlug={onNavigateSlug}
+      onSignIn={onSignIn}
+      onStartTrial={onStartTrial}
+      onEnterDemoApp={onEnterDemoApp}
+      onOpenSuperAdmin={onOpenSuperAdmin}
+    >
 
       {/* Hero Section */}
       <section className="pt-12 pb-16 sm:pt-20 sm:pb-24 border-b border-slate-200/80 bg-gradient-to-b from-white to-slate-50">
@@ -646,250 +591,57 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         </div>
       </section>
 
-      {/* Comprehensive Gateway-Compliant Footer */}
-      <footer className="border-t border-slate-200 bg-white text-xs text-slate-600">
-        {/* Gateway & Trust Assurance Strip */}
-        <div className="border-b border-slate-200 bg-slate-50/80 py-6">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
-              {/* Trust Badge 1 */}
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-brand-50 border border-brand-200 flex items-center justify-center text-brand-600 shrink-0">
-                  <ShieldCheck className="w-5 h-5" />
+      {/* Trust & Security Assurance Strip */}
+      <section className="border-t border-slate-200 bg-slate-50/80 py-8">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
+            {/* Trust Badge 1 */}
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-brand-50 border border-brand-200 flex items-center justify-center text-brand-600 shrink-0">
+                <ShieldCheck className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="font-bold text-slate-900 text-xs">
+                  PCI-DSS &amp; RBI Compliant Payments
                 </div>
-                <div>
-                  <div className="font-bold text-slate-900 text-xs">
-                    PCI-DSS &amp; RBI Compliant Payments
-                  </div>
-                  <div className="text-[11px] text-slate-500">
-                    Instant UPI, Cards &amp; NetBanking via RBI authorized gateways
-                  </div>
+                <div className="text-[11px] text-slate-500">
+                  Instant UPI, Cards &amp; NetBanking via RBI authorized gateways
                 </div>
               </div>
+            </div>
 
-              {/* Trust Badge 2 */}
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-brand-50 border border-brand-200 flex items-center justify-center text-brand-600 shrink-0">
-                  <Lock className="w-5 h-5" />
+            {/* Trust Badge 2 */}
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-brand-50 border border-brand-200 flex items-center justify-center text-brand-600 shrink-0">
+                <Lock className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="font-bold text-slate-900 text-xs">
+                  256-Bit SSL Bank-Grade Encryption
                 </div>
-                <div>
-                  <div className="font-bold text-slate-900 text-xs">
-                    256-Bit SSL Bank-Grade Encryption
-                  </div>
-                  <div className="text-[11px] text-slate-500">
-                    Your financial and GST data is encrypted at rest &amp; in transit
-                  </div>
+                <div className="text-[11px] text-slate-500">
+                  Your financial and GST data is encrypted at rest &amp; in transit
                 </div>
               </div>
+            </div>
 
-              {/* Trust Badge 3 */}
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-brand-50 border border-brand-200 flex items-center justify-center text-brand-600 shrink-0">
-                  <RotateCcw className="w-5 h-5" />
+            {/* Trust Badge 3 */}
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-brand-50 border border-brand-200 flex items-center justify-center text-brand-600 shrink-0">
+                <RotateCcw className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="font-bold text-slate-900 text-xs">
+                  14-Day Free Trial &amp; 7-Day Refund Policy
                 </div>
-                <div>
-                  <div className="font-bold text-slate-900 text-xs">
-                    14-Day Free Trial &amp; 7-Day Refund Policy
-                  </div>
-                  <div className="text-[11px] text-slate-500">
-                    Zero risk, transparent pricing with instant cloud provisioning
-                  </div>
+                <div className="text-[11px] text-slate-500">
+                  Zero risk, transparent pricing with instant cloud provisioning
                 </div>
               </div>
             </div>
           </div>
         </div>
-
-        {/* Clean 4-Column SaaS Footer */}
-        <div id="industries" className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 border-b border-slate-100">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {/* Column 1: Brand & Tagline */}
-            <div className="space-y-4">
-              <a href="/" className="inline-block">
-                <img
-                  src="/logo-horizontal.svg"
-                  alt="JustGST"
-                  className="w-auto object-contain shrink-0"
-                  style={{ height: '36px' }}
-                />
-              </a>
-              <p className="text-xs text-slate-500 leading-relaxed">
-                Simple, fast 100% cloud GST billing, POS &amp; inventory software for Indian businesses, retailers, and wholesalers at ₹49/month.
-              </p>
-              <div className="text-[11px] text-slate-400">
-                © {new Date().getFullYear()} JustGST. All Rights Reserved.
-              </div>
-            </div>
-
-            {/* Column 2: Product */}
-            <div className="space-y-3">
-              <div className="text-xs font-bold text-slate-900 uppercase tracking-wider">
-                Product
-              </div>
-              <ul className="space-y-2 text-xs text-slate-600">
-                <li>
-                  <a href="#features" className="hover:text-brand-600 transition-colors">
-                    Features
-                  </a>
-                </li>
-                <li>
-                  <a href="#pricing" className="hover:text-brand-600 transition-colors">
-                    Pricing
-                  </a>
-                </li>
-                <li>
-                  <a href="/gst-calculator/" className="hover:text-brand-600 transition-colors">
-                    GST Calculator
-                  </a>
-                </li>
-                <li>
-                  <a href="/gst-invoice-generator/" className="hover:text-brand-600 transition-colors">
-                    GST Invoice Generator
-                  </a>
-                </li>
-                <li>
-                  <a href="/gst-billing-software/" className="hover:text-brand-600 transition-colors">
-                    GST Billing Software
-                  </a>
-                </li>
-                <li>
-                  <a href="/inventory-management-software/" className="hover:text-brand-600 transition-colors">
-                    Inventory Software
-                  </a>
-                </li>
-              </ul>
-            </div>
-
-            {/* Column 3: Industries */}
-            <div className="space-y-3">
-              <div className="text-xs font-bold text-slate-900 uppercase tracking-wider">
-                Industries
-              </div>
-              <ul className="space-y-2 text-xs text-slate-600">
-                <li>
-                  <a href="/billing-software-for-pharmacy/" className="hover:text-brand-600 transition-colors">
-                    Pharmacy
-                  </a>
-                </li>
-                <li>
-                  <a href="/billing-software-for-supermarket/" className="hover:text-brand-600 transition-colors">
-                    Supermarket
-                  </a>
-                </li>
-                <li>
-                  <a href="/billing-software-for-wholesale/" className="hover:text-brand-600 transition-colors">
-                    Wholesale
-                  </a>
-                </li>
-                <li>
-                  <a href="/billing-software-for-hardware/" className="hover:text-brand-600 transition-colors">
-                    Hardware
-                  </a>
-                </li>
-                <li>
-                  <a href="/billing-software-for-apparel/" className="hover:text-brand-600 transition-colors">
-                    Garments &amp; Apparel
-                  </a>
-                </li>
-                <li>
-                  <a href="/billing-software-for-manufacturing/" className="hover:text-brand-600 transition-colors">
-                    Manufacturing
-                  </a>
-                </li>
-              </ul>
-            </div>
-
-            {/* Column 4: Comparisons & Legal */}
-            <div className="space-y-3">
-              <div className="text-xs font-bold text-slate-900 uppercase tracking-wider">
-                Comparisons &amp; Legal
-              </div>
-              <ul className="space-y-2 text-xs text-slate-600">
-                <li>
-                  <a href="/compare/justgst-vs-vyapar/" className="hover:text-brand-600 transition-colors">
-                    vs Vyapar
-                  </a>
-                </li>
-                <li>
-                  <a href="/compare/justgst-vs-gogst-vs-vyapar-vs-swipe-vs-mybillbook/" className="hover:text-brand-600 transition-colors">
-                    5-Way Compare
-                  </a>
-                </li>
-                <li>
-                  <button
-                    onClick={() => openLegal('privacy')}
-                    className="hover:text-brand-600 transition-colors cursor-pointer text-left"
-                  >
-                    Privacy Policy
-                  </button>
-                </li>
-                <li>
-                  <button
-                    onClick={() => openLegal('terms')}
-                    className="hover:text-brand-600 transition-colors cursor-pointer text-left"
-                  >
-                    Terms of Service
-                  </button>
-                </li>
-                <li>
-                  <button
-                    onClick={() => openLegal('refund')}
-                    className="hover:text-brand-600 transition-colors cursor-pointer text-left"
-                  >
-                    Refund Policy
-                  </button>
-                </li>
-                <li>
-                  <button
-                    onClick={() => openLegal('contact')}
-                    className="hover:text-brand-600 transition-colors cursor-pointer text-left"
-                  >
-                    Contact Support
-                  </button>
-                </li>
-              </ul>
-            </div>
-          </div>
-        </div>
-
-        {/* Bottom Legal Bar */}
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-slate-400">
-            <p className="text-center sm:text-left">
-              Operated by Rajaganapathy Kamalakannan. All Rights Reserved.
-            </p>
-            <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-slate-500 font-medium">
-              <button
-                onClick={() => openLegal('shipping')}
-                className="hover:text-brand-600 transition-colors cursor-pointer"
-              >
-                SaaS Delivery
-              </button>
-              <span>•</span>
-              <button
-                onClick={() => openLegal('security')}
-                className="hover:text-brand-600 transition-colors cursor-pointer"
-              >
-                Payment Security
-              </button>
-              <span>•</span>
-              <button
-                onClick={onOpenSuperAdmin}
-                className="hover:text-brand-600 transition-colors cursor-pointer font-semibold text-slate-600"
-              >
-                SuperAdmin
-              </button>
-            </div>
-          </div>
-        </div>
-      </footer>
-
-      {/* Legal & Compliance Modal */}
-      <LegalModal
-        isOpen={legalModalOpen}
-        onClose={() => setLegalModalOpen(false)}
-        initialDoc={activeLegalDoc}
-      />
-    </div>
+      </section>
+    </PublicLayout>
   );
 };

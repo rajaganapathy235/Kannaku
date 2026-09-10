@@ -720,6 +720,16 @@ export default function App() {
             window.location.hash = '#signup';
           }}
           onNavigateSlug={handleNavigatePublicSlug}
+          onOpenSuperAdmin={() => {
+            if (authSession?.user?.role === 'SUPER_ADMIN') {
+              setIsSuperAdminMode(true);
+              setAuthView(null);
+              window.location.hash = '#admin';
+            } else {
+              setAuthView('login');
+              window.location.hash = '#login';
+            }
+          }}
         />
       );
     }
@@ -729,6 +739,7 @@ export default function App() {
         <SEOHead seo={SEO_ROUTES.home} />
         <LandingPage
           session={authSession}
+          onNavigateSlug={handleNavigatePublicSlug}
           onStartTrial={() => {
             setAuthView('signup');
             window.location.hash = '#signup';
@@ -769,6 +780,7 @@ export default function App() {
         <SEOHead seo={SEO_ROUTES.home} />
         <LandingPage
           session={authSession}
+          onNavigateSlug={handleNavigatePublicSlug}
           onStartTrial={() => {
             setAuthView('signup');
             window.location.hash = '#signup';
