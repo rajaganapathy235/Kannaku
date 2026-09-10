@@ -1,7 +1,6 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   ArrowRight,
-  ChevronDown,
   ChevronRight,
   Home,
 } from 'lucide-react';
@@ -39,18 +38,6 @@ export const PublicLayout: React.FC<PublicLayoutProps> = ({
 }) => {
   const [legalModalOpen, setLegalModalOpen] = useState(false);
   const [activeLegalDoc, setActiveLegalDoc] = useState<LegalDocType>('terms');
-  const [industriesOpen, setIndustriesOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIndustriesOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
 
   const openLegal = (doc: LegalDocType) => {
     setActiveLegalDoc(doc);
@@ -116,114 +103,6 @@ export const PublicLayout: React.FC<PublicLayoutProps> = ({
             >
               Pricing
             </a>
-
-            {/* Industries Dropdown */}
-            <div className="relative" ref={dropdownRef}>
-              <button
-                type="button"
-                onClick={() => setIndustriesOpen(!industriesOpen)}
-                onMouseEnter={() => setIndustriesOpen(true)}
-                className="flex items-center gap-1 hover:text-brand-600 transition-colors cursor-pointer py-2"
-              >
-                <span>Industries</span>
-                <ChevronDown
-                  className={`w-3.5 h-3.5 transition-transform ${
-                    industriesOpen ? 'rotate-180 text-brand-600' : 'text-slate-400'
-                  }`}
-                />
-              </button>
-
-              {industriesOpen && (
-                <div
-                  onMouseLeave={() => setIndustriesOpen(false)}
-                  className="absolute top-full left-0 mt-1 w-72 rounded-2xl bg-white border border-slate-200 shadow-xl shadow-slate-200/50 p-2 z-50 animate-in fade-in slide-in-from-top-1 duration-150"
-                >
-                  <div className="px-3 py-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                    Tailored Solutions (₹49/mo)
-                  </div>
-                  <div className="grid grid-cols-1 gap-0.5 text-xs">
-                    <a
-                      href="/billing-software-for-pharmacy/"
-                      onClick={(e) => {
-                        setIndustriesOpen(false);
-                        handleNav(e, 'billing-software-for-pharmacy');
-                      }}
-                      className="px-3 py-2 rounded-xl hover:bg-slate-50 hover:text-brand-600 font-medium text-slate-700 flex items-center justify-between transition-colors"
-                    >
-                      <span>Pharmacies &amp; Chemists</span>
-                      <span className="text-[10px] text-slate-400">Batch &amp; Expiry</span>
-                    </a>
-                    <a
-                      href="/billing-software-for-supermarket/"
-                      onClick={(e) => {
-                        setIndustriesOpen(false);
-                        handleNav(e, 'billing-software-for-supermarket');
-                      }}
-                      className="px-3 py-2 rounded-xl hover:bg-slate-50 hover:text-brand-600 font-medium text-slate-700 flex items-center justify-between transition-colors"
-                    >
-                      <span>Supermarkets &amp; Retail POS</span>
-                      <span className="text-[10px] text-slate-400">Barcode</span>
-                    </a>
-                    <a
-                      href="/billing-software-for-wholesale/"
-                      onClick={(e) => {
-                        setIndustriesOpen(false);
-                        handleNav(e, 'billing-software-for-wholesale');
-                      }}
-                      className="px-3 py-2 rounded-xl hover:bg-slate-50 hover:text-brand-600 font-medium text-slate-700 flex items-center justify-between transition-colors"
-                    >
-                      <span>Wholesale &amp; Distribution</span>
-                      <span className="text-[10px] text-slate-400">Party Khata</span>
-                    </a>
-                    <a
-                      href="/billing-software-for-hardware/"
-                      onClick={(e) => {
-                        setIndustriesOpen(false);
-                        handleNav(e, 'billing-software-for-hardware');
-                      }}
-                      className="px-3 py-2 rounded-xl hover:bg-slate-50 hover:text-brand-600 font-medium text-slate-700 flex items-center justify-between transition-colors"
-                    >
-                      <span>Hardware &amp; Sanitary</span>
-                      <span className="text-[10px] text-slate-400">Fractional</span>
-                    </a>
-                    <a
-                      href="/billing-software-for-apparel/"
-                      onClick={(e) => {
-                        setIndustriesOpen(false);
-                        handleNav(e, 'billing-software-for-apparel');
-                      }}
-                      className="px-3 py-2 rounded-xl hover:bg-slate-50 hover:text-brand-600 font-medium text-slate-700 flex items-center justify-between transition-colors"
-                    >
-                      <span>Garments &amp; Apparel</span>
-                      <span className="text-[10px] text-slate-400">Sizes &amp; Colors</span>
-                    </a>
-                    <a
-                      href="/billing-software-for-manufacturing/"
-                      onClick={(e) => {
-                        setIndustriesOpen(false);
-                        handleNav(e, 'billing-software-for-manufacturing');
-                      }}
-                      className="px-3 py-2 rounded-xl hover:bg-slate-50 hover:text-brand-600 font-medium text-slate-700 flex items-center justify-between transition-colors"
-                    >
-                      <span>Manufacturing &amp; Factories</span>
-                      <span className="text-[10px] text-slate-400">MSME</span>
-                    </a>
-                  </div>
-                  <div className="mt-1 pt-1 border-t border-slate-100">
-                    <a
-                      href="/#industries"
-                      onClick={(e) => {
-                        setIndustriesOpen(false);
-                        if (!isHome) handleNav(e, '');
-                      }}
-                      className="px-3 py-1.5 rounded-lg text-[11px] font-bold text-brand-600 hover:bg-brand-50 block transition-colors text-center"
-                    >
-                      View All 12 Industry Solutions ↓
-                    </a>
-                  </div>
-                </div>
-              )}
-            </div>
 
             <a
               href="/#faq"

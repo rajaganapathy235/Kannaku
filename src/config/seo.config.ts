@@ -679,6 +679,112 @@ export const SEO_ROUTES: Record<string, SEORouteConfig> = {
       ],
     },
   },
+
+  freeGstCalculator: {
+    slug: 'tools/free-gst-calculator',
+    title: 'Free Online GST Calculator India (Inclusive & Exclusive) | JustGST',
+    metaTitle: 'Free Online GST Calculator India — Calculate 5%, 12%, 18%, 28% GST | JustGST',
+    description: 'Calculate GST inclusive and exclusive prices, CGST, SGST, and IGST for all tax slabs (5%, 12%, 18%, 28%, custom %) with our 100% free online GST calculator.',
+    canonical: `${BASE_URL}/tools/free-gst-calculator/`,
+    h1: 'Online Free GST Calculator India',
+    subtitle: 'Instantly calculate GST inclusive and exclusive prices, CGST, SGST, and IGST for any tax slab (5%, 12%, 18%, 28%, or custom %).',
+    badge: '100% Free Client-Side Tool',
+    keywords: [
+      'GST calculator',
+      'free GST calculator India',
+      'online GST calculation tool',
+      'inclusive GST calculator',
+      'exclusive GST calculator',
+      'CGST SGST IGST calculator',
+      'reverse GST calculation formula',
+      'calculate GST 18 percent',
+    ],
+    breadcrumbs: [
+      { name: 'Home', url: `${BASE_URL}/` },
+      { name: 'Free Tools', url: `${BASE_URL}/` },
+      { name: 'GST Calculator', url: `${BASE_URL}/tools/free-gst-calculator/` },
+    ],
+    aeoAnswers: [
+      {
+        question: 'What is the GST calculation formula in India?',
+        answer: 'To add GST (Exclusive): GST Amount = (Base Amount × GST Rate) / 100, Total = Base Amount + GST Amount. To remove GST (Inclusive): Base Amount = Total MRP / (1 + (GST Rate / 100)), GST Amount = Total MRP - Base Amount.',
+      },
+      {
+        question: 'What is the difference between Intra-State and Inter-State GST?',
+        answer: 'For intra-state sales (within the same state), GST is split equally into CGST (Central GST) and SGST (State GST). For inter-state sales (between two different states), the full tax is collected as IGST (Integrated GST).',
+      },
+      {
+        question: 'What are the main GST tax slabs in India?',
+        answer: 'India has four primary GST slabs: 5% (essentials, packaged foods), 12% (processed goods, computers), 18% (IT/SaaS, standard services, restaurants), and 28% (luxury items, automobiles, air conditioners). Nil (0%) applies to fresh unprocessed foods.',
+      },
+    ],
+    features: [
+      {
+        title: 'Inclusive & Exclusive Modes',
+        description: 'Easily switch between adding GST to a net base price or reverse-extracting GST from a gross MRP amount.',
+      },
+      {
+        title: 'Intra-State & Inter-State Splits',
+        description: 'Auto-calculates the 50:50 CGST and SGST split for local sales or full IGST for inter-state supplies.',
+      },
+      {
+        title: 'All GST Slabs & Custom Rates',
+        description: 'Instant 1-click toggles for 5%, 12%, 18%, and 28% slabs, plus support for custom fractional tax rates.',
+      },
+      {
+        title: 'One-Click Summary Copy',
+        description: 'Copy the full tax breakdown and share it instantly on WhatsApp, email, or client estimates.',
+      },
+    ],
+    faqs: [
+      {
+        question: 'Is this GST calculator completely free to use?',
+        answer: 'Yes! The JustGST online GST calculator is 100% free with unlimited calculations. No registration or credit card is required.',
+      },
+      {
+        question: 'How do I calculate GST on a product inclusive of tax?',
+        answer: 'Select "Inclusive (-GST)" mode. The calculator uses the formula: Net Base Amount = Gross Amount / (1 + GST Rate / 100). The GST amount is Gross Amount minus Net Base Amount.',
+      },
+      {
+        question: 'How is CGST and SGST divided?',
+        answer: 'For supply of goods and services within the same state (Intra-State), the total GST rate is divided equally between CGST (Central Government) and SGST (State Government). For example, an 18% GST rate equals 9% CGST and 9% SGST.',
+      },
+      {
+        question: 'When should IGST be charged instead of CGST/SGST?',
+        answer: 'IGST (Integrated Goods and Services Tax) is charged on all inter-state transactions where the supplier and recipient are located in different Indian states or union territories.',
+      },
+      {
+        question: 'Can I generate full GST invoices with this tool?',
+        answer: 'This is a quick calculation tool. To create, print, and share GST-compliant tax invoices with automatic HSN codes and UPI QR codes, sign up for a free 14-day trial of JustGST software.',
+      },
+    ],
+    jsonLd: {
+      '@context': 'https://schema.org',
+      '@graph': [
+        ORGANIZATION_SCHEMA,
+        SOFTWARE_APPLICATION_SCHEMA,
+        {
+          '@type': 'BreadcrumbList',
+          itemListElement: [
+            { '@type': 'ListItem', position: 1, name: 'Home', item: `${BASE_URL}/` },
+            { '@type': 'ListItem', position: 2, name: 'Free Tools', item: `${BASE_URL}/` },
+            { '@type': 'ListItem', position: 3, name: 'GST Calculator', item: `${BASE_URL}/tools/free-gst-calculator/` },
+          ],
+        },
+        {
+          '@type': 'WebApplication',
+          name: 'JustGST Free Online GST Calculator',
+          applicationCategory: 'BusinessApplication',
+          operatingSystem: 'All',
+          offers: {
+            '@type': 'Offer',
+            price: '0',
+            priceCurrency: 'INR',
+          },
+        },
+      ],
+    },
+  },
 };
 
 import { INDUSTRY_SOLUTIONS, getIndustrySEOConfig } from './industry.config';
@@ -697,6 +803,14 @@ export function getSEOConfigForPath(pathname: string): SEORouteConfig {
   }
   if (clean === 'billing-software-for-retail') {
     return SEO_ROUTES.retailBillingSoftware;
+  }
+  if (
+    clean === 'tools/free-gst-calculator' ||
+    clean === 'free-gst-calculator' ||
+    clean === 'tools/gst-calculator' ||
+    clean === 'gst-calculator'
+  ) {
+    return SEO_ROUTES.freeGstCalculator;
   }
 
   // Check 12 industry solutions dynamically
