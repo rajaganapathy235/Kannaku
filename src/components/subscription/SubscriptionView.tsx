@@ -183,14 +183,13 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
   });
 
   useEffect(() => {
-    if (paymentResult) {
-      setPaymentBanner(paymentResult);
-      if (paymentResult.status === 'success') {
-        fetchRealSubscription();
-        fetchRealTransactions();
-      }
+    if (paymentBanner?.status === 'success') {
+      fetchRealSubscription();
+      fetchRealTransactions();
+      // Re-fetch /api/auth/me to update session and release read-only mode based on server state
+      apiService.getMe().catch((err) => console.error('Error refreshing session after payment success:', err));
     }
-  }, [paymentResult]);
+  }, [paymentBanner]);
 
   const [plans, setPlans] = useState<SaaSPlan[]>([]);
   const [planTiers, setPlanTiers] = useState<SubscriptionPlanTier[]>(DEFAULT_PLAN_TIERS);

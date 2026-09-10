@@ -1397,39 +1397,69 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
       const udf4 = (body.udf4 || '').trim(); // durationDays
       const udf5 = (body.udf5 || '').trim(); // planId
 
-      // 2. Strict Environment-Specific Credential Resolution
+      // 2. Explicit Single Environment Credential Resolution
       const payuCreds = await getPayUCredentials(db, env);
       const { merchantKey: payuKey, merchantSalt: payuSalt, payuEnv } = payuCreds;
 
-      if ((!payuSalt || !payuKey) && status === 'success') {
+      if (!payuKey || !payuSalt) {
         console.error(`[PayU Return] Configured PayU ${payuEnv} credentials (key/salt) are missing for environment ${payuEnv}`);
         if (isWebhookOrJsonApi) {
-          return errorResponse(`PayU ${payuEnv} Merchant Credentials are not configured on server`, 500);
+          return errorResponse(`PayU ${payuEnv} merchant credentials are not configured on server`, 500);
         }
         const failureUrl = `${appBaseUrl}/?payment_status=failure&txnid=${encodeURIComponent(txnid)}&error=${encodeURIComponent(`Payment gateway configuration missing for ${payuEnv} environment`)}#subscription`;
         return createRedirectResponse(failureUrl, false, 'Returning to subscription page...');
       }
 
-      // 3. Handle Cancelled or Failed payments immediately
-      if (status !== 'success') {
-        if (txnid) {
-          try {
-            await execute(
-              db,
-              `UPDATE subscription_transactions SET
-                payment_status = 'FAILED',
-                payu_payment_id = ?,
-                payu_response_json = ?,
-                updated_at = CURRENT_TIMESTAMP
-              WHERE txnid = ?`,
-              mihpayid,
-              JSON.stringify(body),
-              txnid
-            );
-          } catch (failTxnErr: any) {
-            console.error('[PayU Return] Error updating failed status in subscription_transactions:', failTxnErr?.message || failTxnErr);
-          }
+      // 3. Server-Side TXNID Recovery (DB lookup as authoritative source)
+      if (!txnid) {
+        console.error('[PayU Return] Missing txnid in callback payload');
+        if (isWebhookOrJsonApi) {
+          return errorResponse('Missing txnid in payment callback', 400);
         }
+        const failureUrl = `${appBaseUrl}/?payment_status=failure&error=${encodeURIComponent('Missing transaction identifier')}#subscription`;
+        return createRedirectResponse(failureUrl, false, 'Returning to subscription page...');
+      }
+
+      let existingTxn = await queryFirst<any>(db, 'SELECT * FROM subscription_transactions WHERE txnid = ?', txnid);
+
+      if (!existingTxn) {
+        console.error(`[PayU Return] Unmatched txnid: ${txnid} not found in database`);
+        if (isWebhookOrJsonApi) {
+          return errorResponse(`Transaction ${txnid} not found for reconciliation`, 404);
+        }
+        const failureUrl = `${appBaseUrl}/?payment_status=failure&txnid=${encodeURIComponent(txnid)}&error=${encodeURIComponent('Transaction not found in system record')}#subscription`;
+        return createRedirectResponse(failureUrl, false, 'Returning to subscription page...');
+      }
+
+      // Idempotency check: if transaction is already fulfilled, return success cleanly
+      if (existingTxn.payment_status === 'SUCCESS' || existingTxn.payment_status === 'MANUALLY_ACTIVATED') {
+        if (isWebhookOrJsonApi) {
+          return jsonResponse({
+            success: true,
+            verified: true,
+            message: 'Transaction already verified and fulfilled (idempotent)',
+            txnid,
+            mihpayid,
+          });
+        }
+        const successRedirectUrl = `${appBaseUrl}/?payment_status=success&txnid=${encodeURIComponent(txnid)}&amount=${encodeURIComponent(amount)}#subscription`;
+        return createRedirectResponse(successRedirectUrl, true, 'Payment verified! Returning to subscription...');
+      }
+
+      // 4. Handle Cancelled or Failed payments immediately
+      if (status !== 'success' && status !== 'captured') {
+        await execute(
+          db,
+          `UPDATE subscription_transactions SET
+            payment_status = 'FAILED',
+            payu_payment_id = ?,
+            payu_response_json = ?,
+            updated_at = CURRENT_TIMESTAMP
+          WHERE txnid = ?`,
+          mihpayid,
+          JSON.stringify(body),
+          txnid
+        );
 
         if (isWebhookOrJsonApi) {
           return jsonResponse({
@@ -1447,137 +1477,169 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
         return createRedirectResponse(failureRedirectUrl, false, 'Payment cancelled. Returning to subscription page...');
       }
 
-      // 4. Reverse SHA-512 Hash Verification strictly using active environment salt & key
-      if (payuSalt) {
-        const { isValid, calculatedHash } = await verifyPayUReverseHashPayload(body, payuSalt, payuKey);
+      // 5. Reverse SHA-512 Hash Verification strictly using active environment's SINGLE key and salt
+      const { isValid, calculatedHash } = await verifyPayUReverseHashPayload(body, payuSalt, payuKey);
 
-        if (!isValid && receivedHash) {
-          console.warn(`[PayU Return] Reverse hash verification failed for txnid: ${txnid} in ${payuEnv} environment.`);
+      if (!isValid) {
+        console.warn(`[PayU Return] Reverse hash verification failed for txnid: ${txnid} in ${payuEnv} environment.`);
 
-          // Update transaction status to FAILED in database
-          if (txnid) {
-            try {
-              await execute(
-                db,
-                `UPDATE subscription_transactions SET
-                  payment_status = 'FAILED',
-                  payu_payment_id = ?,
-                  payu_response_json = ?,
-                  updated_at = CURRENT_TIMESTAMP
-                WHERE txnid = ?`,
-                mihpayid,
-                JSON.stringify(body),
-                txnid
-              );
-            } catch (dbErr) {
-              console.error('[PayU Return] Failed to update transaction in DB:', dbErr);
-            }
-          }
+        await execute(
+          db,
+          `UPDATE subscription_transactions SET
+            payment_status = 'VERIFICATION_FAILED',
+            payu_payment_id = ?,
+            payu_response_json = ?,
+            updated_at = CURRENT_TIMESTAMP
+          WHERE txnid = ?`,
+          mihpayid,
+          JSON.stringify(body),
+          txnid
+        );
 
-          if (isWebhookOrJsonApi) {
-            return jsonResponse({
-              error: `Hash verification failed: invalid signature for ${payuEnv} environment`,
-              success: false,
-            }, 400);
-          }
-
-          const failureUrl = `${appBaseUrl}/?payment_status=failure&txnid=${encodeURIComponent(txnid)}&error=${encodeURIComponent('Security signature verification failed')}#subscription`;
-          return createRedirectResponse(failureUrl, false, 'Security verification failed. Returning to subscription...');
-        }
-      }
-
-      // 5. Query existing transaction record for idempotency check & fallback values
-      let existingTxn: any = null;
-      if (txnid) {
-        try {
-          existingTxn = await queryFirst<any>(db, 'SELECT * FROM subscription_transactions WHERE txnid = ?', txnid);
-        } catch (lookupErr: any) {
-          console.error('[PayU Return] Error looking up subscription_transactions for txnid:', txnid, lookupErr?.message || lookupErr);
-        }
-      }
-
-      const orgId = udf1 || existingTxn?.organization_id || '';
-      const durationDays = parseInt(udf4, 10) || existingTxn?.duration_days || 365;
-      const planId = udf5 || existingTxn?.plan_id || 'plan_all_in_one_pro';
-
-      if (existingTxn && existingTxn.payment_status === 'SUCCESS') {
-        // Idempotent no-op: already verified and fulfilled
         if (isWebhookOrJsonApi) {
           return jsonResponse({
-            success: true,
-            verified: true,
-            message: 'Transaction already verified and processed (idempotent)',
-            txnid,
-            mihpayid,
-          });
+            error: `Hash verification failed: invalid signature for ${payuEnv} environment`,
+            success: false,
+          }, 400);
         }
 
-        const successRedirectUrl = `${appBaseUrl}/?payment_status=success&txnid=${encodeURIComponent(txnid)}&amount=${encodeURIComponent(amount)}#subscription`;
-        return createRedirectResponse(successRedirectUrl, true, 'Payment verified! Returning to subscription...');
+        const failureUrl = `${appBaseUrl}/?payment_status=failure&txnid=${encodeURIComponent(txnid)}&error=${encodeURIComponent('Security signature verification failed')}#subscription`;
+        return createRedirectResponse(failureUrl, false, 'Security verification failed. Returning to subscription...');
       }
 
-      // Calculate renewal date extending existing subscription if still active in future
-      let baseDate = Date.now();
-      if (orgId) {
-        try {
-          const org = await queryFirst<any>(db, 'SELECT * FROM organizations WHERE id = ?', orgId);
-          if (org?.renewal_date) {
-            const existingRenewalTime = new Date(org.renewal_date).getTime();
-            if (!isNaN(existingRenewalTime) && existingRenewalTime > baseDate) {
-              baseDate = existingRenewalTime;
-            }
-          }
-        } catch (orgQueryErr: any) {
-          console.error('[PayU Return] Error querying organization for renewal extension:', orgQueryErr?.message || orgQueryErr);
+      // 6. Amount Validation (Normalized to paise integer)
+      const returnedPaise = Math.round(parseFloat(amount) * 100);
+      const expectedPaise = Math.round(parseFloat(String(existingTxn.amount || 0)) * 100);
+
+      if (isNaN(returnedPaise) || isNaN(expectedPaise) || returnedPaise !== expectedPaise) {
+        console.warn(`[PayU Return] Amount mismatch for txnid: ${txnid}. Expected ${expectedPaise} paise, returned ${returnedPaise} paise`);
+
+        await execute(
+          db,
+          `UPDATE subscription_transactions SET
+            payment_status = 'AMOUNT_MISMATCH',
+            payu_payment_id = ?,
+            payu_response_json = ?,
+            updated_at = CURRENT_TIMESTAMP
+          WHERE txnid = ?`,
+          mihpayid,
+          JSON.stringify(body),
+          txnid
+        );
+
+        if (isWebhookOrJsonApi) {
+          return jsonResponse({
+            error: `Amount mismatch: expected ${expectedPaise / 100}, got ${returnedPaise / 100}`,
+            success: false,
+          }, 400);
         }
+
+        const failureUrl = `${appBaseUrl}/?payment_status=failure&txnid=${encodeURIComponent(txnid)}&error=${encodeURIComponent('Payment amount mismatch')}#subscription`;
+        return createRedirectResponse(failureUrl, false, 'Amount verification failed. Returning to subscription...');
+      }
+
+      // 7. Authoritative Data Recovery from Database Record
+      const orgId = existingTxn.organization_id || udf1 || '';
+      const durationDays = parseInt(String(existingTxn.duration_days || udf4 || 365), 10);
+      const planId = existingTxn.plan_id || udf5 || 'plan_all_in_one_pro';
+      const planName = existingTxn.plan_name || 'All-in-One Growth Plan';
+
+      if (!orgId) {
+        console.error(`[PayU Return] Unable to resolve organization_id for txnid: ${txnid}`);
+        await execute(
+          db,
+          `UPDATE subscription_transactions SET payment_status = 'RECONCILIATION_REQUIRED', updated_at = CURRENT_TIMESTAMP WHERE txnid = ?`,
+          txnid
+        );
+        if (isWebhookOrJsonApi) {
+          return errorResponse('Unable to resolve organization for transaction', 400);
+        }
+        const failureUrl = `${appBaseUrl}/?payment_status=failure&txnid=${encodeURIComponent(txnid)}&error=${encodeURIComponent('Organization resolution failed')}#subscription`;
+        return createRedirectResponse(failureUrl, false, 'Returning to subscription page...');
+      }
+
+      // 8. Calculate Renewal Date (Extending existing active subscription if still valid in future)
+      let baseDate = Date.now();
+      try {
+        const org = await queryFirst<any>(db, 'SELECT renewal_date FROM organizations WHERE id = ?', orgId);
+        if (org?.renewal_date) {
+          const existingRenewalTime = new Date(org.renewal_date).getTime();
+          if (!isNaN(existingRenewalTime) && existingRenewalTime > baseDate) {
+            baseDate = existingRenewalTime;
+          }
+        }
+      } catch (orgQueryErr: any) {
+        console.error('[PayU Return] Error querying organization renewal date:', orgQueryErr?.message || orgQueryErr);
       }
       const renewalDate = new Date(baseDate + durationDays * 24 * 60 * 60 * 1000).toISOString();
 
-      // 5.1 Activate organization subscription in D1 (Primary Core Business Logic)
-      if (orgId) {
-        try {
-          await execute(
-            db,
-            `UPDATE organizations SET
-              subscription_status = 'ACTIVE',
-              account_status = 'ACTIVE',
-              renewal_date = ?,
-              plan_id = ?,
-              plan_name = 'All-in-One Growth Plan',
-              payment_provider = 'payu',
-              last_active = CURRENT_TIMESTAMP
-            WHERE id = ?`,
-            renewalDate,
-            udf5 || 'plan_all_in_one_pro',
-            orgId
-          );
-        } catch (orgUpdateErr: any) {
-          console.error('[PayU Return] Critical error updating organization subscription_status:', orgUpdateErr?.message || orgUpdateErr);
-        }
+      // 9. Organization Activation MUST NOT FAIL SILENTLY
+      let orgUpdated = false;
+      try {
+        const result = await execute(
+          db,
+          `UPDATE organizations SET
+            subscription_status = 'ACTIVE',
+            account_status = 'ACTIVE',
+            renewal_date = ?,
+            plan_id = ?,
+            plan_name = ?,
+            payment_provider = 'payu',
+            last_active = CURRENT_TIMESTAMP
+          WHERE id = ?`,
+          renewalDate,
+          planId,
+          planName,
+          orgId
+        );
+        orgUpdated = Boolean(result && (result.changes === undefined || result.changes > 0));
+      } catch (orgUpdateErr: any) {
+        console.error(`[PayU Return] CRITICAL: Organization update SQL thrown for org ${orgId}:`, orgUpdateErr?.message || orgUpdateErr);
+        orgUpdated = false;
       }
 
-      // 5.2 Update subscription_transactions record in D1 (Non-blocking)
-      if (txnid) {
-        try {
-          await execute(
-            db,
-            `UPDATE subscription_transactions SET
-              payment_status = 'SUCCESS',
-              payu_payment_id = ?,
-              payu_response_json = ?,
-              updated_at = CURRENT_TIMESTAMP
-            WHERE txnid = ?`,
-            mihpayid || txnid,
-            JSON.stringify(body),
-            txnid
-          );
-        } catch (subTxnErr: any) {
-          console.error('[PayU Return] Error updating subscription_transactions record:', subTxnErr?.message || subTxnErr);
+      if (!orgUpdated) {
+        console.error(`[PayU Return] CRITICAL: Failed to update organization subscription status for orgId: ${orgId}, txnid: ${txnid}`);
+        await execute(
+          db,
+          `UPDATE subscription_transactions SET
+            payment_status = 'ACTIVATION_FAILED',
+            payu_payment_id = ?,
+            payu_response_json = ?,
+            updated_at = CURRENT_TIMESTAMP
+          WHERE txnid = ?`,
+          mihpayid,
+          JSON.stringify(body),
+          txnid
+        );
+
+        if (isWebhookOrJsonApi) {
+          return errorResponse('Failed to update organization subscription status. Payment recorded for manual review.', 500);
         }
+        const failureUrl = `${appBaseUrl}/?payment_status=failure&txnid=${encodeURIComponent(txnid)}&error=${encodeURIComponent('Organization activation failed. Please contact support.')}#subscription`;
+        return createRedirectResponse(failureUrl, false, 'Activation failed. Returning to subscription page...');
       }
 
-      // 5.3 Increment coupon usage count if coupon was applied (Non-blocking)
-      if (existingTxn && existingTxn.coupon_code) {
+      // 10. Update Transaction Status to SUCCESS & Record in Ledger
+      try {
+        await execute(
+          db,
+          `UPDATE subscription_transactions SET
+            payment_status = 'SUCCESS',
+            payu_payment_id = ?,
+            payu_response_json = ?,
+            updated_at = CURRENT_TIMESTAMP
+          WHERE txnid = ?`,
+          mihpayid || txnid,
+          JSON.stringify(body),
+          txnid
+        );
+      } catch (subTxnErr: any) {
+        console.error('[PayU Return] Error updating subscription_transactions status to SUCCESS:', subTxnErr?.message || subTxnErr);
+      }
+
+      // Increment coupon usage if applicable
+      if (existingTxn.coupon_code) {
         try {
           await execute(
             db,
@@ -1589,28 +1651,32 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
         }
       }
 
-      // 5.4 Record transaction in saas_transactions audit ledger (Non-blocking)
+      // Record in saas_transactions ledger (avoiding duplicates)
       try {
-        const org = orgId ? await queryFirst<any>(db, 'SELECT name FROM organizations WHERE id = ?', orgId) : null;
-        await execute(
-          db,
-          `INSERT INTO saas_transactions (
-            id, organization_id, organization_name, amount, currency, payment_method, payment_provider, status, date, invoice_number, gateway_ref_id, customer_email, plan_name, billing_cycle
-          ) VALUES (?, ?, ?, ?, 'INR', 'PayU Hosted Checkout', 'PayU', 'SUCCESSFUL', CURRENT_TIMESTAMP, ?, ?, ?, 'All-in-One Growth Plan', ?)`,
-          `txn_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
-          orgId || 'unknown_org',
-          org?.name || 'Customer Workspace',
-          Number(amount) || 0,
-          `INV-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
-          txnid || mihpayid,
-          email || '',
-          udf3 || '1_MONTH'
-        );
-      } catch (saasTxnErr: any) {
-        console.error('[PayU Return] Error recording saas_transactions audit entry:', saasTxnErr?.message || saasTxnErr);
+        const existingLedger = await queryFirst<any>(db, 'SELECT id FROM saas_transactions WHERE gateway_ref_id = ? OR id = ?', txnid, `txn_${txnid}`);
+        if (!existingLedger) {
+          const org = await queryFirst<any>(db, 'SELECT name FROM organizations WHERE id = ?', orgId);
+          await execute(
+            db,
+            `INSERT INTO saas_transactions (
+              id, organization_id, organization_name, amount, currency, payment_method, payment_provider, status, date, invoice_number, gateway_ref_id, customer_email, plan_name, billing_cycle
+            ) VALUES (?, ?, ?, ?, 'INR', 'PayU Hosted Checkout', 'PayU', 'SUCCESSFUL', CURRENT_TIMESTAMP, ?, ?, ?, ?, ?)`,
+            `txn_${txnid}`,
+            orgId,
+            org?.name || 'Workspace Tenant',
+            existingTxn.amount || parseFloat(amount) || 0,
+            `INV-${txnid.slice(-8)}`,
+            txnid,
+            email || existingTxn.customer_email || 'customer@justgst.in',
+            planName,
+            existingTxn.billing_cycle || 'YEARLY'
+          );
+        }
+      } catch (ledgerErr: any) {
+        console.error('[PayU Return] Error writing to saas_transactions ledger:', ledgerErr?.message || ledgerErr);
       }
 
-      // 5.5 Record in audit_logs (Non-blocking)
+      // Record audit log for payment success
       try {
         await execute(
           db,
@@ -1622,27 +1688,26 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
           udf2 || 'user_payu',
           firstname || 'Customer',
           txnid || mihpayid,
-          `Subscription All-in-One Growth Plan - ${udf3 || '1_MONTH'}`,
+          `Subscription ${planName}`,
           request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for') || '127.0.0.1'
         );
       } catch (auditErr: any) {
         console.error('[PayU Return] Error inserting audit log for payment success:', auditErr?.message || auditErr);
       }
 
-      // 6. Success Browser Redirection or Webhook Response
       if (isWebhookOrJsonApi) {
         return jsonResponse({
           success: true,
           verified: true,
-          message: 'Payment verified and organization subscription activated',
+          message: 'Payment verified and organization subscription successfully activated',
           txnid,
           mihpayid,
-          status,
+          renewalDate,
         });
       }
 
       const successRedirectUrl = `${appBaseUrl}/?payment_status=success&txnid=${encodeURIComponent(txnid)}&amount=${encodeURIComponent(amount)}#subscription`;
-      return createRedirectResponse(successRedirectUrl, true, 'Payment verified! Returning to subscription page...');
+      return createRedirectResponse(successRedirectUrl, true, 'Payment verified! Returning to subscription...');
     } catch (err: any) {
       console.error('[PayU Return Handler Error]', err);
       if (isWebhookOrJsonApi) {
@@ -4306,14 +4371,44 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
     if (path === '/api/admin/transactions/approve' && method === 'POST') {
       try {
         const body = (await request.json().catch(() => ({}))) as any;
-        const { txnid, organizationId, amount, planName, durationDays = 365 } = body;
+        const { txnid, organizationId, amount, planName, durationDays = 365, adminNote = 'Manual SuperAdmin override and activation' } = body;
 
-        if (!organizationId) {
-          return errorResponse('organizationId is required', 400);
+        let targetOrgId = organizationId;
+        let targetPlanName = planName || 'All-in-One Growth Plan';
+        let targetAmount = Number(amount) || 0;
+        let existingTxn: any = null;
+
+        // 1. Verify transaction exists if txnid provided
+        if (txnid) {
+          existingTxn = await queryFirst<any>(db, 'SELECT * FROM subscription_transactions WHERE txnid = ?', txnid);
+          if (existingTxn) {
+            targetOrgId = targetOrgId || existingTxn.organization_id;
+            targetPlanName = planName || existingTxn.plan_name || 'All-in-One Growth Plan';
+            targetAmount = targetAmount || existingTxn.amount || 0;
+          }
         }
 
-        // 1. Extend Organization Subscription
-        const renewalDate = new Date(Date.now() + Number(durationDays) * 24 * 60 * 60 * 1000).toISOString();
+        if (!targetOrgId) {
+          return errorResponse('Valid organizationId or txnid is required for manual activation', 400);
+        }
+
+        // 2. Verify Organization exists
+        const org = await queryFirst<any>(db, 'SELECT * FROM organizations WHERE id = ?', targetOrgId);
+        if (!org) {
+          return errorResponse(`Organization ${targetOrgId} not found in system`, 404);
+        }
+
+        // 3. Renewal date extension calculation
+        let baseDate = Date.now();
+        if (org.renewal_date) {
+          const existingRenewalTime = new Date(org.renewal_date).getTime();
+          if (!isNaN(existingRenewalTime) && existingRenewalTime > baseDate) {
+            baseDate = existingRenewalTime;
+          }
+        }
+        const renewalDate = new Date(baseDate + Number(durationDays) * 24 * 60 * 60 * 1000).toISOString();
+
+        // 4. Update Organization Subscription Status
         await execute(
           db,
           `UPDATE organizations SET
@@ -4326,45 +4421,66 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
             last_active = CURRENT_TIMESTAMP
           WHERE id = ?`,
           renewalDate,
-          planName || 'All-in-One Growth Plan',
-          organizationId
+          targetPlanName,
+          targetOrgId
         );
 
-        // 2. Update subscription_transactions if txnid provided
+        // 5. Update subscription_transactions to MANUALLY_ACTIVATED
         if (txnid) {
           await execute(
             db,
             `UPDATE subscription_transactions SET
-              payment_status = 'SUCCESS',
+              payment_status = 'MANUALLY_ACTIVATED',
+              payu_response_json = json_set(COALESCE(payu_response_json, '{}'), '$.manual_activation_note', ?),
               updated_at = CURRENT_TIMESTAMP
             WHERE txnid = ?`,
+            adminNote,
             txnid
           );
         }
 
-        // 3. Insert into saas_transactions ledger
-        const org = await queryFirst<any>(db, 'SELECT name FROM organizations WHERE id = ?', organizationId);
-        const newTxnId = `txn_manual_${Date.now()}`;
+        // 6. Record in saas_transactions audit ledger with MANUALLY_ACTIVATED status
+        const ledgerId = `txn_manual_${txnid || Date.now()}`;
+        const existingLedger = await queryFirst<any>(db, 'SELECT id FROM saas_transactions WHERE id = ? OR gateway_ref_id = ?', ledgerId, txnid || '');
+        if (!existingLedger) {
+          await execute(
+            db,
+            `INSERT INTO saas_transactions (
+              id, organization_id, organization_name, amount, currency, payment_method, payment_provider,
+              status, date, invoice_number, gateway_ref_id, customer_email, plan_name, billing_cycle
+            ) VALUES (?, ?, ?, ?, 'INR', 'Manual Admin Overridden', 'PayU', 'MANUALLY_ACTIVATED', CURRENT_TIMESTAMP, ?, ?, ?, ?, 'YEARLY')`,
+            ledgerId,
+            targetOrgId,
+            org.name || 'Workspace Tenant',
+            targetAmount || 99,
+            `INV-MANUAL-${Date.now().toString().slice(-6)}`,
+            txnid || `MANUAL-${Date.now()}`,
+            body.customerEmail || existingTxn?.customer_email || 'admin@justgst.in',
+            targetPlanName
+          );
+        }
+
+        // 7. Audit Log Entry
         await execute(
           db,
-          `INSERT INTO saas_transactions (
-            id, organization_id, organization_name, amount, currency, payment_method, payment_provider,
-            status, date, invoice_number, gateway_ref_id, customer_email, plan_name, billing_cycle
-          ) VALUES (?, ?, ?, ?, 'INR', 'Manual Admin Activation', 'PayU', 'SUCCESSFUL', CURRENT_TIMESTAMP, ?, ?, ?, ?, 'YEARLY')`,
-          newTxnId,
-          organizationId,
-          org?.name || 'Workspace Tenant',
-          Number(amount) || 99,
-          `INV-MANUAL-${Date.now().toString().slice(-6)}`,
-          txnid || `MANUAL-${Date.now()}`,
-          body.customerEmail || 'admin@justgst.in',
-          planName || 'All-in-One Growth Plan'
+          `INSERT INTO audit_logs (
+            id, organization_id, admin_id, admin_name, admin_role, action, target_id, target_name, target_type, ip_address
+          ) VALUES (?, ?, ?, ?, 'SUPER_ADMIN', 'MANUAL_ACTIVATION', ?, ?, 'SUBSCRIPTION', ?)`,
+          `audit_${Date.now()}`,
+          targetOrgId,
+          authContext?.userId || 'admin_super',
+          authContext?.userEmail || 'Super Admin',
+          txnid || targetOrgId,
+          `Manual Activation: ${targetPlanName} (${adminNote})`,
+          request.headers.get('cf-connecting-ip') || '127.0.0.1'
         );
 
         return jsonResponse({
           success: true,
-          message: 'Subscription manually approved and workspace activated successfully!',
+          status: 'MANUALLY_ACTIVATED',
+          message: 'Subscription manually approved, audited, and workspace activated successfully!',
           renewalDate,
+          organizationId: targetOrgId,
         });
       } catch (err: any) {
         return errorResponse('Failed to approve transaction: ' + (err?.message || 'Server error'), 500);
