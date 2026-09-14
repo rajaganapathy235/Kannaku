@@ -88,6 +88,19 @@
   <body class="bg-slate-50 text-slate-900 antialiased font-sans select-none sm:select-auto">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function() {
+          navigator.serviceWorker.register('/sw.js', { scope: '/' })
+            .then(function(registration) {
+              console.log('JustGST Service Worker registered with scope:', registration.scope);
+            })
+            .catch(function(error) {
+              console.error('JustGST Service Worker registration failed:', error);
+            });
+        });
+      }
+    </script>
   </body>
 </html>
 

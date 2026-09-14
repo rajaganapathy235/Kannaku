@@ -1,15 +1,16 @@
 {
+  "id": "/",
   "name": "JustGST — GST Billing & Invoicing Software",
   "short_name": "JustGST",
   "description": "GST billing and invoicing software for Indian small businesses.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "orientation": "portrait-primary",
+  "orientation": "any",
   "background_color": "#ffffff",
-  "theme_color": "#059669",
+  "theme_color": "#0052cc",
   "lang": "en-IN",
-  "categories": ["finance", "business", "productivity"],
+  "categories": ["business", "finance", "productivity"],
   "icons": [
     {
       "src": "/favicon-16x16.png",
@@ -58,6 +59,22 @@
       "sizes": "180x180",
       "type": "image/png",
       "purpose": "any"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/icon-512.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "JustGST Desktop Billing Dashboard"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "720x1280",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "JustGST Mobile Thermal POS & Invoicing"
     }
   ]
 }
