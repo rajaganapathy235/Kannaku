@@ -307,10 +307,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
               <div className="pb-4">
                 <h2 className="text-xl font-black text-slate-900 tracking-tight">
-                  {form.name || 'HYTEX COTTON MILLS'}
+                  {form.name || 'My Business'}
                 </h2>
                 <p className="text-xs text-slate-500 font-mono font-medium">
-                  GSTIN: {form.registerNumber || '33ASWPV8266F1ZW'}
+                  GSTIN: {form.registerNumber || 'Not Set'}
                 </p>
               </div>
             </div>
@@ -410,7 +410,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   Phone Number
                 </span>
                 <span className="font-semibold text-slate-900">
-                  {form.mobile || '+91-9597992677'}
+                  {form.mobile || 'Not Set'}
                 </span>
               </div>
             </div>
@@ -422,7 +422,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   Email Address
                 </span>
                 <span className="font-semibold text-slate-900">
-                  {form.email || 'contact@justgst.in'}
+                  {form.email || 'Not Set'}
                 </span>
               </div>
             </div>
@@ -434,7 +434,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   Registered Address / Operating Region
                 </span>
                 <span className="font-semibold text-slate-900">
-                  {form.address || 'Tamil Nadu, India (100% Online Digital Cloud Service)'}
+                  {form.address || 'Not Set'}
                 </span>
               </div>
             </div>
@@ -447,7 +447,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     City / Location
                   </span>
                   <span className="font-semibold text-slate-900">
-                    {form.city || 'Tiruppur'}, {form.state || 'Tamil Nadu'} ({form.pin || '638751'})
+                    {form.city || form.state
+                      ? `${form.city || ''}${form.city && form.state ? ', ' : ''}${form.state || ''}${form.pin ? ` (${form.pin})` : ''}`
+                      : 'Not Set'}
                   </span>
                 </div>
               </div>
@@ -459,7 +461,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     GSTIN
                   </span>
                   <span className="font-mono font-bold text-brand-600">
-                    {form.registerNumber || '33ASWPV8266F1ZW'}
+                    {form.registerNumber || 'Not Set'}
                   </span>
                 </div>
               </div>

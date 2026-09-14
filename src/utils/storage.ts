@@ -135,6 +135,38 @@ export const DEFAULT_TENANTS: TenantOrganization[] = [
   },
 ];
 
+export const EMPTY_COMPANY: CompanyProfile = {
+  name: '',
+  address: '',
+  city: '',
+  state: '',
+  pin: '',
+  code: '',
+  email: '',
+  mobile: '',
+  registerNumber: '',
+  panNumber: '',
+  billPrefix: 'INV/2026/',
+  invoicePrefixSales: 'INV/2026/',
+  invoicePrefixPurchase: 'PUR/2026/',
+  invoicePrefixQuotation: 'QUO/2026/',
+  colorScheme: 'emerald',
+  bankDetail: {
+    bankName: '',
+    accountNumber: '',
+    ifscCode: '',
+    branchName: '',
+    upiId: '',
+    panNumber: '',
+  },
+  logoUrl: '',
+  signatureName: '',
+  signatureUrl: '',
+  stampUrl: '',
+  termsAndConditions: '',
+  jurisdictionCity: '',
+};
+
 export const DEFAULT_COMPANY: CompanyProfile = {
   name: 'JustGST',
   address: 'Tamil Nadu, India (100% Online Digital Cloud Service)',
@@ -592,18 +624,26 @@ export class KannakuDB {
   static getCompanyProfile(): CompanyProfile {
     try {
       const tenantId = this.getActiveTenantId();
+      const isDemoOrg = tenantId === 'org_hytex_cotton';
+      const fallbackBase = isDemoOrg ? DEFAULT_COMPANY : EMPTY_COMPANY;
+
       const tenantKey = this.getTenantKey(STORAGE_KEYS.COMPANY);
       const data = localStorage.getItem(tenantKey);
 
       if (data) {
         const parsed = JSON.parse(data);
+        const parsedBank = parsed.bankDetail || {};
         return {
-          ...DEFAULT_COMPANY,
+          ...fallbackBase,
           ...parsed,
           bankDetail: {
-            ...DEFAULT_COMPANY.bankDetail,
-            ...(parsed.bankDetail || {}),
+            ...fallbackBase.bankDetail,
+            ...parsedBank,
           },
+          logoUrl: parsed.logoUrl !== undefined ? (parsed.logoUrl ?? '') : (isDemoOrg ? DEFAULT_COMPANY.logoUrl : ''),
+          signatureUrl: parsed.signatureUrl !== undefined ? (parsed.signatureUrl ?? '') : (isDemoOrg ? DEFAULT_COMPANY.signatureUrl : ''),
+          signatureName: parsed.signatureName !== undefined ? (parsed.signatureName ?? '') : (isDemoOrg ? DEFAULT_COMPANY.signatureName : ''),
+          stampUrl: parsed.stampUrl !== undefined ? (parsed.stampUrl ?? '') : (isDemoOrg ? DEFAULT_COMPANY.stampUrl : ''),
         };
       }
 
@@ -613,34 +653,37 @@ export class KannakuDB {
         if (orgsData) {
           const orgs = JSON.parse(orgsData);
           const org = orgs.find((o: any) => o.id === tenantId);
-          if (org && tenantId !== 'org_hytex_cotton') {
+          if (org && !isDemoOrg) {
             const orgProfile: CompanyProfile = {
-              name: org.name,
-              address: `${org.city || 'Industrial Zone'}, ${org.state || 'Tamil Nadu'}`,
-              city: org.city || 'Tiruppur',
-              state: org.state || 'Tamil Nadu',
-              pin: '641604',
-              code: '33',
-              email: org.adminEmail || '',
+              name: org.name || '',
+              address: org.address || '',
+              city: org.city || '',
+              state: org.state || '',
+              pin: org.pin || '',
+              code: org.code || '',
+              email: org.adminEmail || org.email || '',
               mobile: org.mobile || '',
-              registerNumber: org.registerNumber || '',
-              panNumber: org.registerNumber ? org.registerNumber.substring(2, 12) : '',
+              registerNumber: org.registerNumber || org.register_number || '',
+              panNumber: org.panNumber || (org.registerNumber ? org.registerNumber.substring(2, 12) : ''),
               billPrefix: 'INV/2026/',
               invoicePrefixSales: 'INV/2026/',
               invoicePrefixPurchase: 'PUR/2026/',
               invoicePrefixQuotation: 'QUO/2026/',
               colorScheme: 'emerald',
-              termsAndConditions:
-                '1. Goods once sold will not be taken back or exchanged.\n2. Interest @ 18% p.a. charged on overdue bills.',
-              jurisdictionCity: org.city || 'Tiruppur',
+              termsAndConditions: org.termsAndConditions || '',
+              jurisdictionCity: org.city || org.state || '',
               bankDetail: {
-                bankName: 'State Bank of India',
-                accountNumber: '',
-                ifscCode: '',
-                branchName: org.city || 'Main Branch',
-                upiId: `${org.slug || 'pay'}@upi`,
-                panNumber: org.registerNumber ? org.registerNumber.substring(2, 12) : '',
+                bankName: org.bankDetail?.bankName || '',
+                accountNumber: org.bankDetail?.accountNumber || '',
+                ifscCode: org.bankDetail?.ifscCode || '',
+                branchName: org.bankDetail?.branchName || '',
+                upiId: org.bankDetail?.upiId || '',
+                panNumber: org.bankDetail?.panNumber || '',
               },
+              logoUrl: org.logoUrl || '',
+              signatureName: org.signatureName || '',
+              signatureUrl: org.signatureUrl || '',
+              stampUrl: org.stampUrl || '',
             };
             this.saveCompanyProfile(orgProfile);
             return orgProfile;
@@ -650,9 +693,30 @@ export class KannakuDB {
         // ignore
       }
 
+      // Check active auth session for current user's org info
+      try {
+        const sessionData = localStorage.getItem('kannaku_auth_session_v1');
+        if (sessionData && !isDemoOrg) {
+          const session = JSON.parse(sessionData);
+          if (session?.user) {
+            const sessionProfile: CompanyProfile = {
+              ...EMPTY_COMPANY,
+              name: session.user.organizationName || session.user.companyName || '',
+              email: session.user.email || '',
+              mobile: session.user.phone || '',
+              registerNumber: session.user.gstin || '',
+              panNumber: session.user.gstin ? session.user.gstin.substring(2, 12) : '',
+            };
+            return sessionProfile;
+          }
+        }
+      } catch {
+        // ignore
+      }
+
       // Legacy fallback for default tenant
       const legacyData = localStorage.getItem(STORAGE_KEYS.COMPANY);
-      if (legacyData && tenantId === 'org_hytex_cotton') {
+      if (legacyData && isDemoOrg) {
         const parsed = JSON.parse(legacyData);
         return {
           ...DEFAULT_COMPANY,
@@ -664,9 +728,9 @@ export class KannakuDB {
         };
       }
 
-      return DEFAULT_COMPANY;
+      return fallbackBase;
     } catch {
-      return DEFAULT_COMPANY;
+      return EMPTY_COMPANY;
     }
   }
 
