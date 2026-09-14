@@ -15,9 +15,29 @@ import {
   HelpCircle,
   KeyRound,
   FileCheck2,
+  MapPin,
+  X,
 } from 'lucide-react';
 import { AuthService } from '../../utils/authService';
 import { AuthSession } from '../../types/auth';
+
+const INDIAN_STATES = [
+  'Tamil Nadu',
+  'Karnataka',
+  'Maharashtra',
+  'Kerala',
+  'Gujarat',
+  'Delhi',
+  'Andhra Pradesh',
+  'Telangana',
+  'Uttar Pradesh',
+  'West Bengal',
+  'Rajasthan',
+  'Haryana',
+  'Punjab',
+  'Madhya Pradesh',
+  'Odisha',
+];
 
 declare global {
   interface Window {
@@ -50,6 +70,16 @@ export const LoginPage: React.FC<LoginPageProps> = ({
   const [forgotEmail, setForgotEmail] = useState('');
   const [resetSent, setResetSent] = useState(false);
 
+  // Google Profile Completion Modal state
+  const [googleCredential, setGoogleCredential] = useState<string | null>(null);
+  const [googleProfile, setGoogleProfile] = useState<{
+    email: string;
+    name: string;
+    picture?: string;
+    sub: string;
+  } | null>(null);
+  const [showGoogleCompletionModal, setShowGoogleCompletionModal] = useState(false);
+
   useEffect(() => {
     // SECURITY NOTE: Never trust a client-decoded JWT for authentication decisions — the payload can be freely forged by anyone since it's just base64, not verified. All identity claims from Google Sign-In must come from the server-verified tokeninfo response only.
     const handleGoogleSignInResponse = async (response: any) => {
@@ -64,9 +94,15 @@ export const LoginPage: React.FC<LoginPageProps> = ({
       try {
         const res = await AuthService.googleAuthAsync(response.credential);
         setLoading(false);
-        if (res.success && res.session) {
-          onLoginSuccess(res.session);
-          window.location.hash = '#/dashboard';
+        if (res.success) {
+          if (res.session) {
+            onLoginSuccess(res.session);
+            window.location.hash = '#/dashboard';
+          } else if (res.needsProfileCompletion && res.googleProfile) {
+            setGoogleCredential(response.credential);
+            setGoogleProfile(res.googleProfile);
+            setShowGoogleCompletionModal(true);
+          }
         } else {
           setError(res.error || 'Server Google authentication failed.');
         }
@@ -382,6 +418,272 @@ export const LoginPage: React.FC<LoginPageProps> = ({
           </div>
         </div>
       )}
+      {/* Google Signup Profile Completion Modal */}
+      {showGoogleCompletionModal && googleCredential && googleProfile && (
+        <GoogleSignupCompletionModal
+          googleProfile={googleProfile}
+          credential={googleCredential}
+          onComplete={(session) => {
+            setShowGoogleCompletionModal(false);
+            onLoginSuccess(session);
+            window.location.hash = '#/dashboard';
+          }}
+          onClose={() => setShowGoogleCompletionModal(false)}
+        />
+      )}
+    </div>
+  );
+};
+
+interface GoogleSignupCompletionModalProps {
+  googleProfile: {
+    email: string;
+    name: string;
+    picture?: string;
+    sub: string;
+  };
+  credential: string;
+  onComplete: (session: AuthSession) => void;
+  onClose: () => void;
+}
+
+const GoogleSignupCompletionModal: React.FC<GoogleSignupCompletionModalProps> = ({
+  googleProfile,
+  credential,
+  onComplete,
+  onClose,
+}) => {
+  const [ownerName, setOwnerName] = useState(googleProfile.name || '');
+  const [companyName, setCompanyName] = useState('');
+  const [mobile, setMobile] = useState('');
+  const [state, setState] = useState('Tamil Nadu');
+  const [gstin, setGstin] = useState('');
+
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+
+    if (!companyName.trim()) {
+      setError('Please enter your Business / Company Name.');
+      return;
+    }
+
+    if (!mobile.trim()) {
+      setError('Please enter your Mobile Number.');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const res = await AuthService.completeGoogleSignupAsync({
+        credential,
+        companyName: companyName.trim(),
+        ownerName: ownerName.trim(),
+        mobile: mobile.trim(),
+        state: state.trim(),
+        gstin: gstin.trim(),
+      });
+
+      setLoading(false);
+
+      if (res.success && res.session) {
+        onComplete(res.session);
+      } else {
+        setError(res.error || 'Failed to complete Google sign up. Please try again.');
+      }
+    } catch (err: any) {
+      setLoading(false);
+      setError('Network error: ' + (err?.message || 'Server unreachable'));
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in">
+      <div className="w-full max-w-lg bg-white border border-slate-200 rounded-2xl shadow-2xl overflow-hidden text-left space-y-0">
+        {/* Modal Header */}
+        <div className="px-6 py-5 bg-slate-900 text-white flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            {googleProfile.picture ? (
+              <img
+                src={googleProfile.picture}
+                alt={googleProfile.name}
+                className="w-10 h-10 rounded-full border-2 border-brand-400 shrink-0"
+              />
+            ) : (
+              <div className="w-10 h-10 rounded-full bg-brand-600 flex items-center justify-center text-white font-bold shrink-0">
+                {googleProfile.name?.[0] || 'G'}
+              </div>
+            )}
+            <div>
+              <h3 className="text-sm font-bold text-white">Complete Business Workspace</h3>
+              <p className="text-xs text-slate-300">
+                Logged in as <span className="text-brand-300 font-semibold">{googleProfile.email}</span>
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-colors cursor-pointer"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Modal Form */}
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          {error && (
+            <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-xs flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0 text-red-600" />
+              <span>{error}</span>
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Full Name */}
+            <div>
+              <label className="text-xs font-bold text-slate-700 block mb-1">
+                Your Full Name <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <User className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
+                <input
+                  type="text"
+                  value={ownerName}
+                  onChange={(e) => setOwnerName(e.target.value)}
+                  required
+                  className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs text-slate-900 font-medium focus:bg-white focus:outline-none focus:border-brand-600"
+                />
+              </div>
+            </div>
+
+            {/* Email (read-only) */}
+            <div>
+              <label className="text-xs font-bold text-slate-700 block mb-1">
+                Google Email <span className="text-slate-400 font-normal">(Verified)</span>
+              </label>
+              <div className="relative">
+                <Mail className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
+                <input
+                  type="email"
+                  value={googleProfile.email}
+                  disabled
+                  className="w-full pl-9 pr-3 py-2 bg-slate-100 border border-slate-200 rounded-xl text-xs text-slate-500 font-medium cursor-not-allowed"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Business / Company Name */}
+          <div>
+            <label className="text-xs font-bold text-slate-700 block mb-1">
+              Company / Business Name <span className="text-red-500">*</span>
+            </label>
+            <div className="relative">
+              <Building2 className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
+              <input
+                type="text"
+                value={companyName}
+                onChange={(e) => setCompanyName(e.target.value)}
+                placeholder="e.g. Mahadev Traders & Retail"
+                required
+                className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs text-slate-900 font-medium focus:bg-white focus:outline-none focus:border-brand-600 placeholder:text-slate-400"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Mobile Number */}
+            <div>
+              <label className="text-xs font-bold text-slate-700 block mb-1">
+                Mobile Number <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <Phone className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
+                <input
+                  type="tel"
+                  value={mobile}
+                  onChange={(e) => setMobile(e.target.value)}
+                  placeholder="e.g. 9876543210"
+                  required
+                  className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs text-slate-900 font-medium focus:bg-white focus:outline-none focus:border-brand-600 placeholder:text-slate-400"
+                />
+              </div>
+            </div>
+
+            {/* State */}
+            <div>
+              <label className="text-xs font-bold text-slate-700 block mb-1">
+                State (GST Registration)
+              </label>
+              <div className="relative">
+                <MapPin className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
+                <select
+                  value={state}
+                  onChange={(e) => setState(e.target.value)}
+                  className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs text-slate-900 font-medium focus:bg-white focus:outline-none focus:border-brand-600"
+                >
+                  {INDIAN_STATES.map((st) => (
+                    <option key={st} value={st}>
+                      {st}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* GSTIN (Optional) */}
+          <div>
+            <label className="text-xs font-bold text-slate-700 block mb-1">
+              GSTIN <span className="text-slate-400 font-normal">(Optional)</span>
+            </label>
+            <div className="relative">
+              <FileCheck2 className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
+              <input
+                type="text"
+                value={gstin}
+                onChange={(e) => setGstin(e.target.value.toUpperCase())}
+                placeholder="e.g. 33AAAAA0000A1Z5"
+                maxLength={15}
+                className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs text-slate-900 font-medium focus:bg-white focus:outline-none focus:border-brand-600 placeholder:text-slate-400 uppercase"
+              />
+            </div>
+          </div>
+
+          <div className="pt-2 flex items-center justify-end gap-3">
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={loading}
+              className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="px-5 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-brand-600/20 cursor-pointer flex items-center gap-2"
+            >
+              {loading ? (
+                <>
+                  <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <span>Creating Workspace...</span>
+                </>
+              ) : (
+                <>
+                  <span>Complete Setup &amp; Start Trial</span>
+                  <ArrowRight className="w-4 h-4" />
+                </>
+              )}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 };

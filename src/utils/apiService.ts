@@ -207,15 +207,44 @@ export class ApiService {
   static async googleAuth(credential: string) {
     return this.request<{
       success: boolean;
+      token?: string;
+      user?: any;
+      organization?: any;
+      isReadOnly?: boolean;
+      code?: string | null;
+      readOnlyReason?: string | null;
+      needsProfileCompletion?: boolean;
+      googleProfile?: {
+        email: string;
+        name: string;
+        picture?: string;
+        sub: string;
+      };
+    }>('/api/auth/google', {
+      method: 'POST',
+      body: JSON.stringify({ credential }),
+    });
+  }
+
+  static async completeGoogleSignup(payload: {
+    credential: string;
+    companyName: string;
+    ownerName?: string;
+    mobile: string;
+    state?: string;
+    gstin?: string;
+  }) {
+    return this.request<{
+      success: boolean;
       token: string;
       user: any;
       organization: any;
       isReadOnly?: boolean;
       code?: string | null;
       readOnlyReason?: string | null;
-    }>('/api/auth/google', {
+    }>('/api/auth/google/complete-signup', {
       method: 'POST',
-      body: JSON.stringify({ credential }),
+      body: JSON.stringify(payload),
     });
   }
 
