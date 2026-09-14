@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Building2,
   Lock,
@@ -18,6 +18,31 @@ import {
 } from 'lucide-react';
 import { AuthService } from '../../utils/authService';
 import { AuthSession } from '../../types/auth';
+
+declare global {
+  interface Window {
+    google?: any;
+  }
+}
+
+const GOOGLE_CLIENT_ID = '149211959700-g5r155p3o075od5kpfuu49f9atqfdjrl.apps.googleusercontent.com';
+
+function parseJwt(token: string): any {
+  try {
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split('')
+        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+        .join('')
+    );
+    return JSON.parse(jsonPayload);
+  } catch (err) {
+    console.error('Failed to parse Google JWT credential:', err);
+    return null;
+  }
+}
 
 interface LoginPageProps {
   onLoginSuccess: (session: AuthSession) => void;
@@ -42,6 +67,89 @@ export const LoginPage: React.FC<LoginPageProps> = ({
   const [forgotEmail, setForgotEmail] = useState('');
   const [resetSent, setResetSent] = useState(false);
 
+  useEffect(() => {
+    const handleGoogleSignInResponse = async (response: any) => {
+      if (!response || !response.credential) {
+        setError('Google authentication failed. Empty credential received.');
+        return;
+      }
+
+      const userProfile = parseJwt(response.credential);
+      if (!userProfile) {
+        setError('Failed to extract Google user profile.');
+        return;
+      }
+
+      const { sub: googleId, email, name: fullName, picture: avatarUrl } = userProfile;
+
+      const session: AuthSession = {
+        user: {
+          id: `google_${googleId}`,
+          email: email || '',
+          name: fullName || email?.split('@')[0] || 'Google User',
+          role: 'OWNER',
+          organizationId: `google_org_${googleId}`,
+          organizationName: `${fullName || 'Google'}'s Workspace`,
+          gstin: '33ASWPV8266F1ZW',
+          planName: 'All-in-One Growth Plan',
+          avatarUrl: avatarUrl || undefined,
+        },
+        expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+        token: response.credential,
+        loginTimestamp: new Date().toISOString(),
+      };
+
+      try {
+        AuthService.saveSession(session);
+        onLoginSuccess(session);
+        window.location.hash = '#/dashboard';
+      } catch (err) {
+        console.error('Session persistence failed:', err);
+        setError('Failed to save session. Please try again.');
+      }
+    };
+
+    const initGoogleAuth = () => {
+      if (window.google?.accounts?.id) {
+        window.google.accounts.id.initialize({
+          client_id: GOOGLE_CLIENT_ID,
+          callback: handleGoogleSignInResponse,
+          auto_select: false,
+          cancel_on_tap_outside: true,
+        });
+
+        const buttonContainer = document.getElementById('googleSignInButton');
+        if (buttonContainer) {
+          buttonContainer.innerHTML = '';
+          window.google.accounts.id.renderButton(buttonContainer, {
+            type: 'standard',
+            theme: 'outline',
+            size: 'large',
+            text: 'signin_with',
+            shape: 'rectangular',
+            logo_alignment: 'left',
+            width: 320,
+          });
+        }
+
+        window.google.accounts.id.prompt((notification: any) => {
+          if (notification.isNotDisplayed()) {
+            console.log('Google One-Tap not displayed:', notification.getNotDisplayedReason());
+          }
+        });
+      }
+    };
+
+    const checkGsiLoaded = setInterval(() => {
+      if (window.google?.accounts?.id) {
+        clearInterval(checkGsiLoaded);
+        initGoogleAuth();
+      }
+    }, 100);
+
+    return () => clearInterval(checkGsiLoaded);
+  }, [onLoginSuccess]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -59,12 +167,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({
       setLoading(false);
       setError('Connection error. Please try again.');
     }
-  };
-
-  const handleQuickFill = (demoEmail: string, demoPass: string) => {
-    setEmail(demoEmail);
-    setPassword(demoPass);
-    setError(null);
   };
 
   return (
@@ -119,6 +221,25 @@ export const LoginPage: React.FC<LoginPageProps> = ({
               <div className="leading-relaxed font-medium">{error}</div>
             </div>
           )}
+
+          {/* Google Sign-In Container */}
+          <div className="space-y-3">
+            <div className="flex justify-center">
+              <div
+                id="googleSignInButton"
+                className="w-full flex justify-center items-center min-h-[44px] rounded-xl overflow-hidden"
+              />
+            </div>
+
+            <div className="relative flex items-center justify-center my-3">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-slate-200" />
+              </div>
+              <div className="relative px-3 bg-white text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+                Or sign in with email
+              </div>
+            </div>
+          </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
@@ -296,4 +417,3 @@ export const LoginPage: React.FC<LoginPageProps> = ({
     </div>
   );
 };
-

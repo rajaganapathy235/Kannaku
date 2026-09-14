@@ -38,6 +38,16 @@ export class AuthService {
     return this.getSession()?.token;
   }
 
+  // Save/Persist Session
+  static saveSession(session: AuthSession): void {
+    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(session));
+    if (session.user?.organizationId) {
+      localStorage.setItem('kannaku_active_tenant_id', session.user.organizationId);
+      KannakuDB.setActiveTenantId(session.user.organizationId);
+      SaaSAdminDB.setPortalMode(session.user.role === 'SUPER_ADMIN' ? 'ADMIN' : 'CUSTOMER');
+    }
+  }
+
   // Logout session
   static logout(): void {
     ApiService.logout().catch(() => {});
