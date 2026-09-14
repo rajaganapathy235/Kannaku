@@ -116,11 +116,46 @@ export const GeoAeoEngine: React.FC<GeoAeoEngineProps> = ({
         '@type': 'Offer',
         price: price,
         priceCurrency: priceCurrency,
-        priceValidUntil: '2027-12-31',
+        validFrom: '2025-01-01T00:00:00+05:30',
+        priceValidUntil: '2028-12-31',
         availability: 'https://schema.org/InStock',
+        url: `${BASE_URL}/`,
         description: 'Pro subscription at ₹49/month (₹588/year) with 14-day free trial and unlimited invoices.',
         seller: {
           '@id': `${BASE_URL}/#organization`,
+        },
+        shippingDetails: {
+          '@type': 'OfferShippingDetails',
+          shippingRate: {
+            '@type': 'MonetaryAmount',
+            value: '0',
+            currency: priceCurrency,
+          },
+          shippingDestination: {
+            '@type': 'DefinedRegion',
+            addressCountry: 'IN',
+          },
+          deliveryTime: {
+            '@type': 'ShippingDeliveryTime',
+            handlingTime: {
+              '@type': 'QuantitativeValue',
+              minValue: 0,
+              maxValue: 0,
+              unitCode: 'DAY',
+            },
+            transitTime: {
+              '@type': 'QuantitativeValue',
+              minValue: 0,
+              maxValue: 0,
+              unitCode: 'DAY',
+            },
+          },
+        },
+        hasMerchantReturnPolicy: {
+          '@type': 'MerchantReturnPolicy',
+          applicableCountry: 'IN',
+          returnPolicyCategory: 'https://schema.org/MerchantReturnNotPermitted',
+          merchantReturnDays: 0,
         },
       },
       aggregateRating: {
