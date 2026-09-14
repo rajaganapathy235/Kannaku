@@ -10,7 +10,11 @@
   "background_color": "#ffffff",
   "theme_color": "#0052cc",
   "lang": "en-IN",
-  "categories": ["business", "finance", "productivity"],
+  "categories": [
+    "business",
+    "finance",
+    "productivity"
+  ],
   "icons": [
     {
       "src": "/favicon-16x16.png",
@@ -64,14 +68,14 @@
   "screenshots": [
     {
       "src": "/icon-512.png",
-      "sizes": "1280x720",
+      "sizes": "512x512",
       "type": "image/png",
       "form_factor": "wide",
       "label": "JustGST Desktop Billing Dashboard"
     },
     {
       "src": "/icon-512.png",
-      "sizes": "720x1280",
+      "sizes": "512x512",
       "type": "image/png",
       "form_factor": "narrow",
       "label": "JustGST Mobile Thermal POS & Invoicing"
