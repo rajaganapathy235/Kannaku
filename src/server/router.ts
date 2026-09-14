@@ -624,6 +624,239 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
       return errorResponse('Failed to issue demo session token: ' + (err?.message || 'Unknown error'), 500);
     }
   }
+
+  // -------------------------------------------------------------
+  // GOOGLE AUTHENTICATION ENDPOINT
+  // -------------------------------------------------------------
+  // SECURITY NOTE: Never trust a client-decoded JWT for authentication decisions — the payload can be freely forged by anyone since it's just base64, not verified. All identity claims from Google Sign-In must come from the server-verified tokeninfo response only.
+  if (path === '/api/auth/google' && method === 'POST') {
+    const ip = request.headers.get('cf-connecting-ip') || 'unknown';
+    const rate = checkRateLimit(`google-auth:${ip}`, 15, 60);
+    if (!rate.allowed) {
+      return errorResponse('Too many Google sign-in attempts. Please wait 1 minute.', 429);
+    }
+
+    try {
+      const body = (await request.json().catch(() => ({}))) as any;
+      const credential = body?.credential;
+      if (!credential || typeof credential !== 'string') {
+        return errorResponse('Google ID token credential is required', 400);
+      }
+
+      // Verify token server-side with Google tokeninfo endpoint
+      let tokenInfoRes: Response;
+      try {
+        tokenInfoRes = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(credential)}`);
+      } catch (err: any) {
+        return errorResponse('Failed to reach Google token verification service: ' + (err?.message || 'Network error'), 500);
+      }
+
+      if (!tokenInfoRes.ok) {
+        return errorResponse('Invalid or expired Google ID token credential', 401);
+      }
+
+      const tokenInfo = (await tokenInfoRes.json()) as any;
+      const expectedClientId = '149211959700-g5r155p3o075od5kpfuu49f9atqfdjrl.apps.googleusercontent.com';
+
+      // Reject if aud field doesn't match GOOGLE_CLIENT_ID
+      if (tokenInfo.aud !== expectedClientId) {
+        return errorResponse('Google token audience mismatch', 401);
+      }
+
+      // Reject if email_verified is not true
+      if (tokenInfo.email_verified !== true && tokenInfo.email_verified !== 'true') {
+        return errorResponse('Google account email is not verified', 401);
+      }
+
+      const verifiedEmail = (tokenInfo.email || '').trim().toLowerCase();
+      const verifiedName = (tokenInfo.name || tokenInfo.given_name || verifiedEmail.split('@')[0] || 'Google User').trim();
+      const verifiedPicture = tokenInfo.picture || null;
+      const googleSub = tokenInfo.sub; // Google user ID
+
+      if (!verifiedEmail || !googleSub) {
+        return errorResponse('Google token missing email or subject identifier', 400);
+      }
+
+      await seedInitialTenants(db, env);
+
+      // Self-healing migration: Add google_id column to platform_users if missing
+      try {
+        const userColsInfo = await queryAll<any>(db, 'PRAGMA table_info(platform_users)');
+        if (Array.isArray(userColsInfo) && userColsInfo.length > 0 && !userColsInfo.some((c) => c.name === 'google_id')) {
+          await execute(db, 'ALTER TABLE platform_users ADD COLUMN google_id TEXT');
+        }
+      } catch {
+        // Ignored if column exists or schema is static
+      }
+
+      // SELECT * FROM platform_users WHERE email = ? or google_id = ?
+      let user = await queryFirst<any>(
+        db,
+        'SELECT * FROM platform_users WHERE google_id = ? OR LOWER(email) = LOWER(?)',
+        googleSub,
+        verifiedEmail
+      );
+
+      let org: any = null;
+
+      if (user) {
+        // Existing user found: Store/link google_id if missing or updated
+        if (!user.google_id || user.google_id !== googleSub) {
+          await execute(db, 'UPDATE platform_users SET google_id = ? WHERE id = ?', googleSub, user.id);
+          user.google_id = googleSub;
+        }
+
+        // Update avatar_url if missing and verifiedPicture provided
+        if (!user.avatar_url && verifiedPicture) {
+          await execute(db, 'UPDATE platform_users SET avatar_url = ? WHERE id = ?', verifiedPicture, user.id);
+          user.avatar_url = verifiedPicture;
+        }
+
+        // Update last login timestamp
+        await execute(db, 'UPDATE platform_users SET last_login = CURRENT_TIMESTAMP WHERE id = ?', user.id);
+
+        org = await queryFirst<any>(db, 'SELECT * FROM organizations WHERE id = ?', user.organization_id);
+      } else {
+        // New user sign-up via Google: Create Organization and User
+        const orgId = `org_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+        const userId = `usr_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+        const companyName = `${verifiedName}'s Workspace`;
+        const slug = companyName.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').substring(0, 30);
+        const dummyPassHash = await hashPassword(`GoogleAuth_${googleSub}_${Date.now()}`);
+
+        // Read dynamic trial duration (reading saas_plans.trial_duration_days)
+        const platformSettings = await getPlatformSettingsFromDB(db);
+        const adminTrialDays = platformSettings?.billing?.trialDurationDays;
+
+        const assignedPlan = await queryFirst<any>(
+          db,
+          "SELECT trial_duration_days, billing_type FROM saas_plans WHERE id = 'plan_all_in_one_pro'"
+        );
+
+        const trialDays =
+          adminTrialDays !== undefined && adminTrialDays !== null && !isNaN(Number(adminTrialDays)) && Number(adminTrialDays) >= 0
+            ? Number(adminTrialDays)
+            : assignedPlan && assignedPlan.trial_duration_days != null && !isNaN(Number(assignedPlan.trial_duration_days)) && Number(assignedPlan.trial_duration_days) >= 0
+            ? Number(assignedPlan.trial_duration_days)
+            : 15;
+
+        const trialEndDate = new Date(Date.now() + trialDays * 24 * 60 * 60 * 1000).toISOString();
+        const planBillingType = assignedPlan?.billing_type || 'ONE_TIME';
+
+        // Create Organization with Free Trial status
+        await execute(
+          db,
+          `INSERT INTO organizations (
+            id, name, slug, owner_name, admin_email, mobile, state, register_number, plan_id, plan_name, subscription_status, trial_end_date, billing_type
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'plan_all_in_one_pro', 'All-in-One Growth Plan', 'TRIAL', ?, ?)`,
+          orgId,
+          companyName,
+          slug,
+          verifiedName,
+          verifiedEmail,
+          '',
+          'Tamil Nadu',
+          null,
+          trialEndDate,
+          planBillingType
+        );
+
+        // Create Platform User storing google_id
+        await execute(
+          db,
+          `INSERT INTO platform_users (
+            id, organization_id, name, email, phone, password_hash, role, status, avatar_url, google_id, last_login
+          ) VALUES (?, ?, ?, ?, ?, ?, 'OWNER', 'ACTIVE', ?, ?, CURRENT_TIMESTAMP)`,
+          userId,
+          orgId,
+          verifiedName,
+          verifiedEmail,
+          '',
+          dummyPassHash,
+          verifiedPicture,
+          googleSub
+        );
+
+        user = {
+          id: userId,
+          organization_id: orgId,
+          name: verifiedName,
+          email: verifiedEmail,
+          phone: '',
+          role: 'OWNER',
+          status: 'ACTIVE',
+          avatar_url: verifiedPicture,
+          google_id: googleSub,
+        };
+
+        org = await queryFirst<any>(db, 'SELECT * FROM organizations WHERE id = ?', orgId);
+      }
+
+      const accessCheck = isOrgAccessAllowed(org);
+      const isReadOnly = (org?.account_status || '').toUpperCase() === 'SUSPENDED' || !accessCheck.allowed;
+      const code = isReadOnly ? getOrgAccessCode(accessCheck, org) : null;
+      const readOnlyReason = code;
+
+      const token = await createSessionToken(
+        {
+          userId: user.id,
+          email: user.email,
+          name: user.name,
+          organizationId: user.organization_id,
+          role: user.role,
+        },
+        secretKey
+      );
+
+      const sessionCookie = `kannaku_session=${token}; HttpOnly; Secure; SameSite=None; Partitioned; Path=/; Max-Age=${7 * 24 * 3600}`;
+
+      return jsonResponse(
+        {
+          success: true,
+          token,
+          user: {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            phone: user.phone || '',
+            role: user.role,
+            avatarUrl: user.avatar_url || verifiedPicture,
+            accountStatus: org?.account_status,
+            subscriptionStatus: org?.subscription_status,
+            isReadOnly,
+            code,
+            readOnlyReason,
+          },
+          organization: org ? {
+            ...org,
+            accountStatus: org.account_status,
+            subscriptionStatus: org.subscription_status,
+            isReadOnly,
+            code,
+            readOnlyReason,
+          } : {
+            id: user.organization_id,
+            name: `${user.name}'s Workspace`,
+            planId: 'plan_all_in_one_pro',
+            planName: 'All-in-One Growth Plan',
+            accountStatus: 'ACTIVE',
+            subscriptionStatus: 'TRIAL',
+            isReadOnly: false,
+            code: null,
+            readOnlyReason: null,
+          },
+          isReadOnly,
+          code,
+          readOnlyReason,
+        },
+        200,
+        { 'Set-Cookie': sessionCookie }
+      );
+    } catch (err: any) {
+      return errorResponse('Failed to authenticate with Google: ' + (err?.message || 'Server error'), 500);
+    }
+  }
+
   if (path === '/api/auth/login' && method === 'POST') {
     const ip = request.headers.get('cf-connecting-ip') || 'unknown';
     const rate = checkRateLimit(`login:${ip}`, 10, 60);

@@ -27,23 +27,6 @@ declare global {
 
 const GOOGLE_CLIENT_ID = '149211959700-g5r155p3o075od5kpfuu49f9atqfdjrl.apps.googleusercontent.com';
 
-function parseJwt(token: string): any {
-  try {
-    const base64Url = token.split('.')[1];
-    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-    const jsonPayload = decodeURIComponent(
-      atob(base64)
-        .split('')
-        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-        .join('')
-    );
-    return JSON.parse(jsonPayload);
-  } catch (err) {
-    console.error('Failed to parse Google JWT credential:', err);
-    return null;
-  }
-}
-
 interface LoginPageProps {
   onLoginSuccess: (session: AuthSession) => void;
   onSwitchToSignup: () => void;
@@ -68,44 +51,28 @@ export const LoginPage: React.FC<LoginPageProps> = ({
   const [resetSent, setResetSent] = useState(false);
 
   useEffect(() => {
+    // SECURITY NOTE: Never trust a client-decoded JWT for authentication decisions — the payload can be freely forged by anyone since it's just base64, not verified. All identity claims from Google Sign-In must come from the server-verified tokeninfo response only.
     const handleGoogleSignInResponse = async (response: any) => {
       if (!response || !response.credential) {
         setError('Google authentication failed. Empty credential received.');
         return;
       }
 
-      const userProfile = parseJwt(response.credential);
-      if (!userProfile) {
-        setError('Failed to extract Google user profile.');
-        return;
-      }
-
-      const { sub: googleId, email, name: fullName, picture: avatarUrl } = userProfile;
-
-      const session: AuthSession = {
-        user: {
-          id: `google_${googleId}`,
-          email: email || '',
-          name: fullName || email?.split('@')[0] || 'Google User',
-          role: 'OWNER',
-          organizationId: `google_org_${googleId}`,
-          organizationName: `${fullName || 'Google'}'s Workspace`,
-          gstin: '33ASWPV8266F1ZW',
-          planName: 'All-in-One Growth Plan',
-          avatarUrl: avatarUrl || undefined,
-        },
-        expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-        token: response.credential,
-        loginTimestamp: new Date().toISOString(),
-      };
+      setLoading(true);
+      setError(null);
 
       try {
-        AuthService.saveSession(session);
-        onLoginSuccess(session);
-        window.location.hash = '#/dashboard';
-      } catch (err) {
-        console.error('Session persistence failed:', err);
-        setError('Failed to save session. Please try again.');
+        const res = await AuthService.googleAuthAsync(response.credential);
+        setLoading(false);
+        if (res.success && res.session) {
+          onLoginSuccess(res.session);
+          window.location.hash = '#/dashboard';
+        } else {
+          setError(res.error || 'Server Google authentication failed.');
+        }
+      } catch (err: any) {
+        setLoading(false);
+        setError('Connection error during Google authentication: ' + (err?.message || 'Server unreachable'));
       }
     };
 

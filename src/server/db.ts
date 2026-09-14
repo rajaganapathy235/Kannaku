@@ -267,6 +267,7 @@ export async function ensureTables(db: D1Database): Promise<void> {
         role TEXT NOT NULL DEFAULT 'OWNER',
         status TEXT DEFAULT 'ACTIVE',
         avatar_url TEXT,
+        google_id TEXT,
         last_login TEXT,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP
       )`,
@@ -809,6 +810,17 @@ export async function ensureTables(db: D1Database): Promise<void> {
         if (!planCols.some((c) => c.name === 'billing_type')) {
           await db.prepare("ALTER TABLE saas_plans ADD COLUMN billing_type TEXT DEFAULT 'ONE_TIME'").run();
         }
+      }
+    } catch {
+      // Ignored if already existing
+    }
+
+    // Migration: ensure platform_users has google_id
+    try {
+      const userInfo = await db.prepare('PRAGMA table_info(platform_users)').all<{ name: string }>();
+      const userCols = userInfo.results || [];
+      if (Array.isArray(userCols) && userCols.length > 0 && !userCols.some((c) => c.name === 'google_id')) {
+        await db.prepare('ALTER TABLE platform_users ADD COLUMN google_id TEXT').run();
       }
     } catch {
       // Ignored if already existing

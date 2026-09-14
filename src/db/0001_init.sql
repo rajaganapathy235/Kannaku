@@ -53,6 +53,7 @@ CREATE TABLE IF NOT EXISTS platform_users (
   role TEXT NOT NULL DEFAULT 'OWNER',
   status TEXT DEFAULT 'ACTIVE',
   avatar_url TEXT,
+  google_id TEXT,
   last_login TEXT,
   created_at TEXT DEFAULT CURRENT_TIMESTAMP
 );

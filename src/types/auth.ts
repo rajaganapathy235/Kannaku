@@ -27,6 +27,7 @@ export interface AuthSession {
   };
   expiresAt: string;
   loginTimestamp: string;
+  provider?: string;
 }
 
 export interface SignupTenantPayload {

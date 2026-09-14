@@ -204,6 +204,21 @@ export class ApiService {
   }
 
   // --- AUTHENTICATION ---
+  static async googleAuth(credential: string) {
+    return this.request<{
+      success: boolean;
+      token: string;
+      user: any;
+      organization: any;
+      isReadOnly?: boolean;
+      code?: string | null;
+      readOnlyReason?: string | null;
+    }>('/api/auth/google', {
+      method: 'POST',
+      body: JSON.stringify({ credential }),
+    });
+  }
+
   static async login(email: string, pass: string) {
     return this.request<{
       success: boolean;

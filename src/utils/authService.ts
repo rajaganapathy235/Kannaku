@@ -181,6 +181,65 @@ export class AuthService {
     }
   }
 
+  // Server-Side Cloudflare D1 Google Auth
+  static async googleAuthAsync(credential: string): Promise<{
+    success: boolean;
+    error?: string;
+    session?: AuthSession;
+  }> {
+    try {
+      const res = await ApiService.googleAuth(credential);
+      if (res.success && res.data?.user) {
+        const { user, organization } = res.data;
+        const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+
+        const userAvatar = user.avatarUrl
+          ? user.avatarUrl.replace(/background=1[Aa]73[Ee]8/g, 'background=059669')
+          : `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=059669&color=fff&bold=true`;
+
+        const resData = (res.data || {}) as any;
+        const session: AuthSession = {
+          token: res.data.token,
+          user: {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            phone: user.phone || '',
+            role: user.role || 'OWNER',
+            adminRole: user.role === 'SUPER_ADMIN' ? 'SUPER_ADMIN' : undefined,
+            organizationId: organization?.id || user.organizationId,
+            organizationName: organization?.name || 'JustGST Workspace',
+            gstin: organization?.register_number || organization?.registerNumber || '33ASWPV8266F1ZW',
+            planName: organization?.plan_name || organization?.planName || 'All-in-One Growth Plan',
+            accountStatus: user.accountStatus || organization?.account_status || organization?.accountStatus,
+            subscriptionStatus: user.subscriptionStatus || organization?.subscription_status || organization?.subscriptionStatus,
+            isReadOnly: user.isReadOnly ?? organization?.isReadOnly ?? resData.isReadOnly ?? false,
+            code: user.code || organization?.code || resData.code || null,
+            reason: user.code || organization?.code || resData.code || null,
+            readOnlyReason: user.readOnlyReason || user.code || organization?.readOnlyReason || organization?.code || resData.code || null,
+            avatarUrl: userAvatar,
+          },
+          expiresAt,
+          loginTimestamp: new Date().toISOString(),
+          provider: 'google',
+        };
+
+        this.saveSession(session);
+        return { success: true, session };
+      }
+
+      return {
+        success: false,
+        error: res.error || 'Google authentication failed on server',
+      };
+    } catch (err: any) {
+      return {
+        success: false,
+        error: err?.message || 'Connection error during Google authentication',
+      };
+    }
+  }
+
   // Change password for currently authenticated user
   static async changePasswordAsync(currentPassword: string, newPassword: string): Promise<{
     success: boolean;
