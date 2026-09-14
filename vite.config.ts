@@ -1,11 +1,57 @@
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
-import {defineConfig} from 'vite';
+import fs from 'fs';
+import { defineConfig, Plugin } from 'vite';
+
+function pwaBuildVersionPlugin(): Plugin {
+  const now = new Date();
+  const buildVersion = `v${now.getUTCFullYear()}.${String(now.getUTCMonth() + 1).padStart(2, '0')}.${String(now.getUTCDate()).padStart(2, '0')}.${String(now.getUTCHours()).padStart(2, '0')}${String(now.getUTCMinutes()).padStart(2, '0')}${String(now.getUTCSeconds()).padStart(2, '0')}`;
+
+  return {
+    name: 'pwa-build-version',
+    config() {
+      return {
+        define: {
+          'import.meta.env.VITE_BUILD_VERSION': JSON.stringify(buildVersion),
+        },
+      };
+    },
+    transformIndexHtml(html) {
+      const consoleScript = `<script>console.log("[JustGST] Build Version: ${buildVersion}");</script>`;
+      return html
+        .replace(/__BUILD_VERSION__/g, buildVersion)
+        .replace('</head>', `  ${consoleScript}\n</head>`);
+    },
+    closeBundle() {
+      // Process dist/sw.js
+      const swDistPath = path.resolve(__dirname, 'dist/sw.js');
+      if (fs.existsSync(swDistPath)) {
+        let content = fs.readFileSync(swDistPath, 'utf-8');
+        content = content.replace(/__BUILD_VERSION__/g, buildVersion);
+        content = content.replace(
+          /const CACHE_NAME = ['"].*?['"];/,
+          `const CACHE_NAME = 'justgst-pwa-cache-${buildVersion}';`
+        );
+        fs.writeFileSync(swDistPath, content, 'utf-8');
+      }
+
+      // Process dist/index.html
+      const indexDistPath = path.resolve(__dirname, 'dist/index.html');
+      if (fs.existsSync(indexDistPath)) {
+        let content = fs.readFileSync(indexDistPath, 'utf-8');
+        if (content.includes('__BUILD_VERSION__')) {
+          content = content.replace(/__BUILD_VERSION__/g, buildVersion);
+          fs.writeFileSync(indexDistPath, content, 'utf-8');
+        }
+      }
+    },
+  };
+}
 
 export default defineConfig(() => {
   return {
-    plugins: [react(), tailwindcss()],
+    plugins: [react(), tailwindcss(), pwaBuildVersionPlugin()],
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),

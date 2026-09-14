@@ -3,7 +3,7 @@
  * Network-First caching strategy with offline fallback support
  */
 
-const CACHE_NAME = 'justgst-pwa-cache-v1';
+const CACHE_NAME = 'justgst-pwa-cache-__BUILD_VERSION__';
 const PRECACHE_ASSETS = [
   '/',
   '/index.html',
