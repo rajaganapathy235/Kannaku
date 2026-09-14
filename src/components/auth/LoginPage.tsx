@@ -20,24 +20,12 @@ import {
 } from 'lucide-react';
 import { AuthService } from '../../utils/authService';
 import { AuthSession } from '../../types/auth';
+import { INDIAN_STATES as ALL_INDIAN_STATES } from '../../utils/gstValidation';
 
-const INDIAN_STATES = [
-  'Tamil Nadu',
-  'Karnataka',
-  'Maharashtra',
-  'Kerala',
-  'Gujarat',
-  'Delhi',
-  'Andhra Pradesh',
-  'Telangana',
-  'Uttar Pradesh',
-  'West Bengal',
-  'Rajasthan',
-  'Haryana',
-  'Punjab',
-  'Madhya Pradesh',
-  'Odisha',
-];
+// Full list of all Indian states & UTs, sourced from the single authoritative
+// list in gstValidation.ts (used for GST state-code validation) — do not
+// maintain a separate, potentially-incomplete copy here.
+const INDIAN_STATES = ALL_INDIAN_STATES.map((s) => s.name);
 
 declare global {
   interface Window {
