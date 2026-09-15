@@ -1097,14 +1097,23 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
 
       if (!emailResult.success) {
         console.warn('[Forgot Password] Resend dispatch note:', emailResult.error);
-        if (!resendApiKey) {
+        // SECURITY: never return the OTP in the API response in production — doing so
+        // lets anyone take over any account by requesting a reset and reading the OTP
+        // straight from this JSON response, with no access to the actual inbox needed.
+        // Only expose it in genuine local development for convenience.
+        if (!resendApiKey && env.ENVIRONMENT === 'development') {
           return jsonResponse({
             success: true,
             message: 'OTP generated. Note: RESEND_API_KEY is not set in environment settings.',
             devOtpHint: otp,
           });
         }
-        return errorResponse(`Failed to send email via Resend: ${emailResult.error}`, 500);
+        return errorResponse(
+          resendApiKey
+            ? `Failed to send email via Resend: ${emailResult.error}`
+            : 'Password reset email could not be sent — RESEND_API_KEY is not configured on the server.',
+          500
+        );
       }
 
       return jsonResponse({
