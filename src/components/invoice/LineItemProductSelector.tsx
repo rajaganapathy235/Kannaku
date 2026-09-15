@@ -19,7 +19,7 @@ export const LineItemProductSelector: React.FC<LineItemProductSelectorProps> = (
   onSelectProduct,
   products,
   invoiceType,
-  placeholder = 'Search & select product or scan barcode...',
+  placeholder = 'Search product, SKU, barcode or type item...',
   disabled = false,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -144,32 +144,48 @@ export const LineItemProductSelector: React.FC<LineItemProductSelectorProps> = (
           }}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
-          className={`w-full text-xs font-bold pl-8 pr-8 py-2 bg-white border rounded-lg transition ${
+          className={`w-full text-xs font-bold pl-8 pr-16 py-2 bg-white border rounded-lg transition ${
             isOpen
               ? 'border-brand-600 ring-2 ring-brand-100 shadow-xs'
               : 'border-slate-300 hover:border-slate-400 focus:border-brand-600'
           }`}
         />
 
-        <button
-          type="button"
-          tabIndex={-1}
-          disabled={disabled}
-          onClick={() => {
-            setIsOpen(!isOpen);
-            if (!isOpen) {
+        <div className="absolute right-1.5 flex items-center gap-0.5">
+          <button
+            type="button"
+            tabIndex={-1}
+            disabled={disabled}
+            onClick={() => {
+              setIsOpen(true);
               inputRef.current?.focus();
-            }
-          }}
-          className="absolute right-2 p-1 text-slate-400 hover:text-slate-700 rounded transition cursor-pointer"
-          title="Toggle Product Dropdown"
-        >
-          <ChevronDown
-            className={`w-3.5 h-3.5 transition-transform duration-150 ${
-              isOpen ? 'rotate-180 text-brand-600' : ''
-            }`}
-          />
-        </button>
+              inputRef.current?.select();
+            }}
+            className="p-1 text-slate-400 hover:text-emerald-700 hover:bg-emerald-50 rounded transition cursor-pointer flex items-center"
+            title="Scan Barcode / SKU into this line"
+          >
+            <Barcode className="w-3.5 h-3.5 text-emerald-600" />
+          </button>
+          <button
+            type="button"
+            tabIndex={-1}
+            disabled={disabled}
+            onClick={() => {
+              setIsOpen(!isOpen);
+              if (!isOpen) {
+                inputRef.current?.focus();
+              }
+            }}
+            className="p-1 text-slate-400 hover:text-slate-700 rounded transition cursor-pointer"
+            title="Toggle Product Dropdown"
+          >
+            <ChevronDown
+              className={`w-3.5 h-3.5 transition-transform duration-150 ${
+                isOpen ? 'rotate-180 text-brand-600' : ''
+              }`}
+            />
+          </button>
+        </div>
       </div>
 
       {/* Dropdown Menu - Sleek Scrollable Container with Visible Scrollbar */}

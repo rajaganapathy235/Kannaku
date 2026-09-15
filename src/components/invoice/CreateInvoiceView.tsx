@@ -3,10 +3,8 @@ import confetti from 'canvas-confetti';
 import {
   AlertCircle,
   ArrowLeft,
-  Barcode,
   Building,
   Check,
-  CheckCircle2,
   ChevronDown,
   FileCheck,
   FilePlus,
@@ -17,7 +15,6 @@ import {
   Plus,
   Printer,
   Save,
-  ScanLine,
   Trash2,
   Truck,
   UserPlus,
@@ -260,72 +257,6 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
       } else {
         setTaxType('CGST_SGST');
       }
-    }
-  };
-
-  // POS Barcode & SKU Fast-Scan state
-  const [barcodeScanInput, setBarcodeScanInput] = useState('');
-  const [barcodeScanFeedback, setBarcodeScanFeedback] = useState<{
-    message: string;
-    type: 'success' | 'error';
-  } | null>(null);
-  const barcodeScanInputRef = useRef<HTMLInputElement>(null);
-
-  const handleBarcodeScanSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const query = barcodeScanInput.trim().toLowerCase();
-    if (!query) return;
-
-    // Search product catalog by barcode, SKU / itemCode, or exact name
-    const foundProduct = products.find(
-      (p) =>
-        (p.barcode && p.barcode.trim().toLowerCase() === query) ||
-        (p.itemCode && p.itemCode.trim().toLowerCase() === query) ||
-        p.name.trim().toLowerCase() === query
-    );
-
-    if (foundProduct) {
-      // Check if product is already present in invoice line items
-      const existingIdx = items.findIndex(
-        (it) =>
-          it.productId === foundProduct.id ||
-          it.itemId === foundProduct.id ||
-          (it.name && it.name.trim().toLowerCase() === foundProduct.name.trim().toLowerCase())
-      );
-
-      if (existingIdx >= 0) {
-        // Increment quantity by 1
-        const nextQty = (items[existingIdx].qty || 1) + 1;
-        handleItemChange(existingIdx, 'qty', nextQty);
-        setBarcodeScanFeedback({
-          message: `Scanned: "${foundProduct.name}" — Qty updated to ${nextQty} ${foundProduct.unit || 'Nos'}`,
-          type: 'success',
-        });
-      } else {
-        // Check if there is an empty line item (blank name)
-        const emptyIdx = items.findIndex((it) => !it.name || !it.name.trim());
-        if (emptyIdx >= 0) {
-          handleSelectProduct(emptyIdx, foundProduct);
-        } else {
-          handleAddItem(foundProduct);
-        }
-        setBarcodeScanFeedback({
-          message: `Scanned: "${foundProduct.name}" added to line items (₹${formatNumberIndian(
-            invoiceType === InvoiceType.PURCHASE ? foundProduct.buyingPrice : foundProduct.sellingPrice
-          )})`,
-          type: 'success',
-        });
-      }
-
-      setBarcodeScanInput('');
-      setTimeout(() => barcodeScanInputRef.current?.focus(), 50);
-    } else {
-      setBarcodeScanFeedback({
-        message: `No product found matching Barcode / SKU "${barcodeScanInput}". Please add barcode in Inventory first.`,
-        type: 'error',
-      });
-      setBarcodeScanInput('');
-      setTimeout(() => barcodeScanInputRef.current?.focus(), 50);
     }
   };
 
@@ -875,65 +806,8 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
                 </span>
               </div>
               <span className="text-[11px] text-slate-400 hidden sm:inline">
-                Click product search dropdown or scan barcode to add catalog items
+                Type product name, SKU, or barcode to select from catalog
               </span>
-            </div>
-
-            {/* POS Express Barcode Scanner Bar */}
-            <div className="bg-slate-900 text-white p-3.5 rounded-xl shadow-xs border border-slate-800 space-y-2">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  <div className="p-1.5 rounded-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                    <Barcode className="w-4 h-4 animate-pulse" />
-                  </div>
-                  <div>
-                    <span className="text-xs font-bold text-white block">
-                      POS Barcode & SKU Scanner
-                    </span>
-                    <span className="text-[10px] text-slate-400">
-                      Scan USB barcode or type barcode / SKU & press Enter for quick auto-addition
-                    </span>
-                  </div>
-                </div>
-
-                {barcodeScanFeedback && (
-                  <div
-                    className={`px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1.5 animate-in fade-in ${
-                      barcodeScanFeedback.type === 'success'
-                        ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
-                        : 'bg-rose-500/20 text-rose-300 border border-rose-500/40'
-                    }`}
-                  >
-                    {barcodeScanFeedback.type === 'success' ? (
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                    ) : (
-                      <AlertCircle className="w-3.5 h-3.5 text-rose-400 shrink-0" />
-                    )}
-                    <span className="truncate max-w-xs">{barcodeScanFeedback.message}</span>
-                  </div>
-                )}
-              </div>
-
-              <form onSubmit={handleBarcodeScanSubmit} className="flex items-center gap-2 pt-1">
-                <div className="relative flex-1">
-                  <ScanLine className="w-4 h-4 text-emerald-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                  <input
-                    ref={barcodeScanInputRef}
-                    type="text"
-                    value={barcodeScanInput}
-                    onChange={(e) => setBarcodeScanInput(e.target.value)}
-                    placeholder="Scan barcode number or SKU (e.g. 890123456789)..."
-                    className="w-full pl-9 pr-3 py-2 bg-slate-950/80 border border-slate-700 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 rounded-lg text-white placeholder-slate-400 text-xs font-mono font-bold focus:outline-none transition-all"
-                  />
-                </div>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 active:scale-98 text-white text-xs font-bold rounded-lg transition shadow-xs flex items-center gap-1.5 cursor-pointer shrink-0"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>Scan & Add</span>
-                </button>
-              </form>
             </div>
 
             {/* Items Rows */}
