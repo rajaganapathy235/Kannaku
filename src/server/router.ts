@@ -1086,13 +1086,15 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
       );
 
       const resendApiKey = ctx.env.RESEND_API_KEY || process.env.RESEND_API_KEY || process.env.VITE_RESEND_API_KEY;
+      const resendFromAddress = ctx.env.RESEND_FROM_EMAIL || 'JustGST Billing <noreply@justgst.in>';
       const emailResult = await sendPasswordResetEmail(
         {
           email: user.email,
           name: user.name,
           otp,
         },
-        resendApiKey
+        resendApiKey,
+        resendFromAddress
       );
 
       if (!emailResult.success) {
