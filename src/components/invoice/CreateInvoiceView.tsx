@@ -819,13 +819,16 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
                   className="p-3 bg-slate-50/80 hover:bg-slate-50 rounded-xl border border-slate-200/80 space-y-2.5 transition"
                 >
                   <div className="flex items-start justify-between gap-2">
-                    <span className="w-5 h-5 rounded-full bg-slate-200 text-slate-700 text-[10px] font-bold flex items-center justify-center shrink-0 mt-1">
+                    <span className="w-5 h-5 rounded-full bg-slate-200 text-slate-700 text-[10px] font-bold flex items-center justify-center shrink-0 mt-6">
                       {idx + 1}
                     </span>
 
                     {/* Product Name Search Dropdown & HSN */}
                     <div className="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-2">
                       <div className="sm:col-span-2">
+                        <label className="text-[10px] text-slate-500 font-semibold block mb-1">
+                          Item / Product Name
+                        </label>
                         <LineItemProductSelector
                           value={item.name}
                           onChange={(nameVal) => handleItemChange(idx, 'name', nameVal)}
@@ -837,6 +840,9 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
                       </div>
 
                       <div>
+                        <label className="text-[10px] text-slate-500 font-semibold block mb-1">
+                          HSN / SAC Code
+                        </label>
                         <input
                           type="text"
                           value={item.hsnCode}
@@ -855,7 +861,7 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
                       onClick={() => handleRemoveItem(idx)}
                       disabled={items.length <= 1}
                       title={items.length <= 1 ? 'At least one item required' : 'Delete item'}
-                      className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition disabled:opacity-30 cursor-pointer"
+                      className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition disabled:opacity-30 cursor-pointer mt-5"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
