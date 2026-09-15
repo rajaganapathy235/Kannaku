@@ -85,7 +85,8 @@ export const GeoAeoEngine: React.FC<GeoAeoEngineProps> = ({
         availableLanguage: ['en', 'hi', 'ta', 'te', 'mr', 'gu'],
       },
       sameAs: [
-        'https://linkedin.com/company/justgst'
+        'https://linkedin.com/company/justgst',
+        'https://x.com/justgst_in'
       ],
     };
 

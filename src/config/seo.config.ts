@@ -53,7 +53,8 @@ export const ORGANIZATION_SCHEMA = {
     email: 'support@justgst.in',
   },
   sameAs: [
-    'https://linkedin.com/company/justgst'
+    'https://linkedin.com/company/justgst',
+    'https://x.com/justgst_in'
   ],
 };
 
