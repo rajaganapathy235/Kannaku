@@ -52,12 +52,7 @@ export const ORGANIZATION_SCHEMA = {
     url: `${BASE_URL}`,
     email: 'support@justgst.in',
   },
-  sameAs: [
-    'https://twitter.com/justgst_in',
-    'https://linkedin.com/company/justgst',
-    'https://youtube.com/@justgst',
-    'https://www.crunchbase.com/organization/justgst',
-  ],
+  sameAs: [],
 };
 
 export const SOFTWARE_APPLICATION_SCHEMA = {
