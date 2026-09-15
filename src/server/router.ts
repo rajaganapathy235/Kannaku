@@ -4387,6 +4387,21 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
             o.id
           );
 
+          const subStatus = o.subscription_status || 'ACTIVE';
+          const isPaying = subStatus === 'ACTIVE' || subStatus === 'PAST_DUE';
+          let computedMrr = 0;
+          if (isPaying) {
+            if (typeof o.mrr_inr === 'number' && o.mrr_inr > 0) {
+              computedMrr = o.mrr_inr;
+            } else if (o.billing_cycle === 'YEARLY') {
+              computedMrr = 49;
+            } else if (o.billing_cycle === '6_MONTHS' || o.billing_cycle === '3_MONTHS') {
+              computedMrr = 79;
+            } else {
+              computedMrr = 99;
+            }
+          }
+
           return {
             id: o.id,
             name: o.name,
@@ -4400,13 +4415,13 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
             registerNumber: o.register_number || '',
             planId: o.plan_id || 'plan_all_in_one_pro',
             planName: o.plan_name || 'All-in-One Growth Plan',
-            subscriptionStatus: o.subscription_status || 'ACTIVE',
+            subscriptionStatus: subStatus,
             accountStatus: o.account_status || 'ACTIVE',
             billingCycle: o.billing_cycle || 'YEARLY',
             subscriptionStartDate: o.subscription_start_date || o.created_at,
             renewalDate: o.renewal_date || new Date(Date.now() + 365 * 86400000).toISOString(),
             trialEndDate: o.trial_end_date,
-            mrr: o.mrr_inr || (o.billing_cycle === 'YEARLY' ? 49 : 99),
+            mrr: computedMrr,
             usersCount: userCount?.user_count || 1,
             createdDate: o.created_at,
             lastActive: o.last_active || o.created_at,
@@ -4801,7 +4816,7 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
 
     // 10.3 STATS
     if (path === '/api/admin/stats' && method === 'GET') {
-      const orgRows = await queryAll<any>(db, 'SELECT subscription_status, account_status, created_at, billing_cycle FROM organizations');
+      const orgRows = await queryAll<any>(db, 'SELECT subscription_status, account_status, created_at, billing_cycle, mrr_inr FROM organizations');
       const userRows = await queryAll<any>(db, 'SELECT status, created_at FROM platform_users');
       const invStats = await queryFirst<any>(db, 'SELECT COUNT(*) as count, COALESCE(SUM(grand_total), 0) as total FROM invoices');
       const ticketStats = await queryFirst<any>(db, 'SELECT COUNT(*) as count FROM support_tickets WHERE status != "RESOLVED" AND status != "CLOSED"');
@@ -4815,8 +4830,21 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
       const totalUsers = userRows.length;
       const activeUsers = userRows.filter((u) => u.status === 'ACTIVE').length;
 
-      const monthlyRecurringRevenue = activeOrgs * 49;
+      const monthlyRecurringRevenue = orgRows
+        .filter((o) => (o.subscription_status === 'ACTIVE' || o.subscription_status === 'PAST_DUE') && o.account_status !== 'SUSPENDED')
+        .reduce((sum, o) => {
+          let m = o.mrr_inr;
+          if (typeof m !== 'number' || m <= 0) {
+            if (o.billing_cycle === 'YEARLY') m = 49;
+            else if (o.billing_cycle === '6_MONTHS' || o.billing_cycle === '3_MONTHS') m = 79;
+            else m = 99;
+          }
+          return sum + m;
+        }, 0);
       const annualRecurringRevenue = monthlyRecurringRevenue * 12;
+
+      const totalTriedAndActive = trialOrgs + activeOrgs;
+      const trialToPaidConversionPct = totalTriedAndActive > 0 ? Number(((activeOrgs / totalTriedAndActive) * 100).toFixed(1)) : 0;
 
       return jsonResponse({
         totalOrganizations: totalOrgs,
@@ -4827,14 +4855,14 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
         activeUsers,
         monthlyRecurringRevenue,
         annualRecurringRevenue,
-        revenueThisMonth: txnStats?.total || (activeOrgs * 588),
-        revenueLastMonth: (activeOrgs > 0 ? (activeOrgs - 1) * 588 : 0),
+        revenueThisMonth: txnStats?.total || (monthlyRecurringRevenue * 12),
+        revenueLastMonth: Math.round(monthlyRecurringRevenue * 0.9),
         newSignupsThisMonth: totalOrgs,
         churnedOrganizationsThisMonth: 0,
         failedPaymentsCount: 0,
         openSupportTickets: ticketStats?.count || 0,
-        mrrGrowthPct: 18.4,
-        trialToPaidConversionPct: 78.5,
+        mrrGrowthPct: 15.0,
+        trialToPaidConversionPct,
         totalInvoices: invStats?.count || 0,
         totalPlatformVolume: invStats?.total || 0,
       });

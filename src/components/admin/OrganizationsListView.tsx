@@ -416,7 +416,11 @@ export const OrganizationsListView: React.FC<OrganizationsListViewProps> = ({
 
                       {/* MRR */}
                       <td className="py-3.5 px-3 font-mono font-bold text-emerald-400">
-                        ₹{org.mrr.toLocaleString()}
+                        {org.subscriptionStatus === 'TRIAL' || org.mrr === 0 ? (
+                          <span className="text-slate-400 font-normal">₹0 (Trial)</span>
+                        ) : (
+                          `₹${org.mrr.toLocaleString()}`
+                        )}
                       </td>
 
                       {/* Action Menu */}
@@ -526,7 +530,7 @@ export const OrganizationsListView: React.FC<OrganizationsListViewProps> = ({
             <span>
               Total MRR:{' '}
               <strong className="text-emerald-400">
-                ₹{organizations.reduce((sum, o) => sum + o.mrr, 0).toLocaleString()}
+                ₹{organizations.filter((o) => o.subscriptionStatus === 'ACTIVE' || o.subscriptionStatus === 'PAST_DUE').reduce((sum, o) => sum + (o.mrr || 0), 0).toLocaleString()}
               </strong>
             </span>
           </div>
