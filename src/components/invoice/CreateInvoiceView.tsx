@@ -1084,13 +1084,6 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
                   >
                     + Courier (996812)
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => handleAddExtraItem('other')}
-                    className="px-2 py-1 text-[11px] font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-md transition cursor-pointer"
-                  >
-                    + Custom Charge
-                  </button>
                 </div>
               </div>
 
