@@ -1046,14 +1046,6 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
                 )}
               </div>
 
-              <button
-                type="button"
-                onClick={() => handleAddExtraItem('freight')}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs text-slate-600 hover:text-brand-700 font-semibold bg-slate-100 hover:bg-brand-50 border border-slate-200 rounded-lg transition cursor-pointer"
-              >
-                <Truck className="w-3.5 h-3.5" />
-                <span>+ Add Freight / Extra Charge</span>
-              </button>
             </div>
 
             {/* Extra Charges Section (Freight, Packaging, Delivery, Insurance) */}
@@ -1062,34 +1054,19 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
                 <span className="text-xs font-semibold text-slate-700">
                   Extra Charges (Freight / Delivery / Packaging)
                 </span>
-                <div className="flex flex-wrap items-center gap-1.5">
-                  <button
-                    type="button"
-                    onClick={() => handleAddExtraItem('freight')}
-                    className="px-2 py-1 text-[11px] font-bold text-brand-700 bg-brand-50 hover:bg-brand-100 border border-brand-200 rounded-md transition cursor-pointer"
-                  >
-                    + Freight (996511)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleAddExtraItem('packaging')}
-                    className="px-2 py-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-md transition cursor-pointer"
-                  >
-                    + Packaging (998540)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleAddExtraItem('delivery')}
-                    className="px-2 py-1 text-[11px] font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-md transition cursor-pointer"
-                  >
-                    + Courier (996812)
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  onClick={() => handleAddExtraItem('freight')}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs text-brand-700 font-bold bg-brand-50 hover:bg-brand-100 border border-brand-200 rounded-lg transition cursor-pointer"
+                >
+                  <Truck className="w-3.5 h-3.5" />
+                  <span>+ Add Freight / Extra Charge</span>
+                </button>
               </div>
 
               {extraItems.length === 0 && (
                 <div className="text-[11px] text-slate-400 italic py-1">
-                  No extra charges added. Click a charge preset above to include Freight or Packaging.
+                  No extra charges added. Click "+ Add Freight / Extra Charge" to include shipping, packaging, or handling.
                 </div>
               )}
 
