@@ -96,14 +96,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             Create professional GST tax invoices, auto-calculate CGST, SGST, and IGST splits, collect payments via Dynamic UPI QR codes, manage inventory stock, and track client balance ledgers.
           </p>
 
-          {/* TL;DR — Direct Answer for AI Search Engines (44% of AI citations from first 1/3) */}
-          <div className="max-w-2xl mx-auto bg-slate-50 border border-slate-200 rounded-xl p-4 text-left">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-brand-600 mb-1.5">TL;DR — What Is JustGST?</p>
-            <p className="text-xs text-slate-600 leading-relaxed">
-              <strong>JustGST is an Indian cloud GST billing and invoicing software</strong> priced at <strong>₹49/month</strong> (₹588/year). It generates CBIC-compliant GST tax invoices, tracks inventory stock, maintains customer and supplier ledgers, and supports WhatsApp invoice sharing with UPI QR codes — all in any web browser, no software installation needed. Founded in 2025, headquartered in Tamil Nadu, India.
-            </p>
-          </div>
-
           {/* Action CTAs */}
           <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
             <button
@@ -225,6 +217,19 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           </div>
         </div>
       </section>
+
+      {/* TL;DR — Direct Answer for AI Search Engines (Kept in top 1/3 of page) */}
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 mt-2 mb-8">
+        <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 sm:p-5 text-left shadow-sm">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-brand-600 mb-1.5">TL;DR — What Is JustGST?</p>
+          <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+            <strong>JustGST is an Indian cloud GST billing and invoicing software</strong> priced at <strong>₹49/month</strong> (₹588/year). It generates CBIC-compliant GST tax invoices, tracks inventory stock, maintains customer and supplier ledgers, and supports WhatsApp invoice sharing with UPI QR codes — all in any web browser, no software installation needed. Founded in 2025, headquartered in Tamil Nadu, India.
+          </p>
+          <p className="text-[10px] text-slate-400 mt-2">
+            Last updated: <time dateTime="2026-09-15">September 15, 2026</time>
+          </p>
+        </div>
+      </div>
 
       {/* What's in the App Section */}
       <section id="features" className="py-16 sm:py-20 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
