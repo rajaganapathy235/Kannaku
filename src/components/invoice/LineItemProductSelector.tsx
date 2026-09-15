@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Search, ChevronDown, Package, Check, ArrowDown } from 'lucide-react';
+import { Search, ChevronDown, Package, Check, ArrowDown, Barcode } from 'lucide-react';
 import { Product, InvoiceType } from '../../types';
 import { formatNumberIndian } from '../../utils/numberToWords';
 
@@ -19,7 +19,7 @@ export const LineItemProductSelector: React.FC<LineItemProductSelectorProps> = (
   onSelectProduct,
   products,
   invoiceType,
-  placeholder = 'Search & select product or type custom item...',
+  placeholder = 'Search & select product or scan barcode...',
   disabled = false,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -31,13 +31,14 @@ export const LineItemProductSelector: React.FC<LineItemProductSelectorProps> = (
 
   const isPurchase = invoiceType === InvoiceType.PURCHASE;
 
-  // Filter products based on current search input
+  // Filter products based on current search input (Name, SKU, Barcode, HSN)
   const query = (value || '').trim().toLowerCase();
   const filteredProducts = query
     ? products.filter(
         (p) =>
           p.name.toLowerCase().includes(query) ||
           (p.itemCode && p.itemCode.toLowerCase().includes(query)) ||
+          (p.barcode && p.barcode.toLowerCase().includes(query)) ||
           (p.hsnCode && p.hsnCode.toLowerCase().includes(query))
       )
     : products;
@@ -95,6 +96,16 @@ export const LineItemProductSelector: React.FC<LineItemProductSelectorProps> = (
       e.preventDefault();
       setHighlightedIndex((prev) => (prev > 0 ? prev - 1 : 0));
     } else if (e.key === 'Enter') {
+      const exactBarcodeMatch = products.find(
+        (p) =>
+          p.barcode && p.barcode.trim().toLowerCase() === query && query.length > 0
+      );
+      if (exactBarcodeMatch) {
+        e.preventDefault();
+        handleSelect(exactBarcodeMatch);
+        return;
+      }
+
       if (highlightedIndex >= 0 && highlightedIndex < filteredProducts.length) {
         e.preventDefault();
         handleSelect(filteredProducts[highlightedIndex]);
@@ -235,7 +246,13 @@ export const LineItemProductSelector: React.FC<LineItemProductSelectorProps> = (
                             </span>
                           )}
                         </div>
-                        <div className="text-[10px] text-slate-500 flex items-center gap-2 mt-0.5">
+                        <div className="text-[10px] text-slate-500 flex items-center gap-2 mt-0.5 flex-wrap">
+                          {prod.barcode && (
+                            <span className="inline-flex items-center gap-1 font-mono text-emerald-800 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200 font-bold">
+                              <Barcode className="w-2.5 h-2.5 text-emerald-600" />
+                              <span>{prod.barcode}</span>
+                            </span>
+                          )}
                           {prod.hsnCode && <span>HSN: {prod.hsnCode}</span>}
                           <span>Unit: {prod.unit || 'Nos'}</span>
                           {prod.taxRate !== undefined && <span>GST: {prod.taxRate}%</span>}

@@ -139,6 +139,7 @@ export interface Product {
   id: string;
   name: string;
   itemCode?: string;
+  barcode?: string;
   hsnCode: string;
   unit: string;
   buyingPrice: number;

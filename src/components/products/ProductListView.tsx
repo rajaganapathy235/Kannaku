@@ -3,9 +3,11 @@ import {
   AlertTriangle,
   ArrowDownRight,
   ArrowUpRight,
+  Barcode,
   Edit2,
   Package,
   Plus,
+  RefreshCw,
   Search,
   Tag,
   Trash2,
@@ -36,6 +38,7 @@ export const ProductListView: React.FC<ProductListViewProps> = ({
   // Product Form state
   const [name, setName] = useState('');
   const [itemCode, setItemCode] = useState('');
+  const [barcode, setBarcode] = useState('');
   const [hsnCode, setHsnCode] = useState('85044010');
   const [unit, setUnit] = useState('Nos');
   const [buyingPrice, setBuyingPrice] = useState<number>(1000);
@@ -57,14 +60,21 @@ export const ProductListView: React.FC<ProductListViewProps> = ({
     return (
       p.name.toLowerCase().includes(q) ||
       p.hsnCode.includes(q) ||
-      (p.itemCode && p.itemCode.toLowerCase().includes(q))
+      (p.itemCode && p.itemCode.toLowerCase().includes(q)) ||
+      (p.barcode && p.barcode.toLowerCase().includes(q))
     );
   });
+
+  const generateBarcode = () => {
+    const randomDigits = Math.floor(1000000000 + Math.random() * 9000000000).toString();
+    setBarcode(`890${randomDigits}`);
+  };
 
   const handleOpenAdd = () => {
     setSelectedProduct(null);
     setName('');
     setItemCode('');
+    setBarcode('');
     setHsnCode('85044010');
     setUnit('Nos');
     setBuyingPrice(0);
@@ -81,6 +91,7 @@ export const ProductListView: React.FC<ProductListViewProps> = ({
     setSelectedProduct(p);
     setName(p.name);
     setItemCode(p.itemCode || '');
+    setBarcode(p.barcode || '');
     setHsnCode(p.hsnCode);
     setUnit(p.unit);
     setBuyingPrice(p.buyingPrice);
@@ -110,6 +121,7 @@ export const ProductListView: React.FC<ProductListViewProps> = ({
         ...selectedProduct,
         name: name.trim(),
         itemCode: itemCode.trim() || undefined,
+        barcode: barcode.trim() || undefined,
         hsnCode: hsnCode.trim() || 'N/A',
         unit,
         buyingPrice: Number(buyingPrice) || 0,
@@ -125,6 +137,7 @@ export const ProductListView: React.FC<ProductListViewProps> = ({
         id: `p_${Date.now()}`,
         name: name.trim(),
         itemCode: itemCode.trim() || undefined,
+        barcode: barcode.trim() || undefined,
         hsnCode: hsnCode.trim() || '85044010',
         unit,
         buyingPrice: Number(buyingPrice) || 0,
@@ -220,6 +233,17 @@ export const ProductListView: React.FC<ProductListViewProps> = ({
                       <span className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded text-[10px] font-semibold border border-slate-200">
                         HSN: {p.hsnCode}
                       </span>
+                      {p.itemCode && (
+                        <span className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded text-[10px] font-semibold border border-slate-200">
+                          SKU: {p.itemCode}
+                        </span>
+                      )}
+                      {p.barcode && (
+                        <span className="bg-emerald-50 text-emerald-800 px-2 py-0.5 rounded text-[10px] font-mono font-bold border border-emerald-200 flex items-center gap-1">
+                          <Barcode className="w-3 h-3 text-emerald-600" />
+                          <span>{p.barcode}</span>
+                        </span>
+                      )}
                       <span className="bg-brand-50 text-brand-700 px-2 py-0.5 rounded text-[10px] font-bold border border-brand-200/60">
                         {p.taxRate}% GST
                       </span>
@@ -347,6 +371,47 @@ export const ProductListView: React.FC<ProductListViewProps> = ({
                   placeholder="e.g. Industrial Inverter 10KVA"
                   className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:border-brand-600 focus:ring-2 focus:ring-brand-500/20 focus:outline-none transition-all"
                 />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-semibold text-slate-800 mb-1">
+                    SKU / Item Code
+                  </label>
+                  <input
+                    type="text"
+                    value={itemCode}
+                    onChange={(e) => setItemCode(e.target.value)}
+                    placeholder="e.g. SK-1002"
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:border-brand-600 focus:ring-2 focus:ring-brand-500/20 focus:outline-none transition-all font-mono"
+                  />
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block font-semibold text-slate-800">
+                      Barcode No. / EAN
+                    </label>
+                    <button
+                      type="button"
+                      onClick={generateBarcode}
+                      className="text-[10px] text-brand-600 hover:text-brand-800 font-bold flex items-center gap-1 hover:underline cursor-pointer"
+                    >
+                      <RefreshCw className="w-2.5 h-2.5" />
+                      <span>Auto-Generate</span>
+                    </button>
+                  </div>
+                  <div className="relative flex items-center">
+                    <Barcode className="w-4 h-4 text-slate-400 absolute left-3 pointer-events-none" />
+                    <input
+                      type="text"
+                      value={barcode}
+                      onChange={(e) => setBarcode(e.target.value)}
+                      placeholder="Scan or type barcode no."
+                      className="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:border-brand-600 focus:ring-2 focus:ring-brand-500/20 focus:outline-none transition-all font-mono font-bold"
+                    />
+                  </div>
+                </div>
               </div>
 
               <div className="grid grid-cols-3 gap-3">
