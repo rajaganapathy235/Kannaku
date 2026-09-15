@@ -1073,11 +1073,11 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
               {extraItems.map((ex, exIdx) => (
                 <div
                   key={ex.id || exIdx}
-                  className="grid grid-cols-1 sm:grid-cols-12 gap-2 p-2.5 bg-slate-50 rounded-xl border border-slate-200 text-xs items-center"
+                  className="grid grid-cols-1 sm:grid-cols-12 gap-2.5 p-2.5 bg-slate-50/90 rounded-xl border border-slate-200 text-xs items-end"
                 >
                   {/* Preset Selector */}
                   <div className="sm:col-span-3">
-                    <label className="text-[10px] text-slate-500 font-semibold block mb-0.5">
+                    <label className="text-[10px] text-slate-500 font-semibold block mb-1">
                       Charge Type
                     </label>
                     <select
@@ -1095,7 +1095,7 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
                         }
                         setExtraItems(next);
                       }}
-                      className="w-full p-1.5 bg-white border border-slate-300 rounded font-semibold text-slate-800"
+                      className="w-full p-1.5 bg-white border border-slate-300 rounded-lg font-semibold text-slate-800 focus:border-brand-600"
                     >
                       <option value="freight">Freight (SAC 996511)</option>
                       <option value="packaging">Packaging (SAC 998540)</option>
@@ -1107,8 +1107,8 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
                   </div>
 
                   {/* Charge Name */}
-                  <div className="sm:col-span-4">
-                    <label className="text-[10px] text-slate-500 font-semibold block mb-0.5">
+                  <div className="sm:col-span-3">
+                    <label className="text-[10px] text-slate-500 font-semibold block mb-1">
                       Charge Name / Description
                     </label>
                     <input
@@ -1120,13 +1120,13 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
                         setExtraItems(next);
                       }}
                       placeholder="Charge Name"
-                      className="w-full p-1.5 bg-white border border-slate-300 rounded font-semibold text-slate-800"
+                      className="w-full p-1.5 bg-white border border-slate-300 rounded-lg font-semibold text-slate-800 focus:border-brand-600"
                     />
                   </div>
 
                   {/* HSN / SAC Code */}
                   <div className="sm:col-span-2">
-                    <label className="text-[10px] text-slate-500 font-semibold block mb-0.5">
+                    <label className="text-[10px] text-slate-500 font-semibold block mb-1">
                       HSN / SAC
                     </label>
                     <input
@@ -1138,13 +1138,13 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
                         setExtraItems(next);
                       }}
                       placeholder="e.g. 998540"
-                      className="w-full p-1.5 bg-white border border-slate-300 rounded font-mono text-center font-bold text-slate-700"
+                      className="w-full p-1.5 bg-white border border-slate-300 rounded-lg font-mono text-center font-bold text-slate-700 focus:border-brand-600"
                     />
                   </div>
 
                   {/* Base Amount ₹ */}
                   <div className="sm:col-span-2">
-                    <label className="text-[10px] text-slate-500 font-semibold block mb-0.5">
+                    <label className="text-[10px] text-slate-500 font-semibold block mb-1">
                       Amount (₹)
                     </label>
                     <input
@@ -1156,14 +1156,14 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
                         setExtraItems(next);
                       }}
                       placeholder="Amount ₹"
-                      className="w-full p-1.5 bg-white border border-slate-300 rounded font-mono text-right font-bold text-slate-800"
+                      className="w-full p-1.5 bg-white border border-slate-300 rounded-lg font-mono text-right font-bold text-slate-800 focus:border-brand-600"
                     />
                   </div>
 
-                  {/* GST % & Delete */}
-                  <div className="sm:col-span-1 flex items-center justify-between gap-1 pt-3 sm:pt-0">
-                    <div className="flex-1">
-                      <label className="text-[10px] text-slate-500 font-semibold block mb-0.5 sm:hidden">
+                  {/* GST % & Delete Action */}
+                  <div className="sm:col-span-2 flex items-end gap-1">
+                    <div className="flex-1 min-w-0">
+                      <label className="text-[10px] text-slate-500 font-semibold block mb-1">
                         GST %
                       </label>
                       <select
@@ -1173,7 +1173,7 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
                           next[exIdx].taxPercentage = Number(e.target.value);
                           setExtraItems(next);
                         }}
-                        className="w-full p-1.5 bg-white border border-slate-300 rounded font-mono text-xs"
+                        className="w-full p-1.5 bg-white border border-slate-300 rounded-lg font-mono font-bold text-slate-800 text-xs focus:border-brand-600"
                       >
                         <option value={0}>0%</option>
                         <option value={5}>5%</option>
@@ -1185,7 +1185,7 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
                     <button
                       type="button"
                       onClick={() => handleRemoveExtraItem(exIdx)}
-                      className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded transition cursor-pointer shrink-0 mt-4 sm:mt-0"
+                      className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition cursor-pointer shrink-0"
                       title="Delete Charge"
                     >
                       <Trash2 className="w-4 h-4" />
