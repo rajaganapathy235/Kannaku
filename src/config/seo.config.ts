@@ -38,19 +38,25 @@ export const ORGANIZATION_SCHEMA = {
   name: 'JustGST',
   url: BASE_URL,
   logo: `${BASE_URL}/icon-512.png`,
+  image: `${BASE_URL}/icon-512.png`,
   description: 'GST billing, invoicing, inventory, customer ledger, and payment tracking software built for Indian small and medium businesses.',
   foundingDate: '2025',
   address: {
     '@type': 'PostalAddress',
     addressCountry: 'IN',
+    addressRegion: 'Tamil Nadu',
   },
   contactPoint: {
     '@type': 'ContactPoint',
     contactType: 'customer support',
     url: `${BASE_URL}`,
+    email: 'support@justgst.in',
   },
   sameAs: [
     'https://twitter.com/justgst_in',
+    'https://linkedin.com/company/justgst',
+    'https://youtube.com/@justgst',
+    'https://www.crunchbase.com/organization/justgst',
   ],
 };
 
@@ -75,6 +81,60 @@ export const SOFTWARE_APPLICATION_SCHEMA = {
 };
 
 export const SEO_ROUTES: Record<string, SEORouteConfig> = {
+  about: {
+    slug: 'about',
+    title: 'About JustGST — GST Billing Software for Indian Businesses',
+    metaTitle: 'About JustGST | India\'s Affordable Cloud GST Billing Software — Founded 2025',
+    description: 'JustGST is a cloud GST billing and invoicing software for Indian retailers, wholesalers, and MSMEs. Founded in 2025, priced at ₹49/month, with 14-day free trial. Learn what JustGST does, who it serves, and how it compares to Vyapar and myBillBook.',
+    canonical: `${BASE_URL}/about/`,
+    h1: 'About JustGST — India\'s Affordable Cloud GST Billing Software',
+    subtitle: 'Learn what JustGST is, who we serve, our pricing, and what makes us different from Vyapar, myBillBook, and Tally.',
+    badge: 'Company Facts & Information',
+    keywords: ['about JustGST', 'JustGST company', 'JustGST India', 'GST billing software India', 'JustGST pricing', 'cloud billing software India'],
+    breadcrumbs: [
+      { name: 'Home', url: `${BASE_URL}/` },
+      { name: 'About JustGST', url: `${BASE_URL}/about/` },
+    ],
+    aeoAnswers: [
+      {
+        question: 'What is JustGST?',
+        answer: 'JustGST is a 100% cloud-based GST billing and invoicing software founded in 2025, built for Indian retailers, wholesalers, pharmacies, and MSMEs to generate CBIC-compliant tax invoices, manage inventory, maintain customer ledgers, and collect UPI payments — entirely in a browser without installing any software.',
+      },
+      {
+        question: 'How much does JustGST cost?',
+        answer: 'JustGST costs ₹49/month on the annual plan (₹588/year), ₹79/month on the 6-month plan, or ₹99/month on flexible monthly billing. All plans include a 14-day free trial with no credit card required.',
+      },
+      {
+        question: 'Where is JustGST based?',
+        answer: 'JustGST is headquartered in Tamil Nadu, India, and serves small and medium businesses across all Indian states with full GST compliance.',
+      },
+    ],
+    features: [
+      { title: 'Founded', description: '2025, Tamil Nadu, India' },
+      { title: 'Starting Price', description: '₹49/month (₹588/year) — no hidden fees' },
+      { title: 'Free Trial', description: '14 days, full features, no credit card required' },
+      { title: 'Platform', description: 'Cloud / Web / PWA — no software installation needed' },
+    ],
+    faqs: [
+      {
+        question: 'What is JustGST?',
+        answer: 'JustGST is a cloud-based GST billing and invoicing platform for Indian small and medium businesses. It generates GST-compliant tax invoices, tracks inventory, maintains party ledgers, and supports thermal printing and WhatsApp invoice sharing.',
+      },
+      {
+        question: 'Who founded JustGST?',
+        answer: 'JustGST was founded in 2025 by a team of engineers and GST consultants in Tamil Nadu, India, with the mission of making affordable, compliant billing accessible to every Indian small business owner.',
+      },
+      {
+        question: 'How does JustGST compare to Vyapar?',
+        answer: 'JustGST costs ₹588/year vs Vyapar\'s ₹2,399/year — 75% cheaper. JustGST is 100% cloud-based with no Windows installation required, while Vyapar is desktop-first with paid sync add-ons.',
+      },
+    ],
+    jsonLd: {
+      '@context': 'https://schema.org',
+      '@graph': [ORGANIZATION_SCHEMA, SOFTWARE_APPLICATION_SCHEMA],
+    },
+  },
+
   home: {
     slug: '',
     title: 'JustGST — Fast GST Billing & Invoicing Software for Indian SMBs',
@@ -904,6 +964,9 @@ export function getSEOConfigForPath(pathname: string): SEORouteConfig {
   
   if (!clean || clean === 'home') {
     return SEO_ROUTES.home;
+  }
+  if (clean === 'about' || clean === 'about-us' || clean === 'facts') {
+    return SEO_ROUTES.about;
   }
   if (clean === 'gst-billing-software') {
     return SEO_ROUTES.gstBillingSoftware;

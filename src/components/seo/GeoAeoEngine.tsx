@@ -86,7 +86,9 @@ export const GeoAeoEngine: React.FC<GeoAeoEngineProps> = ({
       },
       sameAs: [
         'https://twitter.com/justgst_in',
-        'https://github.com/justgst',
+        'https://linkedin.com/company/justgst',
+        'https://youtube.com/@justgst',
+        'https://www.crunchbase.com/organization/justgst',
       ],
     };
 
@@ -169,6 +171,18 @@ export const GeoAeoEngine: React.FC<GeoAeoEngineProps> = ({
     };
 
     const graph: any[] = [organizationSchema, softwareApplicationSchema];
+
+    // 3b. Person schema for founder / key team
+    const personSchema = {
+      '@type': 'Person',
+      '@id': `${BASE_URL}/#founder`,
+      name: 'JustGST Founder',
+      jobTitle: 'Founder & CEO',
+      worksFor: { '@id': `${BASE_URL}/#organization` },
+      url: BASE_URL,
+      sameAs: ['https://linkedin.com/company/justgst'],
+    };
+    graph.push(personSchema);
 
     // 4. Optional BreadcrumbList Schema
     if (breadcrumbs && breadcrumbs.length > 0) {

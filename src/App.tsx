@@ -35,6 +35,7 @@ import { SolutionLandingPage } from './components/home/SolutionLandingPage';
 import { IndustrySolutionPage } from './components/home/IndustrySolutionPage';
 import { FreeGstCalculatorPage } from './components/home/FreeGstCalculatorPage';
 import { CompetitorComparisonPage } from './components/home/CompetitorComparisonPage';
+import { AboutPage } from './components/home/AboutPage';
 import { SEOHead } from './components/common/SEOHead';
 import { SEO_ROUTES, getSEOConfigForPath } from './config/seo.config';
 import { INDUSTRY_SOLUTIONS, getIndustrySEOConfig, IndustryData } from './config/industry.config';
@@ -732,6 +733,41 @@ export default function App() {
 
     const activeSeoConfig = getSEOConfigForPath(publicSlug);
     const isSolutionPage = publicSlug && publicSlug !== '' && publicSlug !== 'home';
+
+    if (
+      cleanSlug === 'about' ||
+      cleanSlug === 'about-us' ||
+      cleanSlug === 'facts'
+    ) {
+      return (
+        <>
+          <SEOHead seo={SEO_ROUTES.about} />
+          <AboutPage
+            seo={SEO_ROUTES.about}
+            session={authSession}
+            onNavigateSlug={handleNavigatePublicSlug}
+            onStartTrial={() => {
+              setAuthView('signup');
+              window.location.hash = '#signup';
+            }}
+            onSignIn={() => {
+              setAuthView('login');
+              window.location.hash = '#login';
+            }}
+            onOpenSuperAdmin={() => {
+              if (authSession?.user?.role === 'SUPER_ADMIN') {
+                setIsSuperAdminMode(true);
+                setAuthView(null);
+                window.location.hash = '#admin';
+              } else {
+                setAuthView('login');
+                window.location.hash = '#login';
+              }
+            }}
+          />
+        </>
+      );
+    }
 
     if (
       cleanSlug === 'tools/free-gst-calculator' ||

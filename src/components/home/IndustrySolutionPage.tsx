@@ -106,6 +106,17 @@ export const IndustrySolutionPage: React.FC<IndustrySolutionPageProps> = ({
           {data.heroDescription}
         </p>
 
+        {/* TL;DR — Direct Answer for AI Search (Last Updated stamp boosts citation rate) */}
+        <div className="mt-5 max-w-2xl mx-auto bg-brand-50 border border-brand-200 rounded-xl p-4 text-left">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-brand-600 mb-1.5">TL;DR — What Is JustGST for {data.industryName}?</p>
+          <p className="text-xs text-slate-600 leading-relaxed">
+            JustGST is a <strong>cloud GST billing software</strong> built for Indian {data.industryName.toLowerCase()}, priced at <strong>₹49/month</strong>. It generates CBIC-compliant tax invoices, manages inventory stock, tracks customer payments, and sends invoices via WhatsApp with UPI QR codes — all without any software installation.
+          </p>
+          <p className="text-[10px] text-slate-400 mt-2">
+            Last updated: <time dateTime="2026-09-15">September 15, 2026</time>
+          </p>
+        </div>
+
         {/* CTA Group */}
         <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3 w-full sm:w-auto">
           <button
