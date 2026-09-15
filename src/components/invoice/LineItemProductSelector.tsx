@@ -145,7 +145,7 @@ export const LineItemProductSelector: React.FC<LineItemProductSelectorProps> = (
           }}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
-          className={`w-full text-xs font-bold pl-8 pr-20 py-2 bg-white border rounded-lg transition ${
+          className={`w-full text-xs font-bold pl-8 pr-8 py-2 bg-white border rounded-lg transition ${
             isOpen
               ? 'border-brand-600 ring-2 ring-brand-100 shadow-xs'
               : 'border-slate-300 hover:border-slate-400 focus:border-brand-600'
@@ -153,22 +153,6 @@ export const LineItemProductSelector: React.FC<LineItemProductSelectorProps> = (
         />
 
         <div className="absolute right-1.5 flex items-center gap-1">
-          <button
-            type="button"
-            tabIndex={-1}
-            disabled={disabled}
-            onClick={(e) => {
-              e.stopPropagation();
-              inputRef.current?.focus();
-              if (!isOpen) setIsOpen(true);
-            }}
-            className="px-1.5 py-0.5 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200/90 rounded text-[10px] font-bold flex items-center gap-1 transition cursor-pointer shadow-2xs"
-            title="Scan USB barcode or SKU (auto-selects matching item)"
-          >
-            <Barcode className="w-3 h-3 text-emerald-600 shrink-0" />
-            <span className="hidden sm:inline">Scan</span>
-          </button>
-
           <button
             type="button"
             tabIndex={-1}

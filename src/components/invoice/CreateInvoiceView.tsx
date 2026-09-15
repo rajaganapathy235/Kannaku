@@ -807,7 +807,7 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
                 </span>
               </div>
               <span className="text-[11px] text-slate-500 hidden sm:inline font-medium">
-                Search product or click <span className="font-bold text-emerald-700">Scan</span> on any line item to scan barcodes / SKUs
+                Search by product name, SKU, barcode, or HSN code
               </span>
             </div>
 
