@@ -16,6 +16,7 @@ import {
 } from './crypto';
 import { D1Database, ensureTables, execute, queryAll, queryFirst, seedInitialTenants } from './db';
 import { InvoiceType } from '../types';
+import { sendPasswordResetEmail } from './email';
 
 export interface RequestContext {
   request: Request;
@@ -1029,6 +1030,150 @@ export async function handleApiRequest(ctx: RequestContext): Promise<Response> {
       );
     } catch (err: any) {
       return errorResponse('Failed to complete Google signup: ' + (err?.message || 'Server error'), 500);
+    }
+  }
+
+  // -------------------------------------------------------------
+  // FORGOT PASSWORD - RESEND EMAIL ENDPOINT
+  // -------------------------------------------------------------
+  if (path === '/api/auth/forgot-password' && method === 'POST') {
+    const ip = request.headers.get('cf-connecting-ip') || 'unknown';
+    const rate = checkRateLimit(`forgot-password:${ip}`, 5, 60);
+    if (!rate.allowed) {
+      return errorResponse('Too many password reset requests. Please wait 1 minute.', 429);
+    }
+
+    try {
+      const body = (await request.json().catch(() => ({}))) as any;
+      const email = (body?.email || '').trim().toLowerCase();
+
+      if (!email || !email.includes('@')) {
+        return errorResponse('Valid registered email address is required', 400);
+      }
+
+      await execute(
+        db,
+        `CREATE TABLE IF NOT EXISTS password_resets (
+          email TEXT PRIMARY KEY,
+          otp TEXT NOT NULL,
+          expires_at INTEGER NOT NULL,
+          created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        )`
+      );
+
+      const user = await queryFirst<any>(
+        db,
+        'SELECT id, name, email FROM platform_users WHERE LOWER(email) = LOWER(?)',
+        email
+      );
+
+      if (!user) {
+        return jsonResponse({
+          success: true,
+          message: 'If an account exists with this email, a password reset OTP has been sent.',
+        });
+      }
+
+      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+      const expiresAt = Date.now() + 15 * 60 * 1000;
+
+      await execute(
+        db,
+        `INSERT OR REPLACE INTO password_resets (email, otp, expires_at) VALUES (?, ?, ?)`,
+        email,
+        otp,
+        expiresAt
+      );
+
+      const resendApiKey = ctx.env.RESEND_API_KEY || process.env.RESEND_API_KEY || process.env.VITE_RESEND_API_KEY;
+      const emailResult = await sendPasswordResetEmail(
+        {
+          email: user.email,
+          name: user.name,
+          otp,
+        },
+        resendApiKey
+      );
+
+      if (!emailResult.success) {
+        console.warn('[Forgot Password] Resend dispatch note:', emailResult.error);
+        if (!resendApiKey) {
+          return jsonResponse({
+            success: true,
+            message: 'OTP generated. Note: RESEND_API_KEY is not set in environment settings.',
+            devOtpHint: otp,
+          });
+        }
+        return errorResponse(`Failed to send email via Resend: ${emailResult.error}`, 500);
+      }
+
+      return jsonResponse({
+        success: true,
+        message: 'Password reset OTP code sent via Resend to ' + email,
+      });
+    } catch (err: any) {
+      return errorResponse('Failed to request password reset: ' + (err?.message || 'Server error'), 500);
+    }
+  }
+
+  // -------------------------------------------------------------
+  // RESET PASSWORD ENDPOINT
+  // -------------------------------------------------------------
+  if (path === '/api/auth/reset-password' && method === 'POST') {
+    const ip = request.headers.get('cf-connecting-ip') || 'unknown';
+    const rate = checkRateLimit(`reset-password:${ip}`, 10, 60);
+    if (!rate.allowed) {
+      return errorResponse('Too many password reset attempts. Please wait 1 minute.', 429);
+    }
+
+    try {
+      const body = (await request.json().catch(() => ({}))) as any;
+      const email = (body?.email || '').trim().toLowerCase();
+      const otp = (body?.otp || body?.token || '').trim();
+      const newPassword = body?.newPassword || body?.password || '';
+
+      if (!email || !otp || !newPassword) {
+        return errorResponse('Email, OTP code, and new password are required', 400);
+      }
+
+      if (newPassword.length < 6) {
+        return errorResponse('New password must be at least 6 characters long', 400);
+      }
+
+      const resetEntry = await queryFirst<any>(
+        db,
+        'SELECT email, otp, expires_at FROM password_resets WHERE LOWER(email) = LOWER(?)',
+        email
+      );
+
+      if (!resetEntry) {
+        return errorResponse('No password reset request found for this email. Please request a new OTP.', 400);
+      }
+
+      if (String(resetEntry.otp) !== String(otp)) {
+        return errorResponse('Invalid OTP verification code. Please check and try again.', 400);
+      }
+
+      if (Number(resetEntry.expires_at) < Date.now()) {
+        return errorResponse('OTP verification code has expired. Please request a new code.', 400);
+      }
+
+      const passwordHash = await hashPassword(newPassword);
+      await execute(
+        db,
+        'UPDATE platform_users SET password_hash = ? WHERE LOWER(email) = LOWER(?)',
+        passwordHash,
+        email
+      );
+
+      await execute(db, 'DELETE FROM password_resets WHERE LOWER(email) = LOWER(?)', email);
+
+      return jsonResponse({
+        success: true,
+        message: 'Password reset successfully! You can now log in with your new password.',
+      });
+    } catch (err: any) {
+      return errorResponse('Failed to reset password: ' + (err?.message || 'Server error'), 500);
     }
   }
 

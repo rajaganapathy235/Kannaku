@@ -273,6 +273,15 @@ export async function ensureTables(db: D1Database): Promise<void> {
       )`,
     },
     {
+      name: 'password_resets',
+      sql: `CREATE TABLE IF NOT EXISTS password_resets (
+        email TEXT PRIMARY KEY,
+        otp TEXT NOT NULL,
+        expires_at INTEGER NOT NULL,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP
+      )`,
+    },
+    {
       name: 'clients',
       sql: `CREATE TABLE IF NOT EXISTS clients (
         id TEXT PRIMARY KEY,
