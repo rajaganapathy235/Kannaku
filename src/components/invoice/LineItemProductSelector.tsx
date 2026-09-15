@@ -250,6 +250,11 @@ export const LineItemProductSelector: React.FC<LineItemProductSelectorProps> = (
                           )}
                         </div>
                         <div className="text-[10px] text-slate-500 flex items-center gap-2 mt-0.5 flex-wrap">
+                          {prod.itemCode && (
+                            <span className="inline-flex items-center gap-1 font-mono text-indigo-900 bg-indigo-50 px-1.5 py-0.2 rounded border border-indigo-200 font-bold">
+                              <span>SKU: {prod.itemCode}</span>
+                            </span>
+                          )}
                           {prod.barcode && (
                             <span className="inline-flex items-center gap-1 font-mono text-emerald-800 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200 font-bold">
                               <Barcode className="w-2.5 h-2.5 text-emerald-600" />
