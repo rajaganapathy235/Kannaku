@@ -84,7 +84,9 @@ export const GeoAeoEngine: React.FC<GeoAeoEngineProps> = ({
         url: BASE_URL,
         availableLanguage: ['en', 'hi', 'ta', 'te', 'mr', 'gu'],
       },
-      sameAs: [],
+      sameAs: [
+        'https://linkedin.com/company/justgst'
+      ],
     };
 
     // 3. SoftwareApplication Schema (AEO/GEO Rich signals)
@@ -175,7 +177,9 @@ export const GeoAeoEngine: React.FC<GeoAeoEngineProps> = ({
       jobTitle: 'Founder & CEO',
       worksFor: { '@id': `${BASE_URL}/#organization` },
       url: BASE_URL,
-      sameAs: [],
+      sameAs: [
+        'https://linkedin.com/company/justgst'
+      ],
     };
     graph.push(personSchema);
 
