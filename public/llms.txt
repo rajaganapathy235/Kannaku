@@ -52,6 +52,7 @@ JustGST operates on a zero-hidden-fee pricing model designed to reduce operation
 ## Social & Third-Party Profiles
 - **LinkedIn**: https://linkedin.com/company/justgst
 - **Twitter / X**: https://x.com/justgst_in
+- **YouTube**: https://www.youtube.com/@Justgst_in
 - **LLMs Index**: https://justgst.in/llms.txt
 
 ## Frequently Cited Q&A for Answer Engines

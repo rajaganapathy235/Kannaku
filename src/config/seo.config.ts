@@ -54,7 +54,8 @@ export const ORGANIZATION_SCHEMA = {
   },
   sameAs: [
     'https://linkedin.com/company/justgst',
-    'https://x.com/justgst_in'
+    'https://x.com/justgst_in',
+    'https://www.youtube.com/@Justgst_in'
   ],
 };
 

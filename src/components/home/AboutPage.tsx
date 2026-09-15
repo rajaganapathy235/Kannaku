@@ -410,6 +410,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({
                 { label: 'Headquarters', href: '#', display: 'Tamil Nadu, India', icon: <MapPin className="w-4 h-4" /> },
                 { label: 'LinkedIn', href: 'https://linkedin.com/company/justgst', display: 'linkedin.com/company/justgst', icon: <Building2 className="w-4 h-4" /> },
                 { label: 'Twitter / X', href: 'https://x.com/justgst_in', display: '@justgst_in', icon: <ExternalLink className="w-4 h-4" /> },
+                { label: 'YouTube', href: 'https://www.youtube.com/@Justgst_in', display: 'youtube.com/@Justgst_in', icon: <Layers className="w-4 h-4" /> },
               ].map((item) => (
                 <div key={item.label} className="flex items-center gap-3 p-3 rounded-xl border border-slate-200 bg-slate-50">
                   <div className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-brand-600 shrink-0">
