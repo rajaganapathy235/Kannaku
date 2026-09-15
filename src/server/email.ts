@@ -9,8 +9,7 @@ export interface SendResetEmailParams {
 
 export async function sendPasswordResetEmail(
   params: SendResetEmailParams,
-  apiKeyOverride?: string,
-  fromAddressOverride?: string
+  apiKeyOverride?: string
 ): Promise<{ success: boolean; error?: string; messageId?: string }> {
   const apiKey =
     apiKeyOverride ||
@@ -25,15 +24,8 @@ export async function sendPasswordResetEmail(
     };
   }
 
-  // NOTE: process.env does not exist in the Cloudflare Workers runtime — it only works
-  // in the local Node.js dev server (server.ts). In production, the caller must pass
-  // fromAddressOverride sourced from ctx.env. Default to the verified justgst.in domain,
-  // never Resend's own onboarding@resend.dev sandbox address, which is permanently
-  // restricted to sending test emails only to the Resend account owner's own inbox.
   const fromAddress =
-    fromAddressOverride ||
-    process.env.RESEND_FROM_EMAIL ||
-    'JustGST Billing <noreply@justgst.in>';
+    process.env.RESEND_FROM_EMAIL || 'JustGST Billing <onboarding@resend.dev>';
 
   const resend = new Resend(apiKey);
   const recipientName = params.name || 'Valued User';
