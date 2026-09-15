@@ -344,18 +344,28 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
     setItems(next);
   };
 
-  // Add Freight / Extra Item
-  const handleAddFreight = () => {
+  // Add Freight / Packaging / Extra Item
+  const EXTRA_CHARGE_PRESETS = [
+    { type: 'freight', name: 'Freight & Transportation Charges', hsnCode: '996511', defaultRate: 500 },
+    { type: 'packaging', name: 'Packaging & Handling Charges', hsnCode: '998540', defaultRate: 200 },
+    { type: 'delivery', name: 'Delivery & Courier Charges', hsnCode: '996812', defaultRate: 150 },
+    { type: 'loading', name: 'Loading & Unloading Charges', hsnCode: '996719', defaultRate: 300 },
+    { type: 'insurance', name: 'Transit Insurance Charges', hsnCode: '997139', defaultRate: 250 },
+    { type: 'other', name: 'Other Additional Charge', hsnCode: '999799', defaultRate: 100 },
+  ];
+
+  const handleAddExtraItem = (presetType: string = 'freight') => {
+    const preset = EXTRA_CHARGE_PRESETS.find((p) => p.type === presetType) || EXTRA_CHARGE_PRESETS[0];
     setExtraItems([
       ...extraItems,
       {
         id: `extra_${Date.now()}`,
-        name: 'Freight & Transportation Charges',
-        baseRate: 500,
-        unit: 'Trip',
-        hsnCode: '996511',
+        name: preset.name,
+        baseRate: preset.defaultRate,
+        unit: 'Job',
+        hsnCode: preset.hsnCode,
         taxPercentage: 18,
-        extraType: 'freight',
+        extraType: preset.type as any,
       },
     ]);
   };
@@ -1038,7 +1048,7 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
 
               <button
                 type="button"
-                onClick={handleAddFreight}
+                onClick={() => handleAddExtraItem('freight')}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs text-slate-600 hover:text-brand-700 font-semibold bg-slate-100 hover:bg-brand-50 border border-slate-200 rounded-lg transition cursor-pointer"
               >
                 <Truck className="w-3.5 h-3.5" />
@@ -1046,38 +1056,127 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
               </button>
             </div>
 
-            {/* Extra Charges Section (Freight, Insurance) */}
+            {/* Extra Charges Section (Freight, Packaging, Delivery, Insurance) */}
             <div className="pt-3 border-t border-slate-100 space-y-2">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-wrap items-center justify-between gap-2">
                 <span className="text-xs font-semibold text-slate-700">
                   Extra Charges (Freight / Delivery / Packaging)
                 </span>
-                <button
-                  type="button"
-                  onClick={handleAddFreight}
-                  className="text-xs text-brand-700 font-bold hover:underline"
-                >
-                  + Add Freight Charge
-                </button>
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => handleAddExtraItem('freight')}
+                    className="px-2 py-1 text-[11px] font-bold text-brand-700 bg-brand-50 hover:bg-brand-100 border border-brand-200 rounded-md transition cursor-pointer"
+                  >
+                    + Freight (996511)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleAddExtraItem('packaging')}
+                    className="px-2 py-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-md transition cursor-pointer"
+                  >
+                    + Packaging (998540)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleAddExtraItem('delivery')}
+                    className="px-2 py-1 text-[11px] font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-md transition cursor-pointer"
+                  >
+                    + Courier (996812)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleAddExtraItem('other')}
+                    className="px-2 py-1 text-[11px] font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-md transition cursor-pointer"
+                  >
+                    + Custom Charge
+                  </button>
+                </div>
               </div>
+
+              {extraItems.length === 0 && (
+                <div className="text-[11px] text-slate-400 italic py-1">
+                  No extra charges added. Click a charge preset above to include Freight or Packaging.
+                </div>
+              )}
 
               {extraItems.map((ex, exIdx) => (
                 <div
                   key={ex.id || exIdx}
-                  className="flex items-center gap-2 p-2 bg-slate-50 rounded-xl border border-slate-200 text-xs"
+                  className="grid grid-cols-1 sm:grid-cols-12 gap-2 p-2.5 bg-slate-50 rounded-xl border border-slate-200 text-xs items-center"
                 >
-                  <input
-                    type="text"
-                    value={ex.name}
-                    onChange={(e) => {
-                      const next = [...extraItems];
-                      next[exIdx].name = e.target.value;
-                      setExtraItems(next);
-                    }}
-                    placeholder="Charge Name"
-                    className="flex-1 p-1.5 bg-white border border-slate-300 rounded font-semibold"
-                  />
-                  <div className="w-24">
+                  {/* Preset Selector */}
+                  <div className="sm:col-span-3">
+                    <label className="text-[10px] text-slate-500 font-semibold block mb-0.5">
+                      Charge Type
+                    </label>
+                    <select
+                      value={ex.extraType || 'other'}
+                      onChange={(e) => {
+                        const next = [...extraItems];
+                        const preset = EXTRA_CHARGE_PRESETS.find((p) => p.type === e.target.value);
+                        if (preset) {
+                          next[exIdx].extraType = preset.type as any;
+                          next[exIdx].name = preset.name;
+                          next[exIdx].hsnCode = preset.hsnCode;
+                          if (!next[exIdx].baseRate) next[exIdx].baseRate = preset.defaultRate;
+                        } else {
+                          next[exIdx].extraType = 'other';
+                        }
+                        setExtraItems(next);
+                      }}
+                      className="w-full p-1.5 bg-white border border-slate-300 rounded font-semibold text-slate-800"
+                    >
+                      <option value="freight">Freight (SAC 996511)</option>
+                      <option value="packaging">Packaging (SAC 998540)</option>
+                      <option value="delivery">Courier / Delivery (SAC 996812)</option>
+                      <option value="loading">Loading / Cargo (SAC 996719)</option>
+                      <option value="insurance">Insurance (SAC 997139)</option>
+                      <option value="other">Custom Charge</option>
+                    </select>
+                  </div>
+
+                  {/* Charge Name */}
+                  <div className="sm:col-span-4">
+                    <label className="text-[10px] text-slate-500 font-semibold block mb-0.5">
+                      Charge Name / Description
+                    </label>
+                    <input
+                      type="text"
+                      value={ex.name}
+                      onChange={(e) => {
+                        const next = [...extraItems];
+                        next[exIdx].name = e.target.value;
+                        setExtraItems(next);
+                      }}
+                      placeholder="Charge Name"
+                      className="w-full p-1.5 bg-white border border-slate-300 rounded font-semibold text-slate-800"
+                    />
+                  </div>
+
+                  {/* HSN / SAC Code */}
+                  <div className="sm:col-span-2">
+                    <label className="text-[10px] text-slate-500 font-semibold block mb-0.5">
+                      HSN / SAC
+                    </label>
+                    <input
+                      type="text"
+                      value={ex.hsnCode || ''}
+                      onChange={(e) => {
+                        const next = [...extraItems];
+                        next[exIdx].hsnCode = e.target.value;
+                        setExtraItems(next);
+                      }}
+                      placeholder="e.g. 998540"
+                      className="w-full p-1.5 bg-white border border-slate-300 rounded font-mono text-center font-bold text-slate-700"
+                    />
+                  </div>
+
+                  {/* Base Amount ₹ */}
+                  <div className="sm:col-span-2">
+                    <label className="text-[10px] text-slate-500 font-semibold block mb-0.5">
+                      Amount (₹)
+                    </label>
                     <input
                       type="number"
                       value={ex.baseRate}
@@ -1087,31 +1186,41 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
                         setExtraItems(next);
                       }}
                       placeholder="Amount ₹"
-                      className="w-full p-1.5 bg-white border border-slate-300 rounded font-mono text-right"
+                      className="w-full p-1.5 bg-white border border-slate-300 rounded font-mono text-right font-bold text-slate-800"
                     />
                   </div>
-                  <div className="w-20">
-                    <select
-                      value={ex.taxPercentage}
-                      onChange={(e) => {
-                        const next = [...extraItems];
-                        next[exIdx].taxPercentage = Number(e.target.value);
-                        setExtraItems(next);
-                      }}
-                      className="w-full p-1.5 bg-white border border-slate-300 rounded font-mono"
+
+                  {/* GST % & Delete */}
+                  <div className="sm:col-span-1 flex items-center justify-between gap-1 pt-3 sm:pt-0">
+                    <div className="flex-1">
+                      <label className="text-[10px] text-slate-500 font-semibold block mb-0.5 sm:hidden">
+                        GST %
+                      </label>
+                      <select
+                        value={ex.taxPercentage}
+                        onChange={(e) => {
+                          const next = [...extraItems];
+                          next[exIdx].taxPercentage = Number(e.target.value);
+                          setExtraItems(next);
+                        }}
+                        className="w-full p-1.5 bg-white border border-slate-300 rounded font-mono text-xs"
+                      >
+                        <option value={0}>0%</option>
+                        <option value={5}>5%</option>
+                        <option value={12}>12%</option>
+                        <option value={18}>18%</option>
+                        <option value={28}>28%</option>
+                      </select>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveExtraItem(exIdx)}
+                      className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded transition cursor-pointer shrink-0 mt-4 sm:mt-0"
+                      title="Delete Charge"
                     >
-                      <option value={0}>0%</option>
-                      <option value={5}>5%</option>
-                      <option value={18}>18%</option>
-                    </select>
+                      <Trash2 className="w-4 h-4" />
+                    </button>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveExtraItem(exIdx)}
-                    className="p-1.5 text-slate-400 hover:text-rose-600 rounded cursor-pointer"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
                 </div>
               ))}
             </div>
