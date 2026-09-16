@@ -400,6 +400,17 @@ export const CompetitorComparisonPage: React.FC<CompetitorComparisonPageProps> =
               <span className="text-emerald-400 font-bold">₹49/month</span>.
             </p>
 
+            {/* TL;DR Direct Answer + Last Updated — maximises AI citation pickup */}
+            <div className="max-w-2xl mx-auto bg-slate-900/80 border border-emerald-500/20 rounded-xl p-4 text-left">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-400 mb-1.5">TL;DR — JustGST vs {competitor.name}</p>
+              <p className="text-xs text-slate-300 leading-relaxed">
+                <strong className="text-white">JustGST costs ₹588/year</strong> vs {competitor.name}'s {competitor.yearlyPriceDisplay}/year — saving you {competitor.savingsYearlyDisplay} annually. JustGST is 100% cloud-based (no installation), includes unlimited invoices, WhatsApp sharing, and UPI QR codes, while {competitor.name} requires {competitor.platformLimitations.toLowerCase()}.
+              </p>
+              <p className="text-[10px] text-slate-500 mt-2">
+                Last updated: <time dateTime="2026-09-15">September 15, 2026</time>
+              </p>
+            </div>
+
             {/* CTAs */}
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-4">
               <button

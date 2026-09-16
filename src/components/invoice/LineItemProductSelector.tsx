@@ -19,7 +19,7 @@ export const LineItemProductSelector: React.FC<LineItemProductSelectorProps> = (
   onSelectProduct,
   products,
   invoiceType,
-  placeholder = 'Search & select product or scan barcode...',
+  placeholder = 'Search product, barcode or SKU...',
   disabled = false,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -98,7 +98,8 @@ export const LineItemProductSelector: React.FC<LineItemProductSelectorProps> = (
     } else if (e.key === 'Enter') {
       const exactBarcodeMatch = products.find(
         (p) =>
-          p.barcode && p.barcode.trim().toLowerCase() === query && query.length > 0
+          (p.barcode && p.barcode.trim().toLowerCase() === query && query.length > 0) ||
+          (p.itemCode && p.itemCode.trim().toLowerCase() === query && query.length > 0)
       );
       if (exactBarcodeMatch) {
         e.preventDefault();
@@ -151,25 +152,27 @@ export const LineItemProductSelector: React.FC<LineItemProductSelectorProps> = (
           }`}
         />
 
-        <button
-          type="button"
-          tabIndex={-1}
-          disabled={disabled}
-          onClick={() => {
-            setIsOpen(!isOpen);
-            if (!isOpen) {
-              inputRef.current?.focus();
-            }
-          }}
-          className="absolute right-2 p-1 text-slate-400 hover:text-slate-700 rounded transition cursor-pointer"
-          title="Toggle Product Dropdown"
-        >
-          <ChevronDown
-            className={`w-3.5 h-3.5 transition-transform duration-150 ${
-              isOpen ? 'rotate-180 text-brand-600' : ''
-            }`}
-          />
-        </button>
+        <div className="absolute right-1.5 flex items-center gap-1">
+          <button
+            type="button"
+            tabIndex={-1}
+            disabled={disabled}
+            onClick={() => {
+              setIsOpen(!isOpen);
+              if (!isOpen) {
+                inputRef.current?.focus();
+              }
+            }}
+            className="p-1 text-slate-400 hover:text-slate-700 rounded transition cursor-pointer"
+            title="Toggle Product Dropdown"
+          >
+            <ChevronDown
+              className={`w-3.5 h-3.5 transition-transform duration-150 ${
+                isOpen ? 'rotate-180 text-brand-600' : ''
+              }`}
+            />
+          </button>
+        </div>
       </div>
 
       {/* Dropdown Menu - Sleek Scrollable Container with Visible Scrollbar */}
@@ -247,6 +250,11 @@ export const LineItemProductSelector: React.FC<LineItemProductSelectorProps> = (
                           )}
                         </div>
                         <div className="text-[10px] text-slate-500 flex items-center gap-2 mt-0.5 flex-wrap">
+                          {prod.itemCode && (
+                            <span className="inline-flex items-center gap-1 font-mono text-indigo-900 bg-indigo-50 px-1.5 py-0.2 rounded border border-indigo-200 font-bold">
+                              <span>SKU: {prod.itemCode}</span>
+                            </span>
+                          )}
                           {prod.barcode && (
                             <span className="inline-flex items-center gap-1 font-mono text-emerald-800 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200 font-bold">
                               <Barcode className="w-2.5 h-2.5 text-emerald-600" />

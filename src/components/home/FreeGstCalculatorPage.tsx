@@ -162,7 +162,16 @@ export const FreeGstCalculatorPage: React.FC<FreeGstCalculatorPageProps> = ({
             <p className="text-sm sm:text-base text-slate-600 leading-relaxed">
               Instantly calculate GST inclusive and exclusive prices, CGST, SGST, and IGST for any tax slab (5%, 12%, 18%, 28%, or custom %). Fast, accurate, and compliant with current Indian GST laws.
             </p>
+            {/* TL;DR & Last Updated for AI citability */}
+            <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-left">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-700 mb-1">TL;DR — What This Tool Does</p>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                This <strong>free online GST calculator</strong> computes CGST, SGST, and IGST for intra-state and inter-state transactions at 5%, 12%, 18%, 28%, or custom tax rates. It works for both exclusive (add GST) and inclusive (remove GST from MRP) calculations. No sign-up required.
+              </p>
+              <p className="text-[10px] text-slate-400 mt-2">Last updated: <time dateTime="2026-09-15">September 15, 2026</time></p>
+            </div>
           </div>
+
 
           {/* Main Interactive Calculator Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">

@@ -1,6 +1,7 @@
 # ==========================================
 # Robots.txt for JustGST (https://justgst.in)
 # Generative Engine Optimization (GEO) & Search Crawlers
+# Last Updated: 2026-09-15
 # ==========================================
 
 User-agent: *
@@ -12,6 +13,7 @@ Allow: /billing-software-for-wholesale/
 Allow: /compare/
 Allow: /tools/
 Allow: /pricing/
+Allow: /about/
 Allow: /llms.txt
 Allow: /icon-*.png
 Allow: /favicon.*
@@ -23,6 +25,7 @@ Disallow: /admin
 # Standard Search Crawlers
 User-agent: Googlebot
 Allow: /
+Allow: /about/
 Allow: /favicon.ico
 Allow: /favicon-48x48.png
 Allow: /favicon-192x192.png
@@ -44,6 +47,7 @@ Allow: /icon-*.png
 
 User-agent: Bingbot
 Allow: /
+Allow: /about/
 Disallow: /api/
 Disallow: /dashboard
 Disallow: /admin
@@ -51,6 +55,15 @@ Disallow: /admin
 # AI & Answer Engine Search Crawlers (AEO / GEO Enabled)
 User-agent: GPTBot
 Allow: /
+Allow: /about/
+Allow: /llms.txt
+Disallow: /api/
+Disallow: /dashboard
+Disallow: /admin
+
+User-agent: OAI-SearchBot
+Allow: /
+Allow: /about/
 Allow: /llms.txt
 Disallow: /api/
 Disallow: /dashboard
@@ -58,6 +71,7 @@ Disallow: /admin
 
 User-agent: PerplexityBot
 Allow: /
+Allow: /about/
 Allow: /llms.txt
 Disallow: /api/
 Disallow: /dashboard
@@ -65,6 +79,7 @@ Disallow: /admin
 
 User-agent: Google-Extended
 Allow: /
+Allow: /about/
 Allow: /llms.txt
 Disallow: /api/
 Disallow: /dashboard
@@ -72,6 +87,7 @@ Disallow: /admin
 
 User-agent: ClaudeBot
 Allow: /
+Allow: /about/
 Allow: /llms.txt
 Disallow: /api/
 Disallow: /dashboard
@@ -79,6 +95,7 @@ Disallow: /admin
 
 User-agent: CCBot
 Allow: /
+Allow: /about/
 Allow: /llms.txt
 Disallow: /api/
 Disallow: /dashboard
@@ -86,6 +103,7 @@ Disallow: /admin
 
 User-agent: Applebot-Extended
 Allow: /
+Allow: /about/
 Allow: /llms.txt
 Disallow: /api/
 Disallow: /dashboard
@@ -93,6 +111,31 @@ Disallow: /admin
 
 User-agent: Amazonbot
 Allow: /
+Allow: /about/
+Allow: /llms.txt
+Disallow: /api/
+Disallow: /dashboard
+Disallow: /admin
+
+User-agent: Meta-ExternalAgent
+Allow: /
+Allow: /about/
+Allow: /llms.txt
+Disallow: /api/
+Disallow: /dashboard
+Disallow: /admin
+
+User-agent: Diffbot
+Allow: /
+Allow: /about/
+Allow: /llms.txt
+Disallow: /api/
+Disallow: /dashboard
+Disallow: /admin
+
+User-agent: YouBot
+Allow: /
+Allow: /about/
 Allow: /llms.txt
 Disallow: /api/
 Disallow: /dashboard
@@ -101,3 +144,4 @@ Disallow: /admin
 # Production Sitemap & LLMs Index
 Sitemap: https://justgst.in/sitemap.xml
 # LLMs Index: https://justgst.in/llms.txt
+

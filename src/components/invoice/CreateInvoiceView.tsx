@@ -6,7 +6,6 @@ import {
   Barcode,
   Building,
   Check,
-  CheckCircle2,
   ChevronDown,
   FileCheck,
   FilePlus,
@@ -17,7 +16,6 @@ import {
   Plus,
   Printer,
   Save,
-  ScanLine,
   Trash2,
   Truck,
   UserPlus,
@@ -263,72 +261,6 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
     }
   };
 
-  // POS Barcode & SKU Fast-Scan state
-  const [barcodeScanInput, setBarcodeScanInput] = useState('');
-  const [barcodeScanFeedback, setBarcodeScanFeedback] = useState<{
-    message: string;
-    type: 'success' | 'error';
-  } | null>(null);
-  const barcodeScanInputRef = useRef<HTMLInputElement>(null);
-
-  const handleBarcodeScanSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const query = barcodeScanInput.trim().toLowerCase();
-    if (!query) return;
-
-    // Search product catalog by barcode, SKU / itemCode, or exact name
-    const foundProduct = products.find(
-      (p) =>
-        (p.barcode && p.barcode.trim().toLowerCase() === query) ||
-        (p.itemCode && p.itemCode.trim().toLowerCase() === query) ||
-        p.name.trim().toLowerCase() === query
-    );
-
-    if (foundProduct) {
-      // Check if product is already present in invoice line items
-      const existingIdx = items.findIndex(
-        (it) =>
-          it.productId === foundProduct.id ||
-          it.itemId === foundProduct.id ||
-          (it.name && it.name.trim().toLowerCase() === foundProduct.name.trim().toLowerCase())
-      );
-
-      if (existingIdx >= 0) {
-        // Increment quantity by 1
-        const nextQty = (items[existingIdx].qty || 1) + 1;
-        handleItemChange(existingIdx, 'qty', nextQty);
-        setBarcodeScanFeedback({
-          message: `Scanned: "${foundProduct.name}" — Qty updated to ${nextQty} ${foundProduct.unit || 'Nos'}`,
-          type: 'success',
-        });
-      } else {
-        // Check if there is an empty line item (blank name)
-        const emptyIdx = items.findIndex((it) => !it.name || !it.name.trim());
-        if (emptyIdx >= 0) {
-          handleSelectProduct(emptyIdx, foundProduct);
-        } else {
-          handleAddItem(foundProduct);
-        }
-        setBarcodeScanFeedback({
-          message: `Scanned: "${foundProduct.name}" added to line items (₹${formatNumberIndian(
-            invoiceType === InvoiceType.PURCHASE ? foundProduct.buyingPrice : foundProduct.sellingPrice
-          )})`,
-          type: 'success',
-        });
-      }
-
-      setBarcodeScanInput('');
-      setTimeout(() => barcodeScanInputRef.current?.focus(), 50);
-    } else {
-      setBarcodeScanFeedback({
-        message: `No product found matching Barcode / SKU "${barcodeScanInput}". Please add barcode in Inventory first.`,
-        type: 'error',
-      });
-      setBarcodeScanInput('');
-      setTimeout(() => barcodeScanInputRef.current?.focus(), 50);
-    }
-  };
-
   // Line item handlers
   const handleAddItem = (prod?: Product) => {
     const isPurchase = invoiceType === InvoiceType.PURCHASE;
@@ -412,18 +344,28 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
     setItems(next);
   };
 
-  // Add Freight / Extra Item
-  const handleAddFreight = () => {
+  // Add Freight / Packaging / Extra Item
+  const EXTRA_CHARGE_PRESETS = [
+    { type: 'freight', name: 'Freight & Transportation Charges', hsnCode: '996511', defaultRate: 500 },
+    { type: 'packaging', name: 'Packaging & Handling Charges', hsnCode: '998540', defaultRate: 200 },
+    { type: 'delivery', name: 'Delivery & Courier Charges', hsnCode: '996812', defaultRate: 150 },
+    { type: 'loading', name: 'Loading & Unloading Charges', hsnCode: '996719', defaultRate: 300 },
+    { type: 'insurance', name: 'Transit Insurance Charges', hsnCode: '997139', defaultRate: 250 },
+    { type: 'other', name: 'Other Additional Charge', hsnCode: '999799', defaultRate: 100 },
+  ];
+
+  const handleAddExtraItem = (presetType: string = 'freight') => {
+    const preset = EXTRA_CHARGE_PRESETS.find((p) => p.type === presetType) || EXTRA_CHARGE_PRESETS[0];
     setExtraItems([
       ...extraItems,
       {
         id: `extra_${Date.now()}`,
-        name: 'Freight & Transportation Charges',
-        baseRate: 500,
-        unit: 'Trip',
-        hsnCode: '996511',
+        name: preset.name,
+        baseRate: preset.defaultRate,
+        unit: 'Job',
+        hsnCode: preset.hsnCode,
         taxPercentage: 18,
-        extraType: 'freight',
+        extraType: preset.type as any,
       },
     ]);
   };
@@ -874,66 +816,9 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
                   {items.length} {items.length === 1 ? 'item' : 'items'}
                 </span>
               </div>
-              <span className="text-[11px] text-slate-400 hidden sm:inline">
-                Click product search dropdown or scan barcode to add catalog items
+              <span className="text-[11px] text-slate-500 hidden sm:inline font-medium">
+                Search by product name, SKU, barcode, or HSN code
               </span>
-            </div>
-
-            {/* POS Express Barcode Scanner Bar */}
-            <div className="bg-slate-900 text-white p-3.5 rounded-xl shadow-xs border border-slate-800 space-y-2">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  <div className="p-1.5 rounded-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                    <Barcode className="w-4 h-4 animate-pulse" />
-                  </div>
-                  <div>
-                    <span className="text-xs font-bold text-white block">
-                      POS Barcode & SKU Scanner
-                    </span>
-                    <span className="text-[10px] text-slate-400">
-                      Scan USB barcode or type barcode / SKU & press Enter for quick auto-addition
-                    </span>
-                  </div>
-                </div>
-
-                {barcodeScanFeedback && (
-                  <div
-                    className={`px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1.5 animate-in fade-in ${
-                      barcodeScanFeedback.type === 'success'
-                        ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
-                        : 'bg-rose-500/20 text-rose-300 border border-rose-500/40'
-                    }`}
-                  >
-                    {barcodeScanFeedback.type === 'success' ? (
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                    ) : (
-                      <AlertCircle className="w-3.5 h-3.5 text-rose-400 shrink-0" />
-                    )}
-                    <span className="truncate max-w-xs">{barcodeScanFeedback.message}</span>
-                  </div>
-                )}
-              </div>
-
-              <form onSubmit={handleBarcodeScanSubmit} className="flex items-center gap-2 pt-1">
-                <div className="relative flex-1">
-                  <ScanLine className="w-4 h-4 text-emerald-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                  <input
-                    ref={barcodeScanInputRef}
-                    type="text"
-                    value={barcodeScanInput}
-                    onChange={(e) => setBarcodeScanInput(e.target.value)}
-                    placeholder="Scan barcode number or SKU (e.g. 890123456789)..."
-                    className="w-full pl-9 pr-3 py-2 bg-slate-950/80 border border-slate-700 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 rounded-lg text-white placeholder-slate-400 text-xs font-mono font-bold focus:outline-none transition-all"
-                  />
-                </div>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 active:scale-98 text-white text-xs font-bold rounded-lg transition shadow-xs flex items-center gap-1.5 cursor-pointer shrink-0"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>Scan & Add</span>
-                </button>
-              </form>
             </div>
 
             {/* Items Rows */}
@@ -944,13 +829,16 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
                   className="p-3 bg-slate-50/80 hover:bg-slate-50 rounded-xl border border-slate-200/80 space-y-2.5 transition"
                 >
                   <div className="flex items-start justify-between gap-2">
-                    <span className="w-5 h-5 rounded-full bg-slate-200 text-slate-700 text-[10px] font-bold flex items-center justify-center shrink-0 mt-1">
+                    <span className="w-5 h-5 rounded-full bg-slate-200 text-slate-700 text-[10px] font-bold flex items-center justify-center shrink-0 mt-6">
                       {idx + 1}
                     </span>
 
                     {/* Product Name Search Dropdown & HSN */}
                     <div className="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-2">
                       <div className="sm:col-span-2">
+                        <label className="text-[10px] text-slate-500 font-semibold block mb-1">
+                          Item / Product Name
+                        </label>
                         <LineItemProductSelector
                           value={item.name}
                           onChange={(nameVal) => handleItemChange(idx, 'name', nameVal)}
@@ -962,6 +850,9 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
                       </div>
 
                       <div>
+                        <label className="text-[10px] text-slate-500 font-semibold block mb-1">
+                          HSN / SAC Code
+                        </label>
                         <input
                           type="text"
                           value={item.hsnCode}
@@ -980,7 +871,7 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
                       onClick={() => handleRemoveItem(idx)}
                       disabled={items.length <= 1}
                       title={items.length <= 1 ? 'At least one item required' : 'Delete item'}
-                      className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition disabled:opacity-30 cursor-pointer"
+                      className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition disabled:opacity-30 cursor-pointer mt-5"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -1155,48 +1046,107 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
                 )}
               </div>
 
-              <button
-                type="button"
-                onClick={handleAddFreight}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs text-slate-600 hover:text-brand-700 font-semibold bg-slate-100 hover:bg-brand-50 border border-slate-200 rounded-lg transition cursor-pointer"
-              >
-                <Truck className="w-3.5 h-3.5" />
-                <span>+ Add Freight / Extra Charge</span>
-              </button>
             </div>
 
-            {/* Extra Charges Section (Freight, Insurance) */}
+            {/* Extra Charges Section (Freight, Packaging, Delivery, Insurance) */}
             <div className="pt-3 border-t border-slate-100 space-y-2">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-wrap items-center justify-between gap-2">
                 <span className="text-xs font-semibold text-slate-700">
                   Extra Charges (Freight / Delivery / Packaging)
                 </span>
                 <button
                   type="button"
-                  onClick={handleAddFreight}
-                  className="text-xs text-brand-700 font-bold hover:underline"
+                  onClick={() => handleAddExtraItem('freight')}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs text-brand-700 font-bold bg-brand-50 hover:bg-brand-100 border border-brand-200 rounded-lg transition cursor-pointer"
                 >
-                  + Add Freight Charge
+                  <Truck className="w-3.5 h-3.5" />
+                  <span>+ Add Freight / Extra Charge</span>
                 </button>
               </div>
+
+              {extraItems.length === 0 && (
+                <div className="text-[11px] text-slate-400 italic py-1">
+                  No extra charges added. Click "+ Add Freight / Extra Charge" to include shipping, packaging, or handling.
+                </div>
+              )}
 
               {extraItems.map((ex, exIdx) => (
                 <div
                   key={ex.id || exIdx}
-                  className="flex items-center gap-2 p-2 bg-slate-50 rounded-xl border border-slate-200 text-xs"
+                  className="grid grid-cols-1 sm:grid-cols-12 gap-2.5 p-2.5 bg-slate-50/90 rounded-xl border border-slate-200 text-xs items-end"
                 >
-                  <input
-                    type="text"
-                    value={ex.name}
-                    onChange={(e) => {
-                      const next = [...extraItems];
-                      next[exIdx].name = e.target.value;
-                      setExtraItems(next);
-                    }}
-                    placeholder="Charge Name"
-                    className="flex-1 p-1.5 bg-white border border-slate-300 rounded font-semibold"
-                  />
-                  <div className="w-24">
+                  {/* Preset Selector */}
+                  <div className="sm:col-span-3">
+                    <label className="text-[10px] text-slate-500 font-semibold block mb-1">
+                      Charge Type
+                    </label>
+                    <select
+                      value={ex.extraType || 'other'}
+                      onChange={(e) => {
+                        const next = [...extraItems];
+                        const preset = EXTRA_CHARGE_PRESETS.find((p) => p.type === e.target.value);
+                        if (preset) {
+                          next[exIdx].extraType = preset.type as any;
+                          next[exIdx].name = preset.name;
+                          next[exIdx].hsnCode = preset.hsnCode;
+                          if (!next[exIdx].baseRate) next[exIdx].baseRate = preset.defaultRate;
+                        } else {
+                          next[exIdx].extraType = 'other';
+                        }
+                        setExtraItems(next);
+                      }}
+                      className="w-full p-1.5 bg-white border border-slate-300 rounded-lg font-semibold text-slate-800 focus:border-brand-600"
+                    >
+                      <option value="freight">Freight (SAC 996511)</option>
+                      <option value="packaging">Packaging (SAC 998540)</option>
+                      <option value="delivery">Courier / Delivery (SAC 996812)</option>
+                      <option value="loading">Loading / Cargo (SAC 996719)</option>
+                      <option value="insurance">Insurance (SAC 997139)</option>
+                      <option value="other">Custom Charge</option>
+                    </select>
+                  </div>
+
+                  {/* Charge Name */}
+                  <div className="sm:col-span-3">
+                    <label className="text-[10px] text-slate-500 font-semibold block mb-1">
+                      Charge Name / Description
+                    </label>
+                    <input
+                      type="text"
+                      value={ex.name}
+                      onChange={(e) => {
+                        const next = [...extraItems];
+                        next[exIdx].name = e.target.value;
+                        setExtraItems(next);
+                      }}
+                      placeholder="Charge Name"
+                      className="w-full p-1.5 bg-white border border-slate-300 rounded-lg font-semibold text-slate-800 focus:border-brand-600"
+                    />
+                  </div>
+
+                  {/* HSN / SAC Code */}
+                  <div className="sm:col-span-2">
+                    <label className="text-[10px] text-slate-500 font-semibold block mb-1">
+                      HSN / SAC
+                    </label>
+                    <input
+                      type="text"
+                      value={ex.hsnCode || ''}
+                      onChange={(e) => {
+                        const next = [...extraItems];
+                        next[exIdx].hsnCode = e.target.value;
+                        setExtraItems(next);
+                      }}
+                      placeholder="e.g. 998540"
+                      className="w-full p-1.5 bg-white border border-slate-300 rounded-lg font-mono text-center font-bold text-slate-700 focus:border-brand-600"
+                    />
+                  </div>
+
+                  {/* Base Amount ₹ */}
+                  <div className="sm:col-span-2">
+                    <label className="text-[10px] text-slate-500 font-semibold block mb-1">
+                      Amount (₹)
+                    </label>
                     <input
                       type="number"
                       value={ex.baseRate}
@@ -1206,31 +1156,41 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
                         setExtraItems(next);
                       }}
                       placeholder="Amount ₹"
-                      className="w-full p-1.5 bg-white border border-slate-300 rounded font-mono text-right"
+                      className="w-full p-1.5 bg-white border border-slate-300 rounded-lg font-mono text-right font-bold text-slate-800 focus:border-brand-600"
                     />
                   </div>
-                  <div className="w-20">
-                    <select
-                      value={ex.taxPercentage}
-                      onChange={(e) => {
-                        const next = [...extraItems];
-                        next[exIdx].taxPercentage = Number(e.target.value);
-                        setExtraItems(next);
-                      }}
-                      className="w-full p-1.5 bg-white border border-slate-300 rounded font-mono"
+
+                  {/* GST % & Delete Action */}
+                  <div className="sm:col-span-2 flex items-end gap-1">
+                    <div className="flex-1 min-w-0">
+                      <label className="text-[10px] text-slate-500 font-semibold block mb-1">
+                        GST %
+                      </label>
+                      <select
+                        value={ex.taxPercentage}
+                        onChange={(e) => {
+                          const next = [...extraItems];
+                          next[exIdx].taxPercentage = Number(e.target.value);
+                          setExtraItems(next);
+                        }}
+                        className="w-full p-1.5 bg-white border border-slate-300 rounded-lg font-mono font-bold text-slate-800 text-xs focus:border-brand-600"
+                      >
+                        <option value={0}>0%</option>
+                        <option value={5}>5%</option>
+                        <option value={12}>12%</option>
+                        <option value={18}>18%</option>
+                        <option value={28}>28%</option>
+                      </select>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveExtraItem(exIdx)}
+                      className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition cursor-pointer shrink-0"
+                      title="Delete Charge"
                     >
-                      <option value={0}>0%</option>
-                      <option value={5}>5%</option>
-                      <option value={18}>18%</option>
-                    </select>
+                      <Trash2 className="w-4 h-4" />
+                    </button>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveExtraItem(exIdx)}
-                    className="p-1.5 text-slate-400 hover:text-rose-600 rounded cursor-pointer"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
                 </div>
               ))}
             </div>
