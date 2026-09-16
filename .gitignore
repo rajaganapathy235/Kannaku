@@ -6,3 +6,11 @@ coverage/
 *.log
 .env*
 !.env.example
+
+# This project uses npm (Build command: npm run build). Cloudflare's build pipeline
+# auto-detects the package manager from whichever lock file is present, so a
+# committed bun.lock causes it to run `bun install` instead of npm — which has
+# already broken production deploys twice. Never commit bun.lock or yarn.lock.
+bun.lock
+yarn.lock
+pnpm-lock.yaml
