@@ -46,6 +46,7 @@ import { ConfirmationModal } from './components/common/ConfirmationModal';
 import { AlertModal } from './components/common/AlertModal';
 import { Lock } from 'lucide-react';
 import { TrialExpiredModal, ReadOnlyReasonType } from './components/subscription/TrialExpiredModal';
+import { NetworkStatusBanner } from './hooks/useNetworkStatus';
 
 export default function App() {
   const [authSession, setAuthSession] = useState<AuthSession | null>(() => {
@@ -1003,6 +1004,9 @@ export default function App() {
 
   return (
     <div className="h-screen w-full flex flex-col bg-slate-50 text-slate-900 overflow-hidden antialiased font-sans">
+      {/* Floating Offline Network Status Indicator */}
+      <NetworkStatusBanner />
+
       {/* Impersonation Notification Banner */}
       {activeImpersonation && (
         <ImpersonationBanner

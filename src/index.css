@@ -15,12 +15,43 @@
 }
 
 @layer base {
+  html, body {
+    /* Prevent pull-to-refresh overscroll bounces and rubber-banding */
+    overscroll-behavior-y: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
   body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     background-color: #F8F9FA;
     color: #202124;
+    /* Native App Experience: disable text selection and callouts by default */
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    /* Remove web button tap highlights across entire app */
+    -webkit-tap-highlight-color: transparent;
   }
   
+  /* Explicitly re-enable selection on input, textarea, and editable content */
+  input,
+  textarea,
+  [contenteditable="true"],
+  .selectable-text {
+    user-select: text !important;
+    -webkit-user-select: text !important;
+    -webkit-touch-callout: default !important;
+  }
+
+  /* Optimize tap targets for touch buttons and links */
+  button,
+  a,
+  input[type="button"],
+  input[type="submit"] {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+
   a {
     color: inherit;
     text-decoration: inherit;

@@ -7,6 +7,7 @@ const CACHE_NAME = 'justgst-pwa-cache-__BUILD_VERSION__';
 const PRECACHE_ASSETS = [
   '/',
   '/index.html',
+  '/offline.html',
   '/manifest.json',
   '/favicon.ico',
   '/favicon-48x48.png',
@@ -68,9 +69,11 @@ self.addEventListener('fetch', (event) => {
           if (cachedResponse) {
             return cachedResponse;
           }
-          // Fallback to offline index page for navigation requests
+          // Fallback to cached index or offline page for navigation requests
           if (event.request.mode === 'navigate') {
-            return caches.match('/index.html');
+            return caches.match('/index.html').then((indexRes) => {
+              return indexRes || caches.match('/offline.html');
+            });
           }
         });
       })

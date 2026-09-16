@@ -80,5 +80,59 @@
       "form_factor": "narrow",
       "label": "JustGST Mobile Thermal POS & Invoicing"
     }
+  ],
+  "shortcuts": [
+    {
+      "name": "Create Tax Invoice",
+      "short_name": "New Invoice",
+      "description": "Generate a new GST tax invoice instantly",
+      "url": "/?action=new_invoice",
+      "icons": [
+        {
+          "src": "/favicon-192x192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Quick POS Thermal Billing",
+      "short_name": "Quick POS",
+      "description": "Rapid counter retail billing with barcode scanner",
+      "url": "/?action=quick_pos",
+      "icons": [
+        {
+          "src": "/favicon-192x192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "GST & Sales Reports",
+      "short_name": "Reports",
+      "description": "View GSTR-1, GSTR-3B and profit/loss reports",
+      "url": "/?action=reports",
+      "icons": [
+        {
+          "src": "/favicon-192x192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Add New Product",
+      "short_name": "Add Item",
+      "description": "Add new inventory stock and barcode",
+      "url": "/?action=new_product",
+      "icons": [
+        {
+          "src": "/favicon-192x192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    }
   ]
 }
