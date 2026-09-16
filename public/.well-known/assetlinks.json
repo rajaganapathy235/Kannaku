@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "in.justgst.app",
+      "sha256_cert_fingerprints": [
+        "93:BE:4C:ED:F9:EE:67:63:60:29:CC:0E:92:49:88:84:BB:ED:85:F7:70:7F:BA:F1:20:AC:1C:99:EC:C0:0F:6F"
+      ]
+    }
+  }
+]
