@@ -196,3 +196,120 @@ export function releaseScreenWakeLock(): void {
     wakeLockSentinel = null;
   }
 }
+
+// ==========================================
+// 5. Bluetooth POS Thermal Printer Scanner
+// ==========================================
+
+export interface BluetoothPrinterDevice {
+  id: string;
+  name: string;
+  device: any;
+  server?: any;
+}
+
+/**
+ * Scans for nearby ESC/POS Bluetooth thermal receipt printers (2-inch or 3-inch counter POS)
+ * using the Web Bluetooth API.
+ */
+export async function connectBluetoothPrinter(): Promise<{ success: boolean; device?: BluetoothPrinterDevice; error?: string }> {
+  if (typeof window === 'undefined' || !(navigator as any).bluetooth) {
+    return {
+      success: false,
+      error: 'Web Bluetooth API is not supported on this browser or device.',
+    };
+  }
+
+  try {
+    triggerHaptic('light');
+    const device = await (navigator as any).bluetooth.requestDevice({
+      acceptAllDevices: true,
+      optionalServices: [
+        '000018f0-0000-1000-8000-00805f9b34fb', // Standard Serial / POS Printer service
+        'e7810a71-73ae-499d-8c15-faa9aef0c3f2', // ESC/POS Printer service
+        '49535343-fe7d-4ae5-8fa9-9fafd205e455', // Microchip RN4020
+      ],
+    });
+
+    if (!device) {
+      return { success: false, error: 'No printer device selected.' };
+    }
+
+    triggerHaptic('success');
+    return {
+      success: true,
+      device: {
+        id: device.id,
+        name: device.name || 'Bluetooth POS Printer',
+        device,
+      },
+    };
+  } catch (err: any) {
+    if (err.name === 'NotFoundError') {
+      return { success: false, error: 'Device selection was cancelled.' };
+    }
+    triggerHaptic('error');
+    return { success: false, error: err.message || 'Failed to connect to Bluetooth printer.' };
+  }
+}
+
+// ==========================================
+// 6. Geolocation Utility (For E-Way Bill / Dispatch Logs)
+// ==========================================
+
+export interface GeoCoordinates {
+  latitude: number;
+  longitude: number;
+  accuracy: number;
+  timestamp: number;
+}
+
+/**
+ * Fetches the user's high-accuracy current location for GST E-Way dispatch logs and delivery location stamps.
+ */
+export function getCurrentLocation(timeoutMs = 10000): Promise<{ success: boolean; coordinates?: GeoCoordinates; error?: string }> {
+  return new Promise((resolve) => {
+    if (typeof window === 'undefined' || !navigator.geolocation) {
+      resolve({
+        success: false,
+        error: 'Geolocation is not supported by your browser or device.',
+      });
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        resolve({
+          success: true,
+          coordinates: {
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+            accuracy: position.coords.accuracy,
+            timestamp: position.timestamp,
+          },
+        });
+      },
+      (error) => {
+        let errorMessage = 'Failed to acquire location.';
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            errorMessage = 'Location permission was denied.';
+            break;
+          case error.POSITION_UNAVAILABLE:
+            errorMessage = 'Location information is currently unavailable.';
+            break;
+          case error.TIMEOUT:
+            errorMessage = 'Location request timed out.';
+            break;
+        }
+        resolve({ success: false, error: errorMessage });
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: timeoutMs,
+        maximumAge: 60000,
+      }
+    );
+  });
+}
+

@@ -7,6 +7,13 @@
   "scope": "/",
   "display": "standalone",
   "orientation": "any",
+  "handle_links": "preferred",
+  "protocol_handlers": [
+    {
+      "protocol": "web+justgst",
+      "url": "/?intent=%s"
+    }
+  ],
   "background_color": "#ffffff",
   "theme_color": "#059669",
   "lang": "en-IN",
