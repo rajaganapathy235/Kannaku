@@ -16,7 +16,99 @@
   "dir": "ltr",
   "lang": "en-IN",
   "prefer_related_applications": false,
+  "related_applications": [
+    {
+      "platform": "play",
+      "url": "https://play.google.com/store/apps/details?id=in.justgst.app",
+      "id": "in.justgst.app"
+    }
+  ],
+  "iarc_rating_id": "e84b072d-71b3-4d3e-86ae-31a8ce4e53b7",
   "handle_links": "preferred",
+  "scope_extensions": [
+    {
+      "origin": "https://justgst.in"
+    }
+  ],
+  "edge_side_panel": {
+    "preferred_width": 480
+  },
+  "note_taking": {
+    "new_note_url": "/?action=new_invoice"
+  },
+  "widgets": [
+    {
+      "name": "JustGST Quick POS",
+      "short_name": "Quick POS",
+      "description": "Fast counter GST billing & invoice generator",
+      "tag": "pos-widget",
+      "template": "pos-widget",
+      "ms_ac_template": "widgets/pos.json",
+      "data": "widgets/pos-data.json",
+      "type": "application/json",
+      "screenshots": [
+        {
+          "src": "/icon-512.png",
+          "sizes": "512x512",
+          "label": "POS Widget preview"
+        }
+      ],
+      "icons": [
+        {
+          "src": "/favicon-192x192.png",
+          "sizes": "192x192"
+        }
+      ],
+      "auth": false,
+      "update": 86400
+    }
+  ],
+  "launch_handler": {
+    "client_mode": [
+      "focus-existing",
+      "auto"
+    ]
+  },
+  "share_target": {
+    "action": "/?action=share_target",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url",
+      "files": [
+        {
+          "name": "file",
+          "accept": [
+            "application/pdf",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            "application/vnd.ms-excel",
+            "text/csv",
+            "image/*"
+          ]
+        }
+      ]
+    }
+  },
+  "file_handlers": [
+    {
+      "action": "/?action=import_file",
+      "name": "GST Spreadsheet / Invoice",
+      "icons": [
+        {
+          "src": "/favicon-192x192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ],
+      "accept": {
+        "text/csv": [".csv"],
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": [".xlsx"],
+        "application/json": [".json"]
+      }
+    }
+  ],
   "protocol_handlers": [
     {
       "protocol": "web+justgst",
