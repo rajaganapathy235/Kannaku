@@ -5,6 +5,17 @@
 
 import { Client, CompanyProfile, Invoice, PaymentLedgerEntry, Product } from '../types';
 
+// In a browser, the app is served from justgst.in itself, so relative paths work
+// and this stays empty. Inside a Capacitor native app (iOS/Android), the frontend
+// loads from a local scheme, so API calls must be absolute — Capacitor.isNativePlatform()
+// is only true when actually running as a wrapped native app, never in a normal browser.
+const isCapacitorNative = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  return Boolean((window as any).Capacitor?.isNativePlatform?.());
+};
+
+const API_BASE_URL = isCapacitorNative() ? 'https://justgst.in' : '';
+
 export interface ApiResult<T = any> {
   data: T | null;
   error: string | null;
@@ -68,7 +79,8 @@ export class ApiService {
     options: RequestInit = {}
   ): Promise<ApiResult<T>> {
     try {
-      const res = await fetch(path, {
+      const url = path.startsWith('http://') || path.startsWith('https://') ? path : `${API_BASE_URL}${path}`;
+      const res = await fetch(url, {
         credentials: 'include',
         ...options,
         headers: {

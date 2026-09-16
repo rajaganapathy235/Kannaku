@@ -66,9 +66,30 @@ export const ProductListView: React.FC<ProductListViewProps> = ({
   });
 
   const generateBarcode = () => {
-    const randomDigits = Math.floor(1000000000 + Math.random() * 9000000000).toString();
-    setBarcode(`890${randomDigits}`);
+    const existingBarcodes = new Set(
+      products
+        .filter((p) => !selectedProduct || p.id !== selectedProduct.id)
+        .map((p) => p.barcode?.trim())
+        .filter((b): b is string => Boolean(b))
+    );
+
+    let candidate = '';
+    const maxRetries = 10;
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      const randomDigits = Math.floor(1000000000 + Math.random() * 9000000000).toString();
+      candidate = `890${randomDigits}`;
+      if (!existingBarcodes.has(candidate)) {
+        break;
+      }
+    }
+    setBarcode(candidate);
   };
+
+  const barcodeCollisionProduct = barcode.trim()
+    ? products.find(
+        (p) => (!selectedProduct || p.id !== selectedProduct.id) && p.barcode?.trim() === barcode.trim()
+      )
+    : null;
 
   const handleOpenAdd = () => {
     setSelectedProduct(null);
@@ -408,9 +429,19 @@ export const ProductListView: React.FC<ProductListViewProps> = ({
                       value={barcode}
                       onChange={(e) => setBarcode(e.target.value)}
                       placeholder="Scan or type barcode no."
-                      className="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:border-brand-600 focus:ring-2 focus:ring-brand-500/20 focus:outline-none transition-all font-mono font-bold"
+                      className={`w-full pl-9 pr-3 py-2.5 bg-slate-50 border rounded-xl text-slate-900 focus:bg-white focus:outline-none transition-all font-mono font-bold ${
+                        barcodeCollisionProduct
+                          ? 'border-amber-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20'
+                          : 'border-slate-200 focus:border-brand-600 focus:ring-2 focus:ring-brand-500/20'
+                      }`}
                     />
                   </div>
+                  {barcodeCollisionProduct && (
+                    <p className="text-[10px] text-amber-600 font-semibold mt-1 flex items-center gap-1">
+                      <AlertTriangle className="w-3 h-3 shrink-0" />
+                      <span>Used by &quot;{barcodeCollisionProduct.name}&quot;</span>
+                    </p>
+                  )}
                 </div>
               </div>
 
