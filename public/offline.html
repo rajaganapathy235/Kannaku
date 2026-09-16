@@ -37,17 +37,53 @@
       flex-direction: column;
       align-items: center;
     }
-    .icon-wrapper {
-      width: 72px;
-      height: 72px;
-      border-radius: 50%;
-      background: #ecfdf5;
-      border: 2px solid #d1fae5;
+    .illustration-container {
+      width: 100%;
+      max-width: 220px;
+      height: 140px;
+      margin: 0 auto 20px auto;
       display: flex;
       align-items: center;
       justify-content: center;
-      margin-bottom: 20px;
-      color: #059669;
+      position: relative;
+    }
+    .illustration-svg {
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+    }
+    @keyframes pulseRing {
+      0% { transform: scale(0.95); opacity: 0.8; }
+      50% { transform: scale(1.05); opacity: 0.4; }
+      100% { transform: scale(0.95); opacity: 0.8; }
+    }
+    @keyframes floatPlug {
+      0%, 100% { transform: translateY(0px) rotate(0deg); }
+      50% { transform: translateY(-4px) rotate(-2deg); }
+    }
+    @keyframes floatSocket {
+      0%, 100% { transform: translateY(0px) rotate(0deg); }
+      50% { transform: translateY(4px) rotate(2deg); }
+    }
+    @keyframes sparkFlicker {
+      0%, 100% { opacity: 0.3; transform: scale(0.8); }
+      50% { opacity: 0.9; transform: scale(1.1); }
+    }
+    .pulse-bg {
+      transform-origin: center;
+      animation: pulseRing 3s ease-in-out infinite;
+    }
+    .plug-left {
+      transform-origin: center;
+      animation: floatPlug 3.5s ease-in-out infinite;
+    }
+    .socket-right {
+      transform-origin: center;
+      animation: floatSocket 3.5s ease-in-out infinite;
+    }
+    .spark-effect {
+      transform-origin: center;
+      animation: sparkFlicker 2s ease-in-out infinite;
     }
     .brand {
       display: inline-flex;
@@ -124,15 +160,80 @@
       JustGST
     </div>
 
-    <div class="icon-wrapper">
-      <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <line x1="1" y1="1" x2="23" y2="23"></line>
-        <path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"></path>
-        <path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"></path>
-        <path d="M10.71 5.05A16 16 0 0 1 22.58 9"></path>
-        <path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"></path>
-        <path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path>
-        <line x1="12" y1="20" x2="12.01" y2="20"></line>
+    <div class="illustration-container">
+      <svg class="illustration-svg" viewBox="0 0 260 140" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="emeraldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#10b981" />
+            <stop offset="100%" stop-color="#059669" />
+          </linearGradient>
+          <linearGradient id="darkGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#334155" />
+            <stop offset="100%" stop-color="#0f172a" />
+          </linearGradient>
+          <linearGradient id="amberSpark" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#fbbf24" />
+            <stop offset="100%" stop-color="#f59e0b" />
+          </linearGradient>
+          <radialGradient id="auraGrad" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#ecfdf5" stop-opacity="1" />
+            <stop offset="65%" stop-color="#d1fae5" stop-opacity="0.6" />
+            <stop offset="100%" stop-color="#ffffff" stop-opacity="0" />
+          </radialGradient>
+          <filter id="softGlow" x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur stdDeviation="3" result="blur" />
+            <feComposite in="SourceGraphic" in2="blur" operator="over" />
+          </filter>
+        </defs>
+
+        <!-- Background Ambient Ring -->
+        <circle class="pulse-bg" cx="130" cy="70" r="58" fill="url(#auraGrad)" />
+        <circle cx="130" cy="70" r="50" stroke="#a7f3d0" stroke-width="1.5" stroke-dasharray="4 4" opacity="0.7" />
+
+        <!-- LEFT SIDE: Plug & Cable -->
+        <g class="plug-left">
+          <!-- Wire -->
+          <path d="M10 70 Q 40 70, 60 70" stroke="#94a3b8" stroke-width="6" stroke-linecap="round" fill="none" />
+          <!-- Cable Boot -->
+          <rect x="56" y="65" width="10" height="10" rx="3" fill="#64748b" />
+          <!-- Plug Body -->
+          <rect x="66" y="52" width="34" height="36" rx="8" fill="url(#darkGrad)" />
+          <!-- Brand Accent Stripe on Plug -->
+          <rect x="70" y="55" width="4" height="30" rx="2" fill="url(#emeraldGrad)" />
+          <!-- Prongs (Metal Pins) -->
+          <rect x="100" y="58" width="16" height="6" rx="2" fill="#cbd5e1" />
+          <rect x="100" y="76" width="16" height="6" rx="2" fill="#cbd5e1" />
+          <circle cx="112" cy="61" r="1.5" fill="#64748b" />
+          <circle cx="112" cy="79" r="1.5" fill="#64748b" />
+        </g>
+
+        <!-- RIGHT SIDE: Socket & Cable -->
+        <g class="socket-right">
+          <!-- Wire -->
+          <path d="M200 70 Q 220 70, 250 70" stroke="#94a3b8" stroke-width="6" stroke-linecap="round" fill="none" />
+          <!-- Cable Boot -->
+          <rect x="194" y="65" width="10" height="10" rx="3" fill="#64748b" />
+          <!-- Socket Body -->
+          <rect x="160" y="52" width="34" height="36" rx="8" fill="url(#emeraldGrad)" />
+          <!-- Socket Face Plate -->
+          <rect x="156" y="50" width="8" height="40" rx="3" fill="#047857" />
+          <!-- Socket Entry Slots -->
+          <rect x="158" y="58" width="4" height="6" rx="1" fill="#064e3b" />
+          <rect x="158" y="76" width="4" height="6" rx="1" fill="#064e3b" />
+          <!-- Small indicator LED -->
+          <circle cx="184" cy="70" r="3" fill="#ef4444" opacity="0.9" />
+        </g>
+
+        <!-- CENTER: Disconnection Sparks & Signal Disconnect Icon -->
+        <g class="spark-effect">
+          <!-- Small disconnect lightning spark -->
+          <path d="M132 54 L126 64 L134 64 L128 76" stroke="url(#amberSpark)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none" filter="url(#softGlow)" />
+          <!-- Broken signal crosses / particles -->
+          <circle cx="122" cy="48" r="2.5" fill="#f59e0b" />
+          <circle cx="138" cy="88" r="2.5" fill="#10b981" />
+          <circle cx="144" cy="46" r="1.5" fill="#059669" />
+          <circle cx="116" cy="90" r="1.5" fill="#f59e0b" />
+        </g>
       </svg>
     </div>
 
